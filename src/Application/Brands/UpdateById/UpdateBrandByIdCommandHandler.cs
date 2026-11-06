@@ -29,7 +29,8 @@ internal sealed class UpdateBrandCommandHandler(
             var existingBrand = await dbContext.Brands
                 .FirstOrDefaultAsync(b => b.Name == command.Name, cancellationToken);
 
-            if (existingBrand != null)
+            if (existingBrand != null
+                && existingBrand.Id != brand.Id)
             {
                 return BrandErrors.AlreadyExists(command.Name);
             }
