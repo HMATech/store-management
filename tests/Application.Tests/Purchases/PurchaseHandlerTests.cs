@@ -335,6 +335,18 @@ public class PurchaseHandlerTests
     }
 
     [Fact]
+    public async Task UpdateEntriesById_WithSameEntryListedTwice_AddsQuantities()
+    {
+        var graph = await SeededGraph.CreateAsync(database);
+        var duplicate = new UpdateEntry(graph.PurchaseEntry.Id, graph.Product.Id, 3);
+
+        var result = await UpdateEntriesAsync(new UpdatePurchaseEntriesByIdCommand(
+            graph.Purchase.Id, [duplicate, duplicate]));
+
+        Assert.Equal(6, Assert.Single(ResultAssert.Succeeded(result).ProductEntries).Quantity);
+    }
+
+    [Fact]
     public async Task UpdateEntriesById_WithTwoEntriesOfSameProduct_UpdatesEachEntry()
     {
         var graph = await SeededGraph.CreateAsync(database);

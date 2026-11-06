@@ -50,7 +50,7 @@ internal sealed class UpdatePurchaseEntriesByIdCommandHandler(
             var existingEntryIds = currentEntryIds.IntersectBy(inputEntryIds, i => i);
 
             var inputNewEntries = command.ProductEntries.Where(pe => !pe.Id.HasValue);
-            var inputExistingEntries = command.ProductEntries.Except(inputNewEntries);
+            var inputExistingEntries = command.ProductEntries.Where(pe => pe.Id.HasValue);
 
             var existingEntries = purchase.Products.Where(pe => existingEntryIds.Contains(pe.Id));
 
