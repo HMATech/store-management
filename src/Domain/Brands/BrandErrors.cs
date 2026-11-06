@@ -9,6 +9,11 @@ public static class BrandErrors
         $"Brand with name '{name}' already exists"
     );
 
+    public static Error InUse(int id) => Error.Conflict(
+        "Brands.InUse",
+        $"Brand with id '{id}' is still in use"
+    );
+
     public static Error NotFound(int id) => Error.NotFound(
         "Brands.NotFound",
         $"Brand with id '{id}' was not found"

@@ -30,7 +30,8 @@ internal sealed class UpdateRoleByIdCommandHandler(
                 .FirstOrDefaultAsync(r => r.Name.Normalized == command.Name.ToLower().Trim(),
                     cancellationToken);
 
-            if (existingRoleWithName != null)
+            if (existingRoleWithName != null
+                && existingRoleWithName.Id != role.Id)
             {
                 return RoleErrors.AlreadyExist(command.Name);
             }

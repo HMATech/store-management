@@ -28,9 +28,9 @@ internal sealed class Create : SaleEndpoint
             var command = new CreateSaleCommand(
                 request.Title,
                 request.Tags,
-                request.ProductEntries.Select(e => e == null ? null! : new ProductEntryCommand(
+                request.ProductEntries?.Select(e => e == null ? null! : new ProductEntryCommand(
                     e.Id, e.Quantity
-                )).ToList(),
+                )).ToList()!,
                 request.OccurrenceTime
             );
 

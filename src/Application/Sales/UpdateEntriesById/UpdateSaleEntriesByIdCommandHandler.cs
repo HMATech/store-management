@@ -39,7 +39,7 @@ internal sealed class UpdateSaleEntriesByIdCommandHandler(
 
             var currentEntryIds = sale.Products.Select(pe => pe.Id);
             var foreignEntryIds = inputEntryIds
-                .Where(i => i.HasValue && !currentEntryIds.Contains(i.Value))
+                .Where(i => i.HasValue && i.Value != Guid.Empty && !currentEntryIds.Contains(i.Value))
                 .Cast<Guid>();
 
             if (foreignEntryIds.Any())
@@ -78,11 +78,13 @@ internal sealed class UpdateSaleEntriesByIdCommandHandler(
 
             if (existingEntries.Any())
             {
-                var existingProductsDict = inputExistingEntries.ToDictionary(e => e.ProductId, e => e.Quantity);
+                var inputQuantities = inputExistingEntries
+                    .GroupBy(e => e.Id!.Value)
+                    .ToDictionary(g => g.Key, g => g.Sum(e => e.Quantity));
 
                 foreach (var entry in existingEntries)
                 {
-                    if (existingProductsDict.TryGetValue(entry.ProductId, out var quantity))
+                    if (inputQuantities.TryGetValue(entry.Id, out var quantity))
                     {
                         entry.UpdateQuantity(quantity);
                     }
@@ -100,7 +102,7 @@ internal sealed class UpdateSaleEntriesByIdCommandHandler(
 
                 var newProductEntries = inputNewProducts.Select(p => SaleProductEntry.CreateNew(
                     sale.Id, p.Id, p.CurrentPrice!.Id,
-                    inputNewEntries.FirstOrDefault(e => e.ProductId == p.Id)!.Quantity
+                    inputNewEntries.Where(e => e.ProductId == p.Id).Sum(e => e.Quantity)
                 ));
 
                 dbContext.SaleProductEntries.AddRange(newProductEntries);

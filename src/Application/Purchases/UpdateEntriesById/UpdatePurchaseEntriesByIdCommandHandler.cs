@@ -78,11 +78,13 @@ internal sealed class UpdatePurchaseEntriesByIdCommandHandler(
 
             if (existingEntries.Any())
             {
-                var existingProductsDict = inputExistingEntries.ToDictionary(e => e.ProductId, e => e.Quantity);
+                var inputQuantities = inputExistingEntries
+                    .GroupBy(e => e.Id!.Value)
+                    .ToDictionary(g => g.Key, g => g.Sum(e => e.Quantity));
 
                 foreach (var entry in existingEntries)
                 {
-                    if (existingProductsDict.TryGetValue(entry.ProductId, out var quantity))
+                    if (inputQuantities.TryGetValue(entry.Id, out var quantity))
                     {
                         entry.UpdateQuantity(quantity);
                     }
@@ -100,7 +102,7 @@ internal sealed class UpdatePurchaseEntriesByIdCommandHandler(
 
                 var newProductEntries = inputNewProducts.Select(p => PurchaseProductEntry.CreateNew(
                     purchase.Id, p.Id, p.CurrentPrice!.Id,
-                    inputNewEntries.FirstOrDefault(e => e.ProductId == p.Id)!.Quantity
+                    inputNewEntries.Where(e => e.ProductId == p.Id).Sum(e => e.Quantity)
                 ));
 
                 dbContext.PurchaseProductEntries.AddRange(newProductEntries);

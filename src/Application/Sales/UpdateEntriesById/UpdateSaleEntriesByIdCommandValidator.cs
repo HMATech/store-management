@@ -10,6 +10,7 @@ internal sealed class UpdateSaleEntriesByIdCommandValidator
     {
         RuleFor(c => c.ProductEntries)
             .Cascade(CascadeMode.Stop)
+            .NotNull()
             .MustNotHaveAnyNullElement()
             .Must((_, entries, ctx) =>
             {

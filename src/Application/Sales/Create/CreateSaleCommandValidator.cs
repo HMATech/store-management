@@ -12,10 +12,13 @@ internal sealed class CreateSaleCommandValidator
             .NotEmpty();
 
         RuleFor(c => c.Tags)
+            .Cascade(CascadeMode.Stop)
+            .NotNull()
             .MustNotHaveAnyEmptyString();
 
         RuleFor(c => c.ProductEntries)
             .Cascade(CascadeMode.Stop)
+            .NotNull()
             .MustNotHaveAnyNullElement()
             .Must((_, entries, ctx) =>
             {

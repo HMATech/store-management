@@ -53,7 +53,7 @@ internal sealed class LoginUserCommandHandler(IPasswordHasher passwordHasher,
         {
             logger.LogError(ex, "Unexpected error has occurred while logging in user '{command.Email}'",
                 command.Email);
-            return ApplicationErrors.OperationCancelledError(nameof(LoginUserCommandHandler),
+            return ApplicationErrors.UnexpectedError(nameof(LoginUserCommandHandler),
                 $"Unexpected error has occurred while logging in user '{command.Email}'");
         }
     }

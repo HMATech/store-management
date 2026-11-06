@@ -4,6 +4,7 @@ using Application.Common;
 using Domain.Brands;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
+using Npgsql;
 using Shared;
 
 namespace Application.Brands.DeleteById;
@@ -33,6 +34,15 @@ internal sealed class DeleteBrandByIdCommandHandler(
         }
         catch (DbUpdateException ex)
         {
+            if (ex.InnerException is PostgresException pex
+                && pex.SqlState == ApplicationErrorDefaults.PostgreSQLOnDeleteRestrictViolationCode)
+            {
+                logger.LogWarning("Attempting to delete brand with id '{command.Id}' " +
+                    "that is still referenced by other entities",
+                    command.Id);
+                return BrandErrors.InUse(command.Id);
+            }
+
             logger.LogError(ex, "DB error has occurred while deleting brand with id '{command.Id}' from DB",
                 command.Id);
             return ApplicationErrors.DBOperationError(nameof(DeleteBrandByIdCommandHandler),

@@ -39,7 +39,10 @@ internal sealed class UpdateProductUnitByIdCommandHandler(
                     return ProductErrors.UnitAlreadyExists(command.Name);
                 }
 
-                return productUnit.ToUpdateByIdResponse();
+                if (productUnit.Name.Value == command.Name)
+                {
+                    return productUnit.ToUpdateByIdResponse();
+                }
             }
 
             productUnit.UpdateName(command.Name);

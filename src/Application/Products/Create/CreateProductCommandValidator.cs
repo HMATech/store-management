@@ -26,6 +26,7 @@ internal sealed class CreateProductCommandValidator
             .GreaterThanOrEqualTo(0);
 
         RuleFor(c => c.Tags)
+            .Cascade(CascadeMode.Stop)
             .NotNull()
             .MustNotHaveAnyEmptyString();
     }

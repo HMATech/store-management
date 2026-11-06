@@ -53,7 +53,7 @@ internal sealed class CreatePurchaseCommandHandler(
 
             var productEntries = products.Select(p => PurchaseProductEntry.CreateNew(
                 purchase.Id, p.Id, p.CurrentPrice!.Id,
-                command.ProductEntries.FirstOrDefault(e => e.Id == p.Id)!.Quantity
+                command.ProductEntries.Where(e => e.Id == p.Id).Sum(e => e.Quantity)
             ));
 
             purchase.UpdateProductEntries(productEntries.ToList());
