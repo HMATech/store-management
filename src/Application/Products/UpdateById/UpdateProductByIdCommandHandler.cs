@@ -61,6 +61,7 @@ internal sealed class UpdateProductByIdCommandHandler(
 
             var detail = product.Detail;
 
+            detail.UpdateDescription(command.Description);
             detail.UpdateMeasure(command.Measure, unit);
 
             var productTags = await TagsHelper.CreateSynchronizedTagsAsync(command.Tags, ProductTag.CreateNew,

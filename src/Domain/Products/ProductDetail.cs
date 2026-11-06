@@ -17,6 +17,11 @@ public sealed class ProductDetail
 
     private ProductDetail() { }
 
+    public void UpdateDescription(string? description)
+    {
+        Description = description;
+    }
+
     public void UpdateMeasure(float value, ProductUnit unit)
     {
         Measure = value;
