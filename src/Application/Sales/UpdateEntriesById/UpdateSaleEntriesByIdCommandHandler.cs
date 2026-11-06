@@ -50,7 +50,7 @@ internal sealed class UpdateSaleEntriesByIdCommandHandler(
             var existingEntryIds = currentEntryIds.IntersectBy(inputEntryIds, i => i);
 
             var inputNewEntries = command.ProductEntries.Where(pe => !pe.Id.HasValue || pe.Id.Value == Guid.Empty);
-            var inputExistingEntries = command.ProductEntries.Except(inputNewEntries);
+            var inputExistingEntries = command.ProductEntries.Where(pe => pe.Id.HasValue && pe.Id.Value != Guid.Empty);
 
             var existingEntries = sale.Products.Where(pe => existingEntryIds.Contains(pe.Id));
 
@@ -76,16 +76,30 @@ internal sealed class UpdateSaleEntriesByIdCommandHandler(
                 return SaleErrors.ContainNonExistingProducts(invalidProducts);
             }
 
+            var inputNewQuantities = inputNewEntries
+                .GroupBy(e => e.ProductId)
+                .ToDictionary(g => g.Key, g => g.Sum(e => e.Quantity));
+            var mergedProductIds = new HashSet<Guid>();
+
             if (existingEntries.Any())
             {
                 var inputQuantities = inputExistingEntries
                     .GroupBy(e => e.Id!.Value)
                     .ToDictionary(g => g.Key, g => g.Sum(e => e.Quantity));
+                var currentPriceIds = products.ToDictionary(p => p.Id, p => p.CurrentPrice?.Id);
 
                 foreach (var entry in existingEntries)
                 {
                     if (inputQuantities.TryGetValue(entry.Id, out var quantity))
                     {
+                        // A line is a product at a price, so new units only join a line at the current price.
+                        if (inputNewQuantities.TryGetValue(entry.ProductId, out var newQuantity)
+                            && entry.PriceId == currentPriceIds[entry.ProductId]
+                            && mergedProductIds.Add(entry.ProductId))
+                        {
+                            quantity += newQuantity;
+                        }
+
                         entry.UpdateQuantity(quantity);
                     }
                 }
@@ -98,11 +112,12 @@ internal sealed class UpdateSaleEntriesByIdCommandHandler(
 
             if (inputNewEntries.Any())
             {
-                var inputNewProducts = products.Where(p => inputNewProductIds.Contains(p.Id));
+                var inputNewProducts = products
+                    .Where(p => inputNewQuantities.ContainsKey(p.Id) && !mergedProductIds.Contains(p.Id));
 
                 var newProductEntries = inputNewProducts.Select(p => SaleProductEntry.CreateNew(
                     sale.Id, p.Id, p.CurrentPrice!.Id,
-                    inputNewEntries.Where(e => e.ProductId == p.Id).Sum(e => e.Quantity)
+                    inputNewQuantities[p.Id]
                 ));
 
                 dbContext.SaleProductEntries.AddRange(newProductEntries);

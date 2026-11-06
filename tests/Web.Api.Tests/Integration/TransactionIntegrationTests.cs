@@ -114,6 +114,32 @@ public class TransactionIntegrationTests(PostgresApiFixture api)
 
     [Theory]
     [MemberData(nameof(Resources))]
+    public async Task UpdateEntries_WithNewEntryForKeptProduct_AddsToThatEntry(string path)
+    {
+        var product = await CreateProductAsync(10m);
+        var id = await CreateTransactionAsync(path, PostgresApiFixture.Unique("Title"), product, quantity: 1);
+        var entryId = (await (await client.GetAsync($"{path}/{id}")).ReadJsonAsync())
+            .GetProperty("productEntries")[0].GetProperty("id").GetString();
+
+        var changed = await client.PutAsJsonAsync($"{path}/{id}/entries", new
+        {
+            productEntries = new object[]
+            {
+                new { id = entryId, productId = product, quantity = 3 },
+                new { id = (string?)null, productId = product, quantity = 2 },
+            },
+        });
+        Assert.Equal(HttpStatusCode.OK, changed.StatusCode);
+
+        var body = await (await client.GetAsync($"{path}/{id}")).ReadJsonAsync();
+        var entries = body.GetProperty("productEntries");
+        Assert.Equal(1, entries.GetArrayLength());
+        Assert.Equal(entryId, entries[0].GetProperty("id").GetString());
+        Assert.Equal(50m, body.GetProperty("totalPrice").GetDecimal());
+    }
+
+    [Theory]
+    [MemberData(nameof(Resources))]
     public async Task UpdateEntries_WithForeignEntryOrUnknownProduct_ReturnsNotFound(string path)
     {
         var product = await CreateProductAsync(10m);

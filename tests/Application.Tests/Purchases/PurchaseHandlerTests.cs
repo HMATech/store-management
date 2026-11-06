@@ -7,6 +7,7 @@ using Application.Purchases.GetById;
 using Application.Purchases.UpdateDetailsById;
 using Application.Purchases.UpdateEntriesById;
 using Application.Tests.TestSupport;
+using Domain.Purchases;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging.Abstractions;
 using Shared;
@@ -335,22 +336,102 @@ public class PurchaseHandlerTests
     }
 
     [Fact]
-    public async Task UpdateEntriesById_WithTwoEntriesOfSameProduct_UpdatesEachEntry()
+    public async Task UpdateEntriesById_WithNewEntryForKeptProduct_AddsToThatEntry()
     {
         var graph = await SeededGraph.CreateAsync(database);
         var entryId = graph.PurchaseEntry.Id;
         var productId = graph.Product.Id;
-        var added = ResultAssert.Succeeded(await UpdateEntriesAsync(new UpdatePurchaseEntriesByIdCommand(
-            graph.Purchase.Id, [new UpdateEntry(entryId, productId, 3), new UpdateEntry(null, productId, 2)])));
-        var addedId = added.ProductEntries.Single(e => e.Id != entryId).Id;
 
         var result = await UpdateEntriesAsync(new UpdatePurchaseEntriesByIdCommand(
-            graph.Purchase.Id, [new UpdateEntry(entryId, productId, 7), new UpdateEntry(addedId, productId, 8)]));
+            graph.Purchase.Id, [new UpdateEntry(entryId, productId, 3), new UpdateEntry(null, productId, 2)]));
 
         var response = ResultAssert.Succeeded(result);
-        Assert.Equal(7, response.ProductEntries.Single(e => e.Id == entryId).Quantity);
-        Assert.Equal(8, response.ProductEntries.Single(e => e.Id == addedId).Quantity);
-        Assert.Equal(150m, response.TotalPrice);
+        var entry = Assert.Single(response.ProductEntries);
+        Assert.Equal(entryId, entry.Id);
+        Assert.Equal(5, entry.Quantity);
+        Assert.Equal(50m, response.TotalPrice);
+    }
+
+    [Fact]
+    public async Task UpdateEntriesById_WithNewEntryForOmittedProduct_ReplacesTheEntry()
+    {
+        var graph = await SeededGraph.CreateAsync(database);
+
+        var result = await UpdateEntriesAsync(new UpdatePurchaseEntriesByIdCommand(
+            graph.Purchase.Id, [new UpdateEntry(null, graph.Product.Id, 2)]));
+
+        var entry = Assert.Single(ResultAssert.Succeeded(result).ProductEntries);
+        Assert.NotEqual(graph.PurchaseEntry.Id, entry.Id);
+        Assert.Equal(2, entry.Quantity);
+    }
+
+    [Fact]
+    public async Task UpdateEntriesById_WithSameEntryListedTwice_AddsQuantities()
+    {
+        var graph = await SeededGraph.CreateAsync(database);
+        var duplicate = new UpdateEntry(graph.PurchaseEntry.Id, graph.Product.Id, 3);
+
+        var result = await UpdateEntriesAsync(new UpdatePurchaseEntriesByIdCommand(
+            graph.Purchase.Id, [duplicate, duplicate]));
+
+        Assert.Equal(6, Assert.Single(ResultAssert.Succeeded(result).ProductEntries).Quantity);
+    }
+
+    [Fact]
+    public async Task UpdateEntriesById_WithNewEntryForLineAtOldPrice_AddsLineAtCurrentPrice()
+    {
+        var graph = await SeededGraph.CreateAsync(database);
+        var oldLine = await AddEntryAsync(graph, graph.OldPrice.Id, quantity: 3);
+
+        var result = await UpdateEntriesAsync(new UpdatePurchaseEntriesByIdCommand(
+            graph.Purchase.Id,
+            [new UpdateEntry(oldLine.Id, graph.Product.Id, 3), new UpdateEntry(null, graph.Product.Id, 2)]));
+
+        var response = ResultAssert.Succeeded(result);
+        Assert.Equal(2, response.ProductEntries.Length);
+        Assert.Equal(3, response.ProductEntries.Single(e => e.Id == oldLine.Id).Quantity);
+        Assert.Equal(2, response.ProductEntries.Single(e => e.Id != oldLine.Id).Quantity);
+        Assert.Equal(44m, response.TotalPrice);
+    }
+
+    [Fact]
+    public async Task UpdateEntriesById_WithLinesAtOldAndCurrentPrice_AddsToCurrentPriceLine()
+    {
+        var graph = await SeededGraph.CreateAsync(database);
+        var oldLine = await AddEntryAsync(graph, graph.OldPrice.Id, quantity: 1);
+        var productId = graph.Product.Id;
+
+        var result = await UpdateEntriesAsync(new UpdatePurchaseEntriesByIdCommand(graph.Purchase.Id,
+        [
+            new UpdateEntry(graph.PurchaseEntry.Id, productId, 7),
+            new UpdateEntry(oldLine.Id, productId, 8),
+            new UpdateEntry(null, productId, 2),
+        ]));
+
+        var response = ResultAssert.Succeeded(result);
+        Assert.Equal(2, response.ProductEntries.Length);
+        Assert.Equal(9, response.ProductEntries.Single(e => e.Id == graph.PurchaseEntry.Id).Quantity);
+        Assert.Equal(8, response.ProductEntries.Single(e => e.Id == oldLine.Id).Quantity);
+        Assert.Equal(154m, response.TotalPrice);
+    }
+
+    [Fact]
+    public async Task UpdateEntriesById_WithTwoLinesAtCurrentPrice_AddsNewQuantityOnce()
+    {
+        var graph = await SeededGraph.CreateAsync(database);
+        var secondLine = await AddEntryAsync(graph, graph.CurrentPrice.Id, quantity: 1);
+        var productId = graph.Product.Id;
+
+        var result = await UpdateEntriesAsync(new UpdatePurchaseEntriesByIdCommand(graph.Purchase.Id,
+        [
+            new UpdateEntry(graph.PurchaseEntry.Id, productId, 7),
+            new UpdateEntry(secondLine.Id, productId, 8),
+            new UpdateEntry(null, productId, 2),
+        ]));
+
+        var response = ResultAssert.Succeeded(result);
+        Assert.Equal(2, response.ProductEntries.Length);
+        Assert.Equal(17, response.ProductEntries.Sum(e => e.Quantity));
     }
 
     [Fact]
@@ -397,6 +478,15 @@ public class PurchaseHandlerTests
         var handler = new UpdatePurchaseDetailsByIdCommandHandler(context, new FixedClock(),
             NullLogger<UpdatePurchaseDetailsByIdCommandHandler>.Instance);
         return await handler.HandleAsync(command, default);
+    }
+
+    private async Task<PurchaseProductEntry> AddEntryAsync(SeededGraph graph, Guid priceId, int quantity)
+    {
+        await using var context = database.CreateContext();
+        var entry = PurchaseProductEntry.CreateNew(graph.Purchase.Id, graph.Product.Id, priceId, quantity);
+        context.Add(entry);
+        await context.SaveChangesAsync();
+        return entry;
     }
 
     private async Task<Result<UpdatePurchaseEntriesByIdResponse>> UpdateEntriesAsync(

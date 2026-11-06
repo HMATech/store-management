@@ -125,6 +125,10 @@ Handlers, validators and endpoints are discovered automatically, so they don't n
 
 Use `TagsHelper.CreateSynchronizedTagsAsync` to sync tags on an entity (see the Product, Purchase and Sale handlers).
 
+### Purchase and sale entries
+
+An entry line is a product at a price, and it keeps that price when the product's price changes later. Repeated products in a request add together. On `PUT /{id}/entries`, a new entry joins a kept line only if that line is at the product's current price; otherwise it becomes a new line at the current price, so a product can have more than one line.
+
 ### Authorization
 
 `.RequireAuthorization()` is added per endpoint. Only the Users `DeleteById`, `GetUser`, `GetUserById` and `UpdateDetailById` endpoints have it so far, and the other endpoints are public. Swagger is set up to send a JWT bearer token.

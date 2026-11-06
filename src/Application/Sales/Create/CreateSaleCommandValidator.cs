@@ -35,6 +35,12 @@ internal sealed class CreateSaleCommandValidator
                     }
                 }
 
+                if (entries.Sum(e => (long)e.Quantity) > int.MaxValue)
+                {
+                    ctx.AddFailure("The total quantity of product entries is too large");
+                    isValid = false;
+                }
+
                 return isValid;
             })
                 .WithErrorCode("ProductEntriesValidator")
