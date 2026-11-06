@@ -41,8 +41,8 @@ internal static class ValidationDecorator
         }
     }
 
-    private static async Task<ValidationFailure[]> ValidateAsync<TCommand>(TCommand command,
-        IEnumerable<IValidator<TCommand>> validators,
+    private static async Task<ValidationFailure[]> ValidateAsync<TRequest>(TRequest request,
+        IEnumerable<IValidator<TRequest>> validators,
         CancellationToken cancellationToken)
     {
         if (validators == null
@@ -51,9 +51,8 @@ internal static class ValidationDecorator
             return [];
         }
 
-        var context = new ValidationContext<TCommand>(command);
-
-        var results = await Task.WhenAll(validators.Select(v => v.ValidateAsync(context, cancellationToken)));
+        var results = await Task.WhenAll(validators.Select(
+            v => v.ValidateAsync(new ValidationContext<TRequest>(request), cancellationToken)));
 
         return [.. results
             .Where(r => !r.IsValid)
