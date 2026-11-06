@@ -26,7 +26,7 @@ internal sealed class GetRolesByUserQueryHandler(
                     .Select(u => new { u.Id, u.Email } )
                     .FirstOrDefaultAsync(u => u.Id == uid, cancellationToken);
 
-                if (user!.Id == default)
+                if (user == null)
                 {
                     return UserErrors.NotFound(uid);
                 }
