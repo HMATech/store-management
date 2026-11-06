@@ -281,6 +281,26 @@ public class ValidatorTests
     }
 
     [Fact]
+    public void Entries_WithTotalQuantityTooLargeToAddTogether_FailValidation()
+    {
+        AssertFails(new CreatePurchaseCommandValidator().Validate(ValidCreatePurchase() with
+        {
+            ProductEntries = [new PurchaseCreateEntry(SomeId, int.MaxValue), new PurchaseCreateEntry(SomeId, 1)],
+        }), "ProductEntries");
+        AssertFails(new CreateSaleCommandValidator().Validate(ValidCreateSale() with
+        {
+            ProductEntries = [new SaleCreateEntry(SomeId, int.MaxValue), new SaleCreateEntry(SomeId, 1)],
+        }), "ProductEntries");
+        AssertFails(new UpdatePurchaseEntriesByIdCommandValidator().Validate(
+            new UpdatePurchaseEntriesByIdCommand(SomeId,
+            [new PurchaseUpdateEntry(null, SomeId, int.MaxValue), new PurchaseUpdateEntry(null, SomeId, 1)])),
+            "ProductEntries");
+        AssertFails(new UpdateSaleEntriesByIdCommandValidator().Validate(new UpdateSaleEntriesByIdCommand(SomeId,
+            [new SaleUpdateEntry(null, SomeId, int.MaxValue), new SaleUpdateEntry(null, SomeId, 1)])),
+            "ProductEntries");
+    }
+
+    [Fact]
     public void UpdatePurchaseAndSaleEntries_RejectNullEntry()
     {
         AssertFails(new UpdatePurchaseEntriesByIdCommandValidator()
