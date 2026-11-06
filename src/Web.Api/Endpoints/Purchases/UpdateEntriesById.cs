@@ -24,9 +24,9 @@ internal sealed class UpdateEntriesById : PurchaseEndpoint
         {
             var command = new UpdatePurchaseEntriesByIdCommand(
                 id,
-                request.ProductEntries.Select(e => e == null ? null! : new ProductEntryCommand(
+                request.ProductEntries?.Select(e => e == null ? null! : new ProductEntryCommand(
                     e.Id, e.ProductId, e.Quantity
-                )).ToList()
+                )).ToList()!
             );
 
             var result = await handler.HandleAsync(command, cancellationToken);
