@@ -19,10 +19,12 @@ internal sealed class GetUsersByNameQueryHandler(
     {
         try
         {
+            var normalizedName = query.Name.ToLower().Trim();
+
             var role = await dbContext.Roles
                 .Select(r => new { r.Id, r.Name.Normalized })
                 .AsNoTracking()
-                .FirstOrDefaultAsync(r => r.Normalized == query.Name, cancellationToken);
+                .FirstOrDefaultAsync(r => r.Normalized == normalizedName, cancellationToken);
 
             if (role == null)
             {

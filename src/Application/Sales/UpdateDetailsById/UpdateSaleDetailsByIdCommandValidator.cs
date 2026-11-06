@@ -12,6 +12,8 @@ internal sealed class UpdateSaleDetailsByIdCommandValidator
             .NotEmpty();
 
         RuleFor(c => c.Tags)
+            .Cascade(CascadeMode.Stop)
+            .NotNull()
             .MustNotHaveAnyEmptyString();
 
         RuleFor(c => c.OccurrenceTime)

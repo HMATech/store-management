@@ -6,7 +6,7 @@ For commit messages, follow [COMMIT_STYLE.md](COMMIT_STYLE.md).
 
 ## Branching
 
-Always create a new branch before writing changes, and never work directly on `main`. Feature branches go under the `feature/` prefix, for example `feature/sales-endpoints`.
+Always create a new branch before writing changes, and never work directly on `main`. Feature branches go under the `feature/` prefix, for example `feature/sales-endpoints`. Bug fix branches go under the `fix/` prefix, for example `fix/known-bugs`.
 
 ## Stack
 
@@ -87,7 +87,7 @@ Handlers, validators and endpoints are discovered automatically, so they don't n
 
 ### Validation
 
-`ValidationDecorator` runs validators for commands only. Query handlers aren't decorated, so a validator written for a query won't run.
+`ValidationDecorator` runs validators for both commands and queries, so adding an `AbstractValidator<T>` for either is enough.
 
 ### Dates
 

@@ -29,7 +29,7 @@ internal class TokenProvider(IConfiguration configuration) : ITokenProvider
             Expires = DateTime.UtcNow.AddMinutes(jwt.ExpirationInMinutes),
             SigningCredentials = credentials,
             Issuer = jwt.ValidIssuer,
-            Audience = "developer"
+            Audience = jwt.ValidAudiences[0]
         };
 
         var handler = new JsonWebTokenHandler();

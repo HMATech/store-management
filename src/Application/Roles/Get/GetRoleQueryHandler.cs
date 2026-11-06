@@ -16,8 +16,10 @@ internal sealed class GetRoleQueryHandler(IApplicationDbContext dbContext,
     {
         try
         {
+            var search = query.Search?.ToLower().Trim();
+
             var roles = dbContext.Roles
-                .Where(r => string.IsNullOrEmpty(query.Search) || r.Name.Normalized.Contains(query.Search))
+                .Where(r => string.IsNullOrEmpty(search) || r.Name.Normalized.Contains(search))
                 .AsQueryable();
 
             roles = query.SortOrder == SortOrder.ASC

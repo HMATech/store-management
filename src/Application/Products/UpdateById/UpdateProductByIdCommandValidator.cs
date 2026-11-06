@@ -24,6 +24,8 @@ internal sealed class UpdateProductByIdCommandValidator
             .NotEmpty();
 
         RuleFor(c => c.Tags)
+            .Cascade(CascadeMode.Stop)
+            .NotNull()
             .MustNotHaveAnyEmptyString();
     }
 }
