@@ -4,6 +4,28 @@ ASP.NET Core Minimal API backend for a store management app. It covers users, ro
 
 For commit messages, follow [COMMIT_STYLE.md](COMMIT_STYLE.md).
 
+This file keeps evolving with the project's needs. When a change makes it wrong or incomplete, or a new convention is agreed, update it in the same change.
+
+## Working standards
+
+Apply these to all work, however small the change.
+
+### Robustness
+
+- Handle failure paths as carefully as the success path: invalid input, missing data, conflicts, cancellation and database errors.
+- Validate input at the boundary, and return an expected failure as a `Result` error with the right status. A client mistake should never end in a 500.
+- Check related code when you fix a bug. The same mistake often exists in a sibling handler, such as the purchase and sale versions of a feature.
+- Cover failure paths with negative tests, and show a bug fix works with a test that fails without it.
+- Run the build and tests before calling work done, and report any failure or skipped step.
+
+### Clean code
+
+- Keep methods and classes focused, with names that say what they do.
+- Follow the existing patterns in this file and the surrounding code rather than introducing new ones.
+- Reuse existing helpers instead of duplicating logic, and remove dead code, including anything your change leaves unused.
+- Keep each change to its purpose. Raise unrelated problems separately instead of mixing them in.
+- Follow the rules in [Code style](#code-style).
+
 ## Branching
 
 Always create a new branch before writing changes, and never work directly on `main`. Feature branches go under the `feature/` prefix, for example `feature/sales-endpoints`. Bug fix branches go under the `fix/` prefix, for example `fix/known-bugs`.
@@ -23,6 +45,11 @@ Run these from the repo root.
 dotnet build Backend.sln
 dotnet run --project src/Web.Api --launch-profile https   # https://localhost:7001/swagger
 
+# Tests
+dotnet test Backend.sln                                       # All tests, needs Docker running
+dotnet test Backend.sln --filter "Category!=Integration"      # Unit tests only, no Docker needed
+dotnet test Backend.sln --filter "Category=Integration"       # Integration tests only
+
 # Migrations (needs the dotnet-ef tool: dotnet tool install -g dotnet-ef)
 dotnet ef migrations add <Name> --project src/Infrastructure --startup-project src/Web.Api --output-dir Database/Migrations
 ```
@@ -32,11 +59,11 @@ dotnet ef migrations add <Name> --project src/Infrastructure --startup-project s
 
 ## Testing
 
-Always write tests for code changes, even though the repo has no test projects yet. If a change needs a test project that doesn't exist, create it and add it to `Backend.sln` as part of that change. Run the tests with `dotnet test Backend.sln` before committing.
+Always write tests for code changes, including negative cases. If a change needs a test project that doesn't exist, create it and add it to `Backend.sln` as part of that change. Run the tests with `dotnet test Backend.sln` before committing.
 
 - **Framework:** use xUnit. Add test package versions to `Directory.Packages.props` like any other package.
 - **Location:** test projects go in `tests/`, next to `src/`, with one project per layer named `<Layer>.Tests`, such as `tests/Application.Tests` or `tests/Web.Api.Tests`.
-- **API tests:** test endpoints with `WebApplicationFactory` against a real PostgreSQL database run through Testcontainers, because handlers use EF Core directly. These tests need Docker running.
+- **API tests:** test endpoints with `WebApplicationFactory` against a real PostgreSQL database run through Testcontainers, because handlers use EF Core directly. These tests need Docker running. Mark them with `[Trait("Category", "Integration")]` so they can be filtered, and put them in the project's `Integration` folder.
 - **Internal types:** handlers, validators and the generated `Program` class are internal. Expose them to the test project with an `InternalsVisibleTo` attribute in the project under test, written in source because `Directory.Build.props` turns off `GenerateAssemblyInfo`.
 
 ## Architecture

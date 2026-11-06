@@ -1,0 +1,12 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <ItemGroup>
+    <PackageReference Include="Microsoft.AspNetCore.Mvc.Testing" />
+    <!-- Web.Api is compiled against this version through a PrivateAssets EF package, so it must be restated here. -->
+    <PackageReference Include="System.Text.Json" />
+    <PackageReference Include="Testcontainers.PostgreSql" />
+  </ItemGroup>
+  <ItemGroup>
+    <FrameworkReference Include="Microsoft.AspNetCore.App" />
+    <ProjectReference Include="..\..\src\Web.Api\Web.Api.csproj" />
+  </ItemGroup>
+</Project>
