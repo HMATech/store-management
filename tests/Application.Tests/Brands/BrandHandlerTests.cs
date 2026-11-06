@@ -9,7 +9,6 @@ using Domain.Brands;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging.Abstractions;
 using Shared;
-using Tests.Common;
 
 namespace Application.Tests.Brands;
 
@@ -160,7 +159,7 @@ public class BrandHandlerTests
         ResultAssert.Failed(result, "Brands.AlreadyExist", ErrorType.Conflict);
     }
 
-    [KnownBugFact("UpdateBrandCommandHandler doesn't exclude the brand itself from its duplicate name check")]
+    [Fact]
     public async Task UpdateById_WithItsOwnName_Succeeds()
     {
         var brand = Brand.CreateNew("Acme", FixedClock.Now);

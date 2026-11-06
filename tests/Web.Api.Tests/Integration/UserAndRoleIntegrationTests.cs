@@ -5,7 +5,6 @@ using Infrastructure.Database;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
-using Tests.Common;
 using Web.Api.Infrastructure;
 
 namespace Web.Api.Tests.Integration;
@@ -204,7 +203,7 @@ public class UserAndRoleIntegrationTests(PostgresApiFixture api)
         Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
     }
 
-    [KnownBugFact("GetRolesByUserQueryHandler dereferences a null user for an unknown id, giving a 500, not a 404")]
+    [Fact]
     public async Task GetRolesByUser_WithUnknownId_ReturnsNotFound()
     {
         var response = await client.GetAsync($"/roles/users/{Guid.NewGuid()}");

@@ -11,7 +11,6 @@ using Domain.Products;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging.Abstractions;
 using Shared;
-using Tests.Common;
 
 namespace Application.Tests.Products;
 
@@ -251,7 +250,7 @@ public class ProductHandlerTests
         ResultAssert.Failed(result, "Products.UnitNotFound", ErrorType.NotFound);
     }
 
-    [KnownBugFact("UpdateProductByIdCommandHandler never applies command.Description, so it can't be changed")]
+    [Fact]
     public async Task UpdateById_WithNewDescription_UpdatesDescription()
     {
         var graph = await SeededGraph.CreateAsync(database);
@@ -260,6 +259,8 @@ public class ProductHandlerTests
             graph.Unit.Id, SeededGraph.CurrentPriceValue, []));
 
         Assert.Equal("Updated", ResultAssert.Succeeded(result).Description);
+        var detail = await database.ReadAsync(c => c.ProductDetails.SingleAsync(d => d.ProductId == graph.Product.Id));
+        Assert.Equal("Updated", detail.Description);
     }
 
     [Fact]

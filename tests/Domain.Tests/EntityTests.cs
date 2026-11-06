@@ -140,6 +140,18 @@ public class EntityTests
     }
 
     [Fact]
+    public void ProductDetail_UpdateDescription_ChangesDescription()
+    {
+        var detail = ProductDetail.CreateNew(Guid.NewGuid(), "Old", 1, 1f, 1);
+
+        detail.UpdateDescription("New");
+        Assert.Equal("New", detail.Description);
+
+        detail.UpdateDescription(null);
+        Assert.Null(detail.Description);
+    }
+
+    [Fact]
     public void ProductPrice_CreateNew_GeneratesIdWhenNotGiven()
     {
         var productId = Guid.NewGuid();

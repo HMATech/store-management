@@ -2,7 +2,6 @@ using System.Net;
 using System.Net.Http.Json;
 using System.Text;
 using System.Text.Json;
-using Tests.Common;
 using Web.Api.Infrastructure;
 using Web.Api.Tests.TestSupport;
 
@@ -162,7 +161,7 @@ public class RequestValidationTests(NoDatabaseApiFixture api) : IClassFixture<No
         Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
     }
 
-    [KnownBugFact("Validators throw on a missing tags array, so the request fails with a 500 instead of a 400")]
+    [Fact]
     public async Task MissingTags_ReturnsBadRequest()
     {
         var response = await SendJsonAsync("POST", "/products",
@@ -171,13 +170,51 @@ public class RequestValidationTests(NoDatabaseApiFixture api) : IClassFixture<No
         Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
     }
 
-    [KnownBugFact("Validators throw on a missing productEntries array, so the request gives a 500, not a 400")]
+    [Fact]
     public async Task MissingProductEntries_ReturnsBadRequest()
     {
         var response = await SendJsonAsync("POST", "/purchases",
             $$"""{"title":"t","tags":[],"occurrenceTime":"{{When}}"}""");
 
         Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+    }
+
+    [Theory]
+    [InlineData("PUT", $"/products/{SomeId}", """{"name":"x","measure":1,"measureUnitId":1,"price":1}""")]
+    [InlineData("POST", "/purchases", """{"title":"t","productEntries":[],"occurrenceTime":"2026-01-15T10:00:00Z"}""")]
+    [InlineData("POST", "/sales", """{"title":"t","productEntries":[],"occurrenceTime":"2026-01-15T10:00:00Z"}""")]
+    [InlineData("POST", "/sales", """{"title":"t","tags":[],"occurrenceTime":"2026-01-15T10:00:00Z"}""")]
+    [InlineData("PUT", $"/purchases/{SomeId}/details", """{"title":"t","occurrenceTime":"2026-01-15T10:00:00Z"}""")]
+    [InlineData("PUT", $"/sales/{SomeId}/details", """{"title":"t","occurrenceTime":"2026-01-15T10:00:00Z"}""")]
+    [InlineData("PUT", $"/purchases/{SomeId}/entries", "{}")]
+    [InlineData("PUT", $"/sales/{SomeId}/entries", "{}")]
+    public async Task MissingRequiredArray_ReturnsBadRequest(string method, string path, string body)
+    {
+        var response = await SendJsonAsync(method, path, body);
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+    }
+
+    [Theory]
+    [InlineData("/brands", "page=0", "page")]
+    [InlineData("/brands", "page=-1", "page")]
+    [InlineData("/brands", "pageSize=0", "pageSize")]
+    [InlineData("/brands", "pageSize=-1", "pageSize")]
+    [InlineData("/products", "page=0", "page")]
+    [InlineData("/products", "pageSize=0", "pageSize")]
+    [InlineData("/products/prices", "page=0", "page")]
+    [InlineData("/products/prices", "pageSize=0", "pageSize")]
+    [InlineData("/purchases", "page=0", "page")]
+    [InlineData("/purchases", "pageSize=0", "pageSize")]
+    [InlineData("/sales", "page=0", "page")]
+    [InlineData("/sales", "pageSize=0", "pageSize")]
+    public async Task InvalidPaging_ReturnsBadRequestWithFieldError(string path, string query, string field)
+    {
+        var response = await api.CreateClient().GetAsync($"{path}?{query}");
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+        var problem = await response.Content.ReadFromJsonAsync<JsonElement>();
+        Assert.True(problem.GetProperty(CustomHttpResults.ValidationErrorFieldName).TryGetProperty(field, out _));
     }
 
     [Fact]

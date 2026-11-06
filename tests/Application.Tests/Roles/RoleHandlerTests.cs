@@ -14,7 +14,6 @@ using Domain.Roles;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging.Abstractions;
 using Shared;
-using Tests.Common;
 
 namespace Application.Tests.Roles;
 
@@ -152,12 +151,22 @@ public class RoleHandlerTests
         Assert.Equal("Cashier", Assert.Single(value).Name);
     }
 
-    [KnownBugFact("GetRoleQueryHandler compares the raw search with the lowercase normalized name")]
+    [Fact]
     public async Task Get_SearchIgnoresCase()
     {
         await SeededGraph.CreateAsync(database);
 
         var value = await GetAsync(new GetRoleQuery("CASH"));
+
+        Assert.Equal("Cashier", Assert.Single(value).Name);
+    }
+
+    [Fact]
+    public async Task Get_SearchIgnoresSurroundingSpaces()
+    {
+        await SeededGraph.CreateAsync(database);
+
+        var value = await GetAsync(new GetRoleQuery("  cash "));
 
         Assert.Equal("Cashier", Assert.Single(value).Name);
     }
@@ -229,7 +238,7 @@ public class RoleHandlerTests
         ResultAssert.Failed(result, "Users.NotFound", ErrorType.NotFound);
     }
 
-    [KnownBugFact("GetRolesByUserQueryHandler dereferences a null user for an unknown id, giving a 500, not a 404")]
+    [Fact]
     public async Task GetRolesByUser_WithUnknownId_ReturnsNotFound()
     {
         var result = await GetRolesByUserAsync(Guid.NewGuid().ToString());
@@ -255,7 +264,7 @@ public class RoleHandlerTests
         ResultAssert.Failed(result, "Roles.NotFound", ErrorType.NotFound);
     }
 
-    [KnownBugFact("GetUsersByNameQueryHandler doesn't normalize the role name, so 'Admin' doesn't find role 'admin'")]
+    [Fact]
     public async Task GetUsersByName_IgnoresCase()
     {
         var graph = await SeededGraph.CreateAsync(database);
@@ -353,7 +362,7 @@ public class RoleHandlerTests
         ResultAssert.Failed(result, "Roles.AlreadyExist", ErrorType.Conflict);
     }
 
-    [KnownBugFact("UpdateRoleByIdCommandHandler matches the role itself as a duplicate, so its name must change")]
+    [Fact]
     public async Task UpdateById_KeepingNameButChangingDescription_Succeeds()
     {
         var graph = await SeededGraph.CreateAsync(database);
@@ -361,6 +370,8 @@ public class RoleHandlerTests
         var result = await UpdateAsync(new UpdateRoleByIdCommand(graph.Role.Id, "Admin", "New description"));
 
         Assert.Equal("New description", ResultAssert.Succeeded(result).Description);
+        var saved = await database.ReadAsync(c => c.Roles.SingleAsync(r => r.Id == graph.Role.Id));
+        Assert.Equal("New description", saved.Description);
     }
 
     private async Task<Result<AssignUserResponse>> AssignAsync(AssignUserCommand command)

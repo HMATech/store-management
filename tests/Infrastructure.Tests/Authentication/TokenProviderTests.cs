@@ -4,7 +4,6 @@ using Infrastructure.Authentication;
 using Microsoft.Extensions.Configuration;
 using Microsoft.IdentityModel.JsonWebTokens;
 using Microsoft.IdentityModel.Tokens;
-using Tests.Common;
 
 namespace Infrastructure.Tests.Authentication;
 
@@ -85,7 +84,7 @@ public class TokenProviderTests
         Assert.ThrowsAny<ArgumentException>(() => CreateProvider(secret: "short").CreateFor(SomeUser));
     }
 
-    [KnownBugFact("TokenProvider hard-codes the 'developer' audience instead of using Jwt:ValidAudiences")]
+    [Fact]
     public void CreateFor_UsesConfiguredAudience()
     {
         var token = new JsonWebToken(CreateProvider(audience: "store-app").CreateFor(SomeUser));

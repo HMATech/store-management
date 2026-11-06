@@ -1,7 +1,6 @@
 using System.Net;
 using System.Net.Http.Json;
 using System.Text.Json;
-using Tests.Common;
 
 namespace Web.Api.Tests.Integration;
 
@@ -133,6 +132,40 @@ public class CatalogIntegrationTests(PostgresApiFixture api)
     }
 
     [Fact]
+    public async Task Product_Update_ChangesDescription()
+    {
+        var (brandId, unitId) = await CreateBrandAndUnitAsync();
+        var name = PostgresApiFixture.Unique("Product");
+        var created = await (await CreateProductAsync(name, brandId, unitId, 1m, [])).ReadJsonAsync();
+        var path = $"/products/{created.GetProperty("id").GetString()}";
+
+        var update = await client.PutAsJsonAsync(path, new
+        {
+            name,
+            description = "Updated",
+            measure = 1f,
+            measureUnitId = unitId,
+            price = 1m,
+            tags = Array.Empty<string>(),
+        });
+
+        Assert.Equal(HttpStatusCode.OK, update.StatusCode);
+        var read = await (await client.GetAsync(path)).ReadJsonAsync();
+        Assert.Equal("Updated", read.GetProperty("description").GetString());
+    }
+
+    [Fact]
+    public async Task Brand_Update_KeepingItsName_Succeeds()
+    {
+        var name = PostgresApiFixture.Unique("Brand");
+        var brand = await client.PostAsJsonAsync("/brands", new { name });
+
+        var update = await client.PutAsJsonAsync($"/brands/{brand.CreatedId()}", new { name });
+
+        Assert.Equal(HttpStatusCode.OK, update.StatusCode);
+    }
+
+    [Fact]
     public async Task DeletingUnitInUse_ReturnsConflict()
     {
         var (brandId, unitId) = await CreateBrandAndUnitAsync();
@@ -145,7 +178,7 @@ public class CatalogIntegrationTests(PostgresApiFixture api)
         Assert.Equal("Products.UnitIsStillReferenced", problem.GetProperty("title").GetString());
     }
 
-    [KnownBugFact("DeleteBrandByIdCommandHandler doesn't handle the foreign key violation, giving a 500, not a 409")]
+    [Fact]
     public async Task DeletingBrandInUse_ReturnsConflict()
     {
         var (brandId, unitId) = await CreateBrandAndUnitAsync();
@@ -156,18 +189,7 @@ public class CatalogIntegrationTests(PostgresApiFixture api)
         Assert.Equal(HttpStatusCode.Conflict, response.StatusCode);
     }
 
-    [Theory]
-    [InlineData("/brands?page=0")]
-    [InlineData("/brands?page=-1")]
-    [InlineData("/products?page=0")]
-    public async Task PageBelowOne_DoesNotReturnSuccess(string path)
-    {
-        var response = await client.GetAsync(path);
-
-        Assert.False(response.IsSuccessStatusCode);
-    }
-
-    [KnownBugFact("Queries aren't validated, so page=0 reaches the database as a negative OFFSET and gives a 500")]
+    [Fact]
     public async Task PageBelowOne_ReturnsBadRequest()
     {
         var response = await client.GetAsync("/brands?page=0");

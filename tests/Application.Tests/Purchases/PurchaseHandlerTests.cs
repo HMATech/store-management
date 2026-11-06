@@ -10,7 +10,6 @@ using Application.Tests.TestSupport;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging.Abstractions;
 using Shared;
-using Tests.Common;
 using CreateEntry = Application.Purchases.Create.ProductEntryCommand;
 using UpdateEntry = Application.Purchases.UpdateEntriesById.ProductEntryCommand;
 
@@ -84,7 +83,7 @@ public class PurchaseHandlerTests
         Assert.Contains(unknownId.ToString(), result.Error.Description);
     }
 
-    [KnownBugFact("Create keeps only the first entry for a repeated product, losing the other quantity")]
+    [Fact]
     public async Task Create_WithSameProductTwice_KeepsTotalQuantity()
     {
         var graph = await SeededGraph.CreateAsync(database);
@@ -319,6 +318,39 @@ public class PurchaseHandlerTests
             [new UpdateEntry(null, Guid.NewGuid(), 1)]));
 
         ResultAssert.Failed(result, "Purchase.NonExistingProduct(s)", ErrorType.NotFound);
+    }
+
+    [Fact]
+    public async Task UpdateEntriesById_WithNewProductListedTwice_KeepsTotalQuantity()
+    {
+        var graph = await SeededGraph.CreateAsync(database);
+
+        var result = await UpdateEntriesAsync(new UpdatePurchaseEntriesByIdCommand(graph.Purchase.Id,
+        [
+            new UpdateEntry(null, graph.OtherProduct.Id, 2),
+            new UpdateEntry(null, graph.OtherProduct.Id, 3),
+        ]));
+
+        Assert.Equal(5, Assert.Single(ResultAssert.Succeeded(result).ProductEntries).Quantity);
+    }
+
+    [Fact]
+    public async Task UpdateEntriesById_WithTwoEntriesOfSameProduct_UpdatesEachEntry()
+    {
+        var graph = await SeededGraph.CreateAsync(database);
+        var entryId = graph.PurchaseEntry.Id;
+        var productId = graph.Product.Id;
+        var added = ResultAssert.Succeeded(await UpdateEntriesAsync(new UpdatePurchaseEntriesByIdCommand(
+            graph.Purchase.Id, [new UpdateEntry(entryId, productId, 3), new UpdateEntry(null, productId, 2)])));
+        var addedId = added.ProductEntries.Single(e => e.Id != entryId).Id;
+
+        var result = await UpdateEntriesAsync(new UpdatePurchaseEntriesByIdCommand(
+            graph.Purchase.Id, [new UpdateEntry(entryId, productId, 7), new UpdateEntry(addedId, productId, 8)]));
+
+        var response = ResultAssert.Succeeded(result);
+        Assert.Equal(7, response.ProductEntries.Single(e => e.Id == entryId).Quantity);
+        Assert.Equal(8, response.ProductEntries.Single(e => e.Id == addedId).Quantity);
+        Assert.Equal(150m, response.TotalPrice);
     }
 
     [Fact]

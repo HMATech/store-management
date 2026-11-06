@@ -30,14 +30,14 @@ public class DependencyInjectionTests
 
     [Theory]
     [MemberData(nameof(QueryHandlers))]
-    public void QueryHandler_IsRegisteredWithoutDecorator(Type service)
+    public void QueryHandler_IsRegisteredBehindValidationDecorator(Type service)
     {
         using var provider = BuildProvider();
         using var scope = provider.CreateScope();
 
         var resolved = scope.ServiceProvider.GetRequiredService(service);
 
-        Assert.Null(resolved.GetType().DeclaringType);
+        Assert.Equal(typeof(ValidationDecorator), resolved.GetType().DeclaringType);
     }
 
     [Fact]

@@ -55,7 +55,6 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging.Abstractions;
 using Npgsql;
 using Shared;
-using Tests.Common;
 using PriceById = Application.Products.ProductPrices.UpdateById;
 using ProductPriceById = Application.Products.UpdatePriceById;
 using PurchaseCreateEntry = Application.Purchases.Create.ProductEntryCommand;
@@ -321,6 +320,7 @@ public class HandlerFailureTests
     }
 
     [Theory]
+    [InlineData(nameof(DeleteBrandByIdCommandHandler), "Brands.InUse")]
     [InlineData(nameof(DeleteProductByIdCommandHandler), "Products.InUse")]
     [InlineData(nameof(DeleteProductPriceByIdCommandHandler), "Products.PriceInUse")]
     [InlineData(nameof(DeleteProductUnitByIdCommandHandler), "Products.UnitIsStillReferenced")]
@@ -334,6 +334,7 @@ public class HandlerFailureTests
     }
 
     [Theory]
+    [InlineData(nameof(DeleteBrandByIdCommandHandler))]
     [InlineData(nameof(DeleteProductByIdCommandHandler))]
     [InlineData(nameof(DeleteProductPriceByIdCommandHandler))]
     [InlineData(nameof(DeleteProductUnitByIdCommandHandler))]
@@ -377,7 +378,7 @@ public class HandlerFailureTests
         ResultAssert.Failed(result, "LoginUserCommandHandler.OperationError", ErrorType.System);
     }
 
-    [KnownBugFact("LoginUserCommandHandler reports unexpected exceptions as OperationCancelledError")]
+    [Fact]
     public async Task Login_WhenDatabaseThrows_ReturnsUnexpectedError()
     {
         var result = await LoginAsync(new InvalidOperationException("Boom"));

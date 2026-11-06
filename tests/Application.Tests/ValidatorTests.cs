@@ -20,7 +20,6 @@ using Application.Users.Register;
 using Application.Users.UpdateDetailById;
 using Application.Users.Login;
 using FluentValidation;
-using Tests.Common;
 using LoginValidator = Application.Users.Login.RegisterUserCommandValidator;
 using PriceUpdate = Application.Products.ProductPrices.UpdateById;
 using ProductPriceUpdate = Application.Products.UpdatePriceById;
@@ -119,7 +118,7 @@ public class ValidatorTests
         AssertFails(Validate(command), field);
     }
 
-    [KnownBugFact("Tags has no cascade stop, so MustNotHaveAnyEmptyString throws on null, not failing validation")]
+    [Fact]
     public void CreateProduct_WithNullTags_FailsValidation()
     {
         AssertFails(Validate(ValidCreateProduct() with { Tags = null! }), "Tags");
@@ -194,7 +193,7 @@ public class ValidatorTests
         AssertFails(new CreateSaleCommandValidator().Validate(command), field);
     }
 
-    [KnownBugFact("ProductEntries has no null check, so MustNotHaveAnyNullElement throws, not failing validation")]
+    [Fact]
     public void CreatePurchase_WithNullEntries_FailsValidation()
     {
         var command = ValidCreatePurchase() with { ProductEntries = null! };
@@ -202,11 +201,42 @@ public class ValidatorTests
         AssertFails(new CreatePurchaseCommandValidator().Validate(command), "ProductEntries");
     }
 
-    [KnownBugFact("ProductEntries has no null check, so MustNotHaveAnyNullElement throws, not failing validation")]
+    [Fact]
     public void CreateSale_WithNullEntries_FailsValidation()
     {
         AssertFails(new CreateSaleCommandValidator().Validate(ValidCreateSale() with { ProductEntries = null! }),
             "ProductEntries");
+    }
+
+    [Fact]
+    public void UpdateProduct_WithNullTags_FailsValidation()
+    {
+        AssertFails(Validate(ValidUpdateProduct() with { Tags = null! }), "Tags");
+    }
+
+    [Fact]
+    public void CreatePurchaseAndSale_WithNullTags_FailValidation()
+    {
+        AssertFails(new CreatePurchaseCommandValidator().Validate(ValidCreatePurchase() with { Tags = null! }), "Tags");
+        AssertFails(new CreateSaleCommandValidator().Validate(ValidCreateSale() with { Tags = null! }), "Tags");
+    }
+
+    [Fact]
+    public void UpdatePurchaseAndSaleDetails_WithNullTags_FailValidation()
+    {
+        AssertFails(new UpdatePurchaseDetailsByIdCommandValidator()
+            .Validate(new UpdatePurchaseDetailsByIdCommand(SomeId, "t", null!, When)), "Tags");
+        AssertFails(new UpdateSaleDetailsByIdCommandValidator()
+            .Validate(new UpdateSaleDetailsByIdCommand(SomeId, "t", null!, When)), "Tags");
+    }
+
+    [Fact]
+    public void UpdatePurchaseAndSaleEntries_WithNullEntries_FailValidation()
+    {
+        AssertFails(new UpdatePurchaseEntriesByIdCommandValidator()
+            .Validate(new UpdatePurchaseEntriesByIdCommand(SomeId, null!)), "ProductEntries");
+        AssertFails(new UpdateSaleEntriesByIdCommandValidator()
+            .Validate(new UpdateSaleEntriesByIdCommand(SomeId, null!)), "ProductEntries");
     }
 
     [Theory]

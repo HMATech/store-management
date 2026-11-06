@@ -10,7 +10,6 @@ using Application.Tests.TestSupport;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging.Abstractions;
 using Shared;
-using Tests.Common;
 using CreateEntry = Application.Sales.Create.ProductEntryCommand;
 using UpdateEntry = Application.Sales.UpdateEntriesById.ProductEntryCommand;
 
@@ -84,7 +83,7 @@ public class SaleHandlerTests
         Assert.Contains(unknownId.ToString(), result.Error.Description);
     }
 
-    [KnownBugFact("Create keeps only the first entry for a repeated product, losing the other quantity")]
+    [Fact]
     public async Task Create_WithSameProductTwice_KeepsTotalQuantity()
     {
         var graph = await SeededGraph.CreateAsync(database);
@@ -320,7 +319,7 @@ public class SaleHandlerTests
         ResultAssert.Failed(result, "Sale.NonExistingProduct(s)", ErrorType.NotFound);
     }
 
-    [KnownBugFact("UpdateSaleEntriesById treats Guid.Empty as a new entry, but its foreign check rejects it first")]
+    [Fact]
     public async Task UpdateEntriesById_WithEmptyEntryId_AddsNewEntry()
     {
         var graph = await SeededGraph.CreateAsync(database);
@@ -329,6 +328,39 @@ public class SaleHandlerTests
             [new UpdateEntry(Guid.Empty, graph.OtherProduct.Id, 1)]));
 
         Assert.Equal(graph.OtherProduct.Id, Assert.Single(ResultAssert.Succeeded(result).ProductEntries).ProductId);
+    }
+
+    [Fact]
+    public async Task UpdateEntriesById_WithNewProductListedTwice_KeepsTotalQuantity()
+    {
+        var graph = await SeededGraph.CreateAsync(database);
+
+        var result = await UpdateEntriesAsync(new UpdateSaleEntriesByIdCommand(graph.Sale.Id,
+        [
+            new UpdateEntry(null, graph.OtherProduct.Id, 2),
+            new UpdateEntry(null, graph.OtherProduct.Id, 3),
+        ]));
+
+        Assert.Equal(5, Assert.Single(ResultAssert.Succeeded(result).ProductEntries).Quantity);
+    }
+
+    [Fact]
+    public async Task UpdateEntriesById_WithTwoEntriesOfSameProduct_UpdatesEachEntry()
+    {
+        var graph = await SeededGraph.CreateAsync(database);
+        var entryId = graph.SaleEntry.Id;
+        var productId = graph.Product.Id;
+        var added = ResultAssert.Succeeded(await UpdateEntriesAsync(new UpdateSaleEntriesByIdCommand(
+            graph.Sale.Id, [new UpdateEntry(entryId, productId, 3), new UpdateEntry(null, productId, 2)])));
+        var addedId = added.ProductEntries.Single(e => e.Id != entryId).Id;
+
+        var result = await UpdateEntriesAsync(new UpdateSaleEntriesByIdCommand(
+            graph.Sale.Id, [new UpdateEntry(entryId, productId, 7), new UpdateEntry(addedId, productId, 8)]));
+
+        var response = ResultAssert.Succeeded(result);
+        Assert.Equal(7, response.ProductEntries.Single(e => e.Id == entryId).Quantity);
+        Assert.Equal(8, response.ProductEntries.Single(e => e.Id == addedId).Quantity);
+        Assert.Equal(150m, response.TotalPrice);
     }
 
     [Fact]

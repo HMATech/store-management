@@ -2,7 +2,6 @@ using Application.Abstractions.Messaging;
 using Application.Decorators;
 using FluentValidation;
 using Shared;
-using Tests.Common;
 
 namespace Application.Tests.Decorators;
 
@@ -46,7 +45,7 @@ public class ValidationDecoratorTests
         Assert.True(inner.WasCalled);
     }
 
-    [KnownBugFact("ValidationDecorator shares one ValidationContext between validators, so each error is duplicated")]
+    [Fact]
     public async Task Command_WithSeveralFailingValidators_CombinesErrorsByField()
     {
         var inner = new SpyHandler();
@@ -86,6 +85,42 @@ public class ValidationDecoratorTests
     }
 
     [Fact]
+    public async Task Query_WithValidInput_ReturnsHandlerValue()
+    {
+        var inner = new SpyQueryHandler();
+        var decorator = new ValidationDecorator.QueryHandler<SomeQuery, string>(inner, [new PageValidator()]);
+
+        var result = await decorator.HandleAsync(new SomeQuery(1), default);
+
+        Assert.Equal("queried", result.Value);
+    }
+
+    [Fact]
+    public async Task Query_WithInvalidInput_ReturnsValidationErrorWithoutCallingHandler()
+    {
+        var inner = new SpyQueryHandler();
+        var decorator = new ValidationDecorator.QueryHandler<SomeQuery, string>(inner, [new PageValidator()]);
+
+        var result = await decorator.HandleAsync(new SomeQuery(0), default);
+
+        Assert.True(result.IsFailed);
+        Assert.False(inner.WasCalled);
+        Assert.IsType<ValidationError>(result.Error);
+    }
+
+    [Fact]
+    public async Task Query_WithNoValidators_CallsHandler()
+    {
+        var inner = new SpyQueryHandler();
+        var decorator = new ValidationDecorator.QueryHandler<SomeQuery, string>(inner, []);
+
+        var result = await decorator.HandleAsync(new SomeQuery(0), default);
+
+        Assert.True(result.IsSuccess);
+        Assert.True(inner.WasCalled);
+    }
+
+    [Fact]
     public async Task Command_WhenHandlerFails_ReturnsHandlerError()
     {
         var error = Error.Conflict("Some.Code", "Conflict");
@@ -96,9 +131,30 @@ public class ValidationDecoratorTests
         Assert.Equal(error, result.Error);
     }
 
+    public sealed record SomeQuery(int Page) : IQuery<string>;
+
     public sealed record NoResponseCommand(string Name) : ICommand;
 
     public sealed record ResponseCommand(string Name) : ICommand<string>;
+
+    private sealed class PageValidator : AbstractValidator<SomeQuery>
+    {
+        public PageValidator()
+        {
+            RuleFor(q => q.Page).GreaterThan(0);
+        }
+    }
+
+    private sealed class SpyQueryHandler : IQueryHandler<SomeQuery, string>
+    {
+        public bool WasCalled { get; private set; }
+
+        public Task<Result<string>> HandleAsync(SomeQuery query, CancellationToken cancellationToken)
+        {
+            WasCalled = true;
+            return Task.FromResult(Result.Succeed("queried"));
+        }
+    }
 
     private sealed class NameValidator : AbstractValidator<NoResponseCommand>
     {

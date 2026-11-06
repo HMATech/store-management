@@ -15,6 +15,7 @@ public class ErrorCatalogTests
     public static TheoryData<Error, string, ErrorType, string> Errors => new()
     {
         { BrandErrors.AlreadyExists("x"), "Brands.AlreadyExist", ErrorType.Conflict, "x" },
+        { BrandErrors.InUse(5), "Brands.InUse", ErrorType.Conflict, "5" },
         { BrandErrors.NotFound(5), "Brands.NotFound", ErrorType.NotFound, "5" },
         { BrandErrors.NotFound("x"), "Brands.NotFound", ErrorType.NotFound, "x" },
         { UserErrors.NotFound(Id), "Users.NotFound", ErrorType.NotFound, Id.ToString() },

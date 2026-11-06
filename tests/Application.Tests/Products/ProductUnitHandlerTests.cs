@@ -10,7 +10,6 @@ using Domain.Products;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging.Abstractions;
 using Shared;
-using Tests.Common;
 
 namespace Application.Tests.Products;
 
@@ -143,7 +142,7 @@ public class ProductUnitHandlerTests
         Assert.Equal("Litre", ResultAssert.Succeeded(result).Name);
     }
 
-    [KnownBugFact("UpdateProductUnitByIdCommandHandler returns early on a case-only rename, so it's never saved")]
+    [Fact]
     public async Task UpdateById_WithSameNameInDifferentCase_UpdatesUnit()
     {
         var unit = ProductUnit.CreateNew("Litre");
@@ -152,6 +151,7 @@ public class ProductUnitHandlerTests
         var result = await UpdateAsync(new UpdateProductUnitByIdCommand(unit.Id, "LITRE"));
 
         Assert.Equal("LITRE", ResultAssert.Succeeded(result).Name);
+        Assert.Equal("LITRE", (await database.ReadAsync(c => c.ProductUnits.SingleAsync())).Name.Value);
     }
 
     [Fact]
