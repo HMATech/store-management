@@ -39,7 +39,7 @@ internal sealed class UpdateSaleEntriesByIdCommandHandler(
 
             var currentEntryIds = sale.Products.Select(pe => pe.Id);
             var foreignEntryIds = inputEntryIds
-                .Where(i => i.HasValue && !currentEntryIds.Contains(i.Value))
+                .Where(i => i.HasValue && i.Value != Guid.Empty && !currentEntryIds.Contains(i.Value))
                 .Cast<Guid>();
 
             if (foreignEntryIds.Any())
