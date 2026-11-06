@@ -45,6 +45,11 @@ Run these from the repo root.
 dotnet build Backend.sln
 dotnet run --project src/Web.Api --launch-profile https   # https://localhost:7001/swagger
 
+# Tests
+dotnet test Backend.sln                                       # All tests, needs Docker running
+dotnet test Backend.sln --filter "Category!=Integration"      # Unit tests only, no Docker needed
+dotnet test Backend.sln --filter "Category=Integration"       # Integration tests only
+
 # Migrations (needs the dotnet-ef tool: dotnet tool install -g dotnet-ef)
 dotnet ef migrations add <Name> --project src/Infrastructure --startup-project src/Web.Api --output-dir Database/Migrations
 ```
@@ -58,7 +63,7 @@ Always write tests for code changes, including negative cases. If a change needs
 
 - **Framework:** use xUnit. Add test package versions to `Directory.Packages.props` like any other package.
 - **Location:** test projects go in `tests/`, next to `src/`, with one project per layer named `<Layer>.Tests`, such as `tests/Application.Tests` or `tests/Web.Api.Tests`.
-- **API tests:** test endpoints with `WebApplicationFactory` against a real PostgreSQL database run through Testcontainers, because handlers use EF Core directly. These tests need Docker running.
+- **API tests:** test endpoints with `WebApplicationFactory` against a real PostgreSQL database run through Testcontainers, because handlers use EF Core directly. These tests need Docker running. Mark them with `[Trait("Category", "Integration")]` so they can be filtered, and put them in the project's `Integration` folder.
 - **Internal types:** handlers, validators and the generated `Program` class are internal. Expose them to the test project with an `InternalsVisibleTo` attribute in the project under test, written in source because `Directory.Build.props` turns off `GenerateAssemblyInfo`.
 
 ## Architecture
