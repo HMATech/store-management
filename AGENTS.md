@@ -138,6 +138,10 @@ An entry line is a product at a price, and it keeps that price when the product'
 - `Register` needs a signed-in user, so the first account comes from the `InitialUser` configuration section (`Email`, `Password`, `FirstName`, optional `LastName`). On startup, `CreateInitialUserAsync` creates that user when the database has no users, and startup fails if the configured user is invalid. `appsettings.Development.json` sets a local one (`admin@store.local` / `Admin123!`).
 - Swagger is set up to send a JWT bearer token.
 
+### CORS
+
+Browsers can call the API only from origins listed in `Cors:AllowedOrigins`, and none are allowed when the list is empty. `appsettings.Development.json` allows `http://localhost:3000` for a local frontend. The policy exposes the `Location` header so a frontend can read the id of a created resource.
+
 ### Migrations
 
 Files in `src/Infrastructure/Database/Migrations` are generated. Don't edit them by hand except to fix a newly generated migration that hasn't been shared yet.
