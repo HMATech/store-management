@@ -55,7 +55,17 @@ dotnet ef migrations add <Name> --project src/Infrastructure --startup-project s
 ```
 
 - Running the app needs PostgreSQL at the `MainDb` connection string in `src/Web.Api/appsettings.Development.json` (`localhost:5432`, database `store`).
-- Pending migrations are applied at startup in Development only (`ApplyMigrations` in `Program.cs`).
+- Pending migrations are applied at startup (`ApplyMigrations` in `Program.cs`) in Development, and in other environments when `Database:ApplyMigrationsOnStartup` is `true`.
+
+### Docker
+
+```sh
+cp .env.example .env            # Then fill in the secrets
+docker compose up -d --build    # API on http://localhost:8080, with PostgreSQL in a volume
+```
+
+- `docker-compose.yml` runs the API in Production with startup migrations on, and maps the `.env` values to configuration keys such as `Jwt__Secret` and `InitialUser__Email`. A new configuration value the deployment needs goes in both files.
+- The container serves plain HTTP on port 8080, with TLS expected at a reverse proxy. `ASPNETCORE_FORWARDEDHEADERS_ENABLED` makes the API trust the proxy's `X-Forwarded-Proto`, so `Location` URLs use `https`.
 
 ## Testing
 
