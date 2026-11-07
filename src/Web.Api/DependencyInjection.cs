@@ -2,6 +2,7 @@ using System.Text.Json;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Http.Json;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.Net.Http.Headers;
 using Microsoft.OpenApi.Models;
 using Web.Api.Middlewares;
 
@@ -9,11 +10,15 @@ namespace Web.Api;
 
 public static class DependencyInjection
 {
-    public static IServiceCollection AddPresentation(this IServiceCollection services)
+    public const string CorsSectionName = "Cors";
+
+    public static IServiceCollection AddPresentation(this IServiceCollection services, IConfiguration configuration)
     {
         // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
         services.AddEndpointsApiExplorer();
         services.AddSwaggerGenWithAuth();
+
+        services.AddCorsFromConfiguration(configuration);
 
         services.AddProblemDetails();
         services.AddExceptionHandler<GlobalExceptionHandler>();
@@ -23,6 +28,27 @@ public static class DependencyInjection
             options.SerializerOptions.DictionaryKeyPolicy = JsonNamingPolicy.CamelCase;
             options.SerializerOptions.AllowTrailingCommas = true;
         });
+
+        return services;
+    }
+
+    /// <summary>
+    /// Allows the origins listed in <c>Cors:AllowedOrigins</c> to call the API from a browser. With none listed, no
+    /// cross-origin request is allowed. Location is exposed so a frontend can read the id of a created resource.
+    /// </summary>
+    private static IServiceCollection AddCorsFromConfiguration(this IServiceCollection services,
+        IConfiguration configuration)
+    {
+        var origins = configuration.GetSection($"{CorsSectionName}:AllowedOrigins").Get<string[]>() ?? [];
+
+        services.AddCors(options => options.AddDefaultPolicy(policy => policy
+            .WithOrigins(origins
+                .Where(origin => !string.IsNullOrWhiteSpace(origin))
+                .Select(origin => origin.Trim().TrimEnd('/'))
+                .ToArray())
+            .AllowAnyHeader()
+            .AllowAnyMethod()
+            .WithExposedHeaders(HeaderNames.Location)));
 
         return services;
     }
