@@ -1,34 +1,26 @@
 using System.Net;
 using System.Net.Http.Headers;
-using System.Net.Http.Json;
-using System.Security.Claims;
 using System.Text;
-using Microsoft.IdentityModel.JsonWebTokens;
-using Microsoft.IdentityModel.Tokens;
+using System.Text.RegularExpressions;
 using Web.Api.Tests.TestSupport;
 
 namespace Web.Api.Tests.Http;
 
-public class AuthenticationTests(NoDatabaseApiFixture api) : IClassFixture<NoDatabaseApiFixture>
+public partial class AuthenticationTests(NoDatabaseApiFixture api) : IClassFixture<NoDatabaseApiFixture>
 {
-    private const string SomeUserPath = "/users/11111111-1111-1111-1111-111111111111";
+    private const string LoginRoute = "POST /users/login";
+    private const string SomeId = "11111111-1111-1111-1111-111111111111";
 
-    public static TheoryData<string, string> ProtectedEndpoints => new()
-    {
-        { "GET", "/users" },
-        { "GET", SomeUserPath },
-        { "DELETE", SomeUserPath },
-        { "PUT", $"{SomeUserPath}/details" },
-    };
+    public static TheoryData<string, string> ProtectedEndpoints => CreateProtectedEndpoints();
 
     public static TheoryData<string, string> InvalidTokens => new()
     {
         { "garbage", "not-a-jwt" },
-        { "wrong secret", CreateToken(secret: "another-secret-another-secret-another-secret-123") },
-        { "wrong issuer", CreateToken(issuer: "another-issuer") },
-        { "wrong audience", CreateToken(audience: "another-audience") },
-        { "expired", CreateToken(expires: DateTime.UtcNow.AddMinutes(-5)) },
-        { "tampered", TamperPayload(CreateToken()) },
+        { "wrong secret", TestTokens.Create(secret: "another-secret-another-secret-another-secret-123") },
+        { "wrong issuer", TestTokens.Create(issuer: "another-issuer") },
+        { "wrong audience", TestTokens.Create(audience: "another-audience") },
+        { "expired", TestTokens.Create(expires: DateTime.UtcNow.AddMinutes(-5)) },
+        { "tampered", TamperPayload(TestTokens.Create()) },
     };
 
     [Theory]
@@ -41,7 +33,9 @@ public class AuthenticationTests(NoDatabaseApiFixture api) : IClassFixture<NoDat
     }
 
     [Theory]
-    [MemberData(nameof(ProtectedEndpoints))]
+    [InlineData("GET", "/users")]
+    [InlineData("POST", "/users/register")]
+    [InlineData("POST", "/brands")]
     public async Task ProtectedEndpoint_WithBasicScheme_ReturnsUnauthorized(string method, string path)
     {
         var response = await SendAsync(method, path, new AuthenticationHeaderValue("Basic", "dXNlcjpwYXNz"));
@@ -61,26 +55,68 @@ public class AuthenticationTests(NoDatabaseApiFixture api) : IClassFixture<NoDat
     [Fact]
     public async Task ProtectedEndpoint_WithValidToken_PassesAuthentication()
     {
-        var response = await SendAsync("GET", "/users", new AuthenticationHeaderValue("Bearer", CreateToken()));
+        var response = await SendAsync("GET", "/users", new AuthenticationHeaderValue("Bearer", TestTokens.Create()));
 
         // The database is unreachable here, so getting past authentication ends in a 500.
         Assert.Equal(HttpStatusCode.InternalServerError, response.StatusCode);
     }
 
-    private static string CreateToken(string secret = ApiHost.JwtSecret, string issuer = ApiHost.JwtIssuer,
-        string audience = ApiHost.JwtAudience, DateTime? expires = null)
+    [Fact]
+    public async Task Login_WithoutToken_IsAllowed()
     {
-        var expiry = expires ?? DateTime.UtcNow.AddMinutes(30);
-        var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(secret));
+        var response = await SendAsync("POST", "/users/login", body: """{"email":"not-an-email","password":"x"}""");
 
-        return new JsonWebTokenHandler().CreateToken(new SecurityTokenDescriptor
+        // A validation error shows the request got past authorization to the handler.
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task UnknownRoute_WithoutToken_ReturnsUnauthorized()
+    {
+        var response = await SendAsync("GET", "/unknown");
+
+        Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
+    }
+
+    private async Task<HttpResponseMessage> SendAsync(string method, string path,
+        AuthenticationHeaderValue? authorization = null, string body = "{}")
+    {
+        var request = new HttpRequestMessage(new HttpMethod(method), path);
+        request.Headers.Authorization = authorization;
+        if (method is "POST" or "PUT")
         {
-            Subject = new ClaimsIdentity([new Claim(JwtRegisteredClaimNames.Sub, Guid.NewGuid().ToString())]),
-            NotBefore = expiry.AddHours(-1),
-            Expires = expiry,
-            Issuer = issuer,
-            Audience = audience,
-            SigningCredentials = new SigningCredentials(key, SecurityAlgorithms.HmacSha256),
+            request.Content = new StringContent(body, Encoding.UTF8, "application/json");
+        }
+
+        return await api.CreateAnonymousClient().SendAsync(request);
+    }
+
+    private static TheoryData<string, string> CreateProtectedEndpoints()
+    {
+        var data = new TheoryData<string, string>();
+        foreach (var route in RoutingTests.ExpectedRoutes.Where(r => r != LoginRoute))
+        {
+            var (method, pattern) = SplitRoute(route);
+            data.Add(method, ToSamplePath(pattern));
+        }
+
+        return data;
+    }
+
+    private static (string Method, string Pattern) SplitRoute(string route)
+    {
+        var parts = route.Split(' ', 2);
+        return (parts[0], parts[1]);
+    }
+
+    private static string ToSamplePath(string pattern)
+    {
+        return RouteParameterRegex().Replace(pattern, match => match.Groups["name"].Value switch
+        {
+            "user" => "jane@example.com",
+            "role" => "admin",
+            "roleId" => "1",
+            _ => match.Groups["constraint"].Value == "int" ? "1" : SomeId,
         });
     }
 
@@ -91,16 +127,6 @@ public class AuthenticationTests(NoDatabaseApiFixture api) : IClassFixture<NoDat
         return $"{parts[0]}.{payload}.{parts[2]}";
     }
 
-    private async Task<HttpResponseMessage> SendAsync(string method, string path,
-        AuthenticationHeaderValue? authorization = null)
-    {
-        var request = new HttpRequestMessage(new HttpMethod(method), path);
-        request.Headers.Authorization = authorization;
-        if (method == "PUT")
-        {
-            request.Content = JsonContent.Create(new { firstName = "Jane" });
-        }
-
-        return await api.CreateClient().SendAsync(request);
-    }
+    [GeneratedRegex(@"\{(?<name>\w+)(:(?<constraint>\w+))?\}")]
+    private static partial Regex RouteParameterRegex();
 }

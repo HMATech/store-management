@@ -17,9 +17,7 @@ internal sealed class DeleteById : UserEndpoint
             var result = await handler.HandleAsync(command, cancellationToken);
 
             return CustomHttpResults.TypedFrom(result, static () => TypedResults.Ok());
-        })
-            .RequireAuthorization()
-            ;
+        });
 
         return app;
     }

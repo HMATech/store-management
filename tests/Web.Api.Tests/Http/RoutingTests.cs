@@ -1,5 +1,6 @@
 using System.Net;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Authorization.Infrastructure;
 using Microsoft.AspNetCore.Routing;
 using Microsoft.Extensions.DependencyInjection;
 using Web.Api.Tests.TestSupport;
@@ -8,7 +9,7 @@ namespace Web.Api.Tests.Http;
 
 public class RoutingTests(NoDatabaseApiFixture api) : IClassFixture<NoDatabaseApiFixture>
 {
-    private static readonly string[] ExpectedRoutes =
+    internal static readonly string[] ExpectedRoutes =
     [
         "GET /brands/", "POST /brands/", "GET /brands/{id:int}", "PUT /brands/{id:int}", "DELETE /brands/{id:int}",
 
@@ -38,11 +39,6 @@ public class RoutingTests(NoDatabaseApiFixture api) : IClassFixture<NoDatabaseAp
         "PUT /users/{id}/details",
     ];
 
-    private static readonly string[] ProtectedRoutes =
-    [
-        "GET /users/", "GET /users/{id}", "DELETE /users/{id}", "PUT /users/{id}/details",
-    ];
-
     [Fact]
     public void AllExpectedRoutes_AreMapped()
     {
@@ -50,13 +46,22 @@ public class RoutingTests(NoDatabaseApiFixture api) : IClassFixture<NoDatabaseAp
     }
 
     [Fact]
-    public void OnlyUserManagementRoutes_RequireAuthorization()
+    public void OnlyLogin_AllowsAnonymousAccess()
     {
         var actual = MapRoutes()
-            .Where(r => r.Value.Metadata.GetMetadata<IAuthorizeData>() != null)
+            .Where(r => r.Value.Metadata.GetMetadata<IAllowAnonymous>() != null)
             .Select(r => r.Key);
 
-        Assert.Equal(ProtectedRoutes.Order(), actual.Order());
+        Assert.Equal(["POST /users/login"], actual);
+    }
+
+    [Fact]
+    public async Task FallbackPolicy_RequiresAuthenticatedUser()
+    {
+        var policy = await api.Services.GetRequiredService<IAuthorizationPolicyProvider>().GetFallbackPolicyAsync();
+
+        Assert.NotNull(policy);
+        Assert.Contains(policy.Requirements, r => r is DenyAnonymousAuthorizationRequirement);
     }
 
     [Theory]

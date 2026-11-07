@@ -20,9 +20,7 @@ internal sealed class UpdateDetailById : UserEndpoint
             var result = await handler.HandleAsync(command, cancellationToken);
 
             return CustomHttpResults.TypedFrom(result, static r => TypedResults.Ok(r));
-        })
-            .RequireAuthorization()
-            ;
+        });
 
         return app;
     }

@@ -1,6 +1,7 @@
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using System.Text.Json;
+using Npgsql;
 using Testcontainers.PostgreSql;
 using Web.Api.Tests.TestSupport;
 
@@ -12,6 +13,9 @@ namespace Web.Api.Tests.Integration;
 /// </summary>
 public sealed class PostgresApiFixture : IAsyncLifetime
 {
+    public const string InitialUserEmail = "owner@example.com";
+    public const string InitialUserPassword = "Own3rPass!";
+
     private readonly PostgreSqlContainer container = new PostgreSqlBuilder()
         .WithImage("postgres:16-alpine")
         .Build();
@@ -23,7 +27,7 @@ public sealed class PostgresApiFixture : IAsyncLifetime
     public async Task InitializeAsync()
     {
         await container.StartAsync();
-        host = new ApiHost("Development", container.GetConnectionString());
+        host = CreateHostOn(container.GetConnectionString(), InitialUserEmail, InitialUserPassword);
         _ = host.Services;
     }
 
@@ -38,9 +42,36 @@ public sealed class PostgresApiFixture : IAsyncLifetime
         return host!.CreateClient();
     }
 
+    public HttpClient CreateAnonymousClient()
+    {
+        return host!.CreateAnonymousClient();
+    }
+
+    /// <summary>Creates another host on the same container, using the shared database or a new one.</summary>
+    public ApiHost CreateHost(string initialUserEmail, string initialUserPassword, string? database = null)
+    {
+        var builder = new NpgsqlConnectionStringBuilder(container.GetConnectionString());
+        if (database != null)
+        {
+            builder.Database = database;
+        }
+
+        return CreateHostOn(builder.ConnectionString, initialUserEmail, initialUserPassword);
+    }
+
     public static string Unique(string prefix)
     {
         return $"{prefix}-{Guid.NewGuid():N}";
+    }
+
+    private static ApiHost CreateHostOn(string connectionString, string initialUserEmail, string initialUserPassword)
+    {
+        return new ApiHost("Development", connectionString, new Dictionary<string, string?>
+        {
+            ["InitialUser:Email"] = initialUserEmail,
+            ["InitialUser:Password"] = initialUserPassword,
+            ["InitialUser:FirstName"] = "Owner",
+        });
     }
 }
 

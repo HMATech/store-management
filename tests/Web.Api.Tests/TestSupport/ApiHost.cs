@@ -1,3 +1,4 @@
+using System.Net.Http.Headers;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
 
@@ -15,7 +16,8 @@ public sealed class ApiHost : IDisposable
 
     private readonly WebApplicationFactory<Program> factory;
 
-    public ApiHost(string environment, string connectionString)
+    public ApiHost(string environment, string connectionString,
+        IReadOnlyDictionary<string, string?>? settings = null)
     {
         factory = new WebApplicationFactory<Program>().WithWebHostBuilder(builder =>
         {
@@ -25,12 +27,25 @@ public sealed class ApiHost : IDisposable
             builder.UseSetting("Jwt:ValidAudiences:0", JwtAudience);
             builder.UseSetting("Jwt:Secret", JwtSecret);
             builder.UseSetting("Jwt:ExpirationInMinutes", "60");
+
+            foreach (var (key, value) in settings ?? new Dictionary<string, string?>())
+            {
+                builder.UseSetting(key, value);
+            }
         });
     }
 
     public IServiceProvider Services => factory.Services;
 
+    /// <summary>Creates a client that sends a valid bearer token, as a signed-in user would.</summary>
     public HttpClient CreateClient()
+    {
+        var client = factory.CreateClient();
+        client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", TestTokens.Create());
+        return client;
+    }
+
+    public HttpClient CreateAnonymousClient()
     {
         return factory.CreateClient();
     }
@@ -53,6 +68,11 @@ public sealed class NoDatabaseApiFixture : IDisposable
     public HttpClient CreateClient()
     {
         return host.CreateClient();
+    }
+
+    public HttpClient CreateAnonymousClient()
+    {
+        return host.CreateAnonymousClient();
     }
 
     public void Dispose()
