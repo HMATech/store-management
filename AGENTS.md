@@ -64,6 +64,7 @@ Always write tests for code changes, including negative cases. If a change needs
 - **Framework:** use xUnit. Add test package versions to `Directory.Packages.props` like any other package.
 - **Location:** test projects go in `tests/`, next to `src/`, with one project per layer named `<Layer>.Tests`, such as `tests/Application.Tests` or `tests/Web.Api.Tests`.
 - **API tests:** test endpoints with `WebApplicationFactory` against a real PostgreSQL database run through Testcontainers, because handlers use EF Core directly. These tests need Docker running. Mark them with `[Trait("Category", "Integration")]` so they can be filtered, and put them in the project's `Integration` folder.
+- **Signed-in clients:** `CreateClient()` on the test hosts sends a valid bearer token, because every endpoint except `Login` requires one. Use `CreateAnonymousClient()` to test what an unauthenticated caller gets.
 - **Internal types:** handlers, validators and the generated `Program` class are internal. Expose them to the test project with an `InternalsVisibleTo` attribute in the project under test, written in source because `Directory.Build.props` turns off `GenerateAssemblyInfo`.
 
 ## Architecture
@@ -131,7 +132,11 @@ An entry line is a product at a price, and it keeps that price when the product'
 
 ### Authorization
 
-`.RequireAuthorization()` is added per endpoint. Only the Users `DeleteById`, `GetUser`, `GetUserById` and `UpdateDetailById` endpoints have it so far, and the other endpoints are public. Swagger is set up to send a JWT bearer token.
+- A fallback policy in `AddAuthorizationInternal` makes every endpoint require a signed-in user, so new endpoints are protected without extra code. Don't add `.RequireAuthorization()` to endpoints.
+- An endpoint that must stay public opts out with `.AllowAnonymous()`. Only Users `Login` does so far.
+- Roles aren't checked yet. Any signed-in user can call any endpoint.
+- `Register` needs a signed-in user, so the first account comes from the `InitialUser` configuration section (`Email`, `Password`, `FirstName`, optional `LastName`). On startup, `CreateInitialUserAsync` creates that user when the database has no users, and startup fails if the configured user is invalid. `appsettings.Development.json` sets a local one (`admin@store.local` / `Admin123!`).
+- Swagger is set up to send a JWT bearer token.
 
 ### Migrations
 
