@@ -17,9 +17,7 @@ internal sealed class GetUserById : UserEndpoint
             var result = await handler.HandleAsync(query, cancellationToken);
 
             return CustomHttpResults.TypedFrom(result, static r => TypedResults.Ok(r));
-        })
-            .RequireAuthorization()
-            ;
+        });
 
         return app;
     }
