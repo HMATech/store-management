@@ -4,6 +4,7 @@ using Domain.Products;
 using Domain.Purchases;
 using Domain.Roles;
 using Domain.Sales;
+using Domain.Stocks;
 using Domain.Users;
 using Infrastructure.Database;
 using Microsoft.EntityFrameworkCore;
@@ -28,6 +29,7 @@ internal sealed class SaveFailingDbContext(ApplicationDbContext inner, Exception
     public DbSet<Sale> Sales => inner.Sales;
     public DbSet<SaleProductEntry> SaleProductEntries => inner.SaleProductEntries;
     public DbSet<SaleTag> SaleTags => inner.SaleTags;
+    public DbSet<StockAdjustment> StockAdjustments => inner.StockAdjustments;
 
     public Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
     {
@@ -53,6 +55,7 @@ internal sealed class ThrowingDbContext(Exception exception) : IApplicationDbCon
     public DbSet<Sale> Sales => throw exception;
     public DbSet<SaleProductEntry> SaleProductEntries => throw exception;
     public DbSet<SaleTag> SaleTags => throw exception;
+    public DbSet<StockAdjustment> StockAdjustments => throw exception;
 
     public Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
     {

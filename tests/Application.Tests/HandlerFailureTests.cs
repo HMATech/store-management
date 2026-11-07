@@ -44,6 +44,12 @@ using Application.Sales.Get;
 using Application.Sales.GetById;
 using Application.Sales.UpdateDetailsById;
 using Application.Sales.UpdateEntriesById;
+using Application.Stocks.Get;
+using Application.Stocks.GetByProductId;
+using Application.Stocks.StockAdjustments.Create;
+using Application.Stocks.StockAdjustments.DeleteById;
+using Application.Stocks.StockAdjustments.Get;
+using Application.Stocks.StockAdjustments.GetById;
 using Application.Tests.TestSupport;
 using Application.Users.DeleteById;
 using Application.Users.Get;
@@ -172,6 +178,13 @@ public class HandlerFailureTests
         [nameof(UpdateUserDetailByIdCommandHandler)] = async (db, g) =>
             await new UpdateUserDetailByIdCommandHandler(db, Log<UpdateUserDetailByIdCommandHandler>())
                 .HandleAsync(new UpdateUserDetailByIdCommand(g.User.Id, "New", null), default),
+        [nameof(CreateStockAdjustmentCommandHandler)] = async (db, g) =>
+            await new CreateStockAdjustmentCommandHandler(db, new FixedClock(),
+                    Log<CreateStockAdjustmentCommandHandler>())
+                .HandleAsync(new CreateStockAdjustmentCommand(g.Product.Id, 2, "Found", When), default),
+        [nameof(DeleteStockAdjustmentByIdCommandHandler)] = async (db, g) =>
+            await new DeleteStockAdjustmentByIdCommandHandler(db, Log<DeleteStockAdjustmentByIdCommandHandler>())
+                .HandleAsync(new DeleteStockAdjustmentByIdCommand(g.StockAdjustment.Id), default),
     };
 
     private static readonly Dictionary<string, Func<IApplicationDbContext, Task<Result>>> Queries = new()
@@ -235,6 +248,18 @@ public class HandlerFailureTests
         [nameof(GetUserByIdQueryHandler)] = async db =>
             await new GetUserByIdQueryHandler(db, Log<GetUserByIdQueryHandler>())
                 .HandleAsync(new GetUserByIdQuery(Guid.NewGuid()), default),
+        [nameof(GetStockQueryHandler)] = async db =>
+            await new GetStockQueryHandler(db, Log<GetStockQueryHandler>())
+                .HandleAsync(new GetStockQuery(null, SortOrder.ASC), default),
+        [nameof(GetStockByProductIdQueryHandler)] = async db =>
+            await new GetStockByProductIdQueryHandler(db, Log<GetStockByProductIdQueryHandler>())
+                .HandleAsync(new GetStockByProductIdQuery(Guid.NewGuid()), default),
+        [nameof(GetStockAdjustmentQueryHandler)] = async db =>
+            await new GetStockAdjustmentQueryHandler(db, Log<GetStockAdjustmentQueryHandler>())
+                .HandleAsync(new GetStockAdjustmentQuery(null), default),
+        [nameof(GetStockAdjustmentByIdQueryHandler)] = async db =>
+            await new GetStockAdjustmentByIdQueryHandler(db, Log<GetStockAdjustmentByIdQueryHandler>())
+                .HandleAsync(new GetStockAdjustmentByIdQuery(Guid.NewGuid()), default),
     };
 
     private readonly TestDatabase database = new();
@@ -416,6 +441,7 @@ public class HandlerFailureTests
             await context.PurchaseProductEntries.CountAsync(), await context.Sales.CountAsync(),
             await context.SaleProductEntries.CountAsync(), await context.Roles.CountAsync(),
             await context.UserRoles.CountAsync(), await context.Users.CountAsync(),
+            await context.StockAdjustments.CountAsync(),
         ];
     }
 }

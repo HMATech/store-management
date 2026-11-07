@@ -50,13 +50,19 @@ public sealed class PostgresApiFixture : IAsyncLifetime
     /// <summary>Creates another host on the same container, using the shared database or a new one.</summary>
     public ApiHost CreateHost(string initialUserEmail, string initialUserPassword, string? database = null)
     {
+        return CreateHostOn(ConnectionStringFor(database), initialUserEmail, initialUserPassword);
+    }
+
+    /// <summary>Returns a connection string to the shared database, or to another one on the same server.</summary>
+    public string ConnectionStringFor(string? database = null)
+    {
         var builder = new NpgsqlConnectionStringBuilder(container.GetConnectionString());
         if (database != null)
         {
             builder.Database = database;
         }
 
-        return CreateHostOn(builder.ConnectionString, initialUserEmail, initialUserPassword);
+        return builder.ConnectionString;
     }
 
     public static string Unique(string prefix)

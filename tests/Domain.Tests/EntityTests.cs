@@ -4,6 +4,7 @@ using Domain.Products;
 using Domain.Purchases;
 using Domain.Roles;
 using Domain.Sales;
+using Domain.Stocks;
 using Domain.Users;
 
 namespace Domain.Tests;
@@ -199,6 +200,24 @@ public class EntityTests
         unit.UpdateName("Gram");
 
         Assert.Equal("gram", unit.Name.Normalized);
+    }
+
+    [Fact]
+    public void StockAdjustment_CreateNew_SetsAllFields()
+    {
+        var productId = Guid.NewGuid();
+        var occurred = new DateTime(2026, 1, 10, 0, 0, 0, DateTimeKind.Utc);
+        var created = occurred.AddHours(1);
+
+        var adjustment = StockAdjustment.CreateNew(productId, -2, "Spoiled", occurred, created);
+
+        Assert.NotEqual(Guid.Empty, adjustment.Id);
+        Assert.Equal(productId, adjustment.ProductId);
+        Assert.Equal(-2, adjustment.Quantity);
+        Assert.Equal("Spoiled", adjustment.Reason);
+        Assert.Equal(occurred, adjustment.OccurrenceTime);
+        Assert.Equal(created, adjustment.CreatedTime);
+        Assert.NotEqual(adjustment.Id, StockAdjustment.CreateNew(productId, 1, "x", occurred, created).Id);
     }
 
     [Fact]

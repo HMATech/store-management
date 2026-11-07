@@ -3,6 +3,7 @@ using Domain.Products;
 using Domain.Purchases;
 using Domain.Roles;
 using Domain.Sales;
+using Domain.Stocks;
 using Domain.Users;
 using Shared;
 
@@ -38,6 +39,7 @@ public class ErrorCatalogTests
         { ProductErrors.UnitIsStillInUse(5), "Products.UnitIsStillReferenced", ErrorType.Conflict, "5" },
         { ProductErrors.TagNotFound(5), "Products.TagNotFound", ErrorType.NotFound, "5" },
         { ProductErrors.TagAlreadyExists("x"), "Products.TagAlreadyExists", ErrorType.Conflict, "x" },
+        { StockErrors.AdjustmentNotFound(Id), "Stocks.AdjustmentNotFound", ErrorType.NotFound, Id.ToString() },
         { PurchaseErrors.NotFound(Id), "Purchase.NotFound", ErrorType.NotFound, Id.ToString() },
         {
             PurchaseErrors.ContainNonExistingProducts([Id]), "Purchase.NonExistingProduct(s)",

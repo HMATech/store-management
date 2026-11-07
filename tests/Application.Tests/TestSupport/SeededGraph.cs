@@ -3,6 +3,7 @@ using Domain.Products;
 using Domain.Purchases;
 using Domain.Roles;
 using Domain.Sales;
+using Domain.Stocks;
 using Domain.Users;
 
 namespace Application.Tests.TestSupport;
@@ -14,6 +15,7 @@ internal sealed class SeededGraph
     public const decimal OldPriceValue = 8m;
     public const decimal OtherPriceValue = 4m;
     public const int EntryQuantity = 3;
+    public const int AdjustmentQuantity = -1;
 
     public static readonly DateTime OccurredAt = new(2026, 1, 10, 12, 0, 0, DateTimeKind.Utc);
 
@@ -34,6 +36,7 @@ internal sealed class SeededGraph
     public required SaleTag SaleTag { get; init; }
     public required Sale Sale { get; init; }
     public required SaleProductEntry SaleEntry { get; init; }
+    public required StockAdjustment StockAdjustment { get; init; }
 
     public static async Task<SeededGraph> CreateAsync(TestDatabase database)
     {
@@ -75,7 +78,9 @@ internal sealed class SeededGraph
         sale.UpdateProductEntries([saleEntry]);
         sale.UpdateTags([saleTag]);
 
-        context.AddRange(product, otherProduct, user, userRole, purchase, sale);
+        var stockAdjustment = StockAdjustment.CreateNew(product.Id, AdjustmentQuantity, "Spilled", OccurredAt, earlier);
+
+        context.AddRange(product, otherProduct, user, userRole, purchase, sale, stockAdjustment);
         await context.SaveChangesAsync();
 
         return new SeededGraph
@@ -97,6 +102,7 @@ internal sealed class SeededGraph
             SaleTag = saleTag,
             Sale = sale,
             SaleEntry = saleEntry,
+            StockAdjustment = stockAdjustment,
         };
     }
 }

@@ -55,7 +55,17 @@ dotnet ef migrations add <Name> --project src/Infrastructure --startup-project s
 ```
 
 - Running the app needs PostgreSQL at the `MainDb` connection string in `src/Web.Api/appsettings.Development.json` (`localhost:5432`, database `store`).
-- Pending migrations are applied at startup in Development only (`ApplyMigrations` in `Program.cs`).
+- Pending migrations are applied at startup (`ApplyMigrations` in `Program.cs`) in Development, and in other environments when `Database:ApplyMigrationsOnStartup` is `true`.
+
+### Docker
+
+```sh
+cp .env.example .env            # Then fill in the secrets
+docker compose up -d --build    # API on http://localhost:8080, with PostgreSQL in a volume
+```
+
+- `docker-compose.yml` runs the API in Production with startup migrations on, and maps the `.env` values to configuration keys such as `Jwt__Secret` and `InitialUser__Email`. A new configuration value the deployment needs goes in both files.
+- The container serves plain HTTP on port 8080, with TLS expected at a reverse proxy. `ASPNETCORE_FORWARDEDHEADERS_ENABLED` makes the API trust the proxy's `X-Forwarded-Proto`, so `Location` URLs use `https`.
 
 ## Testing
 
@@ -129,6 +139,14 @@ Use `TagsHelper.CreateSynchronizedTagsAsync` to sync tags on an entity (see the 
 ### Purchase and sale entries
 
 An entry line is a product at a price, and it keeps that price when the product's price changes later. Repeated products in a request add together. On `PUT /{id}/entries`, a new entry joins a kept line only if that line is at the product's current price; otherwise it becomes a new line at the current price, so a product can have more than one line.
+
+### Stock
+
+- Stock isn't stored. It's worked out on each read as purchased minus sold plus adjusted, by `StockQueries.SelectStock`. Use that helper for anything that shows stock, rather than summing entries again.
+- A `StockAdjustment` records any other change, such as spoilage or a correction after counting. A positive quantity adds stock and a negative one removes it, and zero is rejected.
+- Stock can go negative, for example when a sale is recorded before its purchase. That's allowed so the records match what happened.
+- Purchases and sales count whole products. A product sold both singly and by the carton is two products.
+- Quantities are summed as `long`, so the totals in `ProductStockResponse` can't overflow.
 
 ### Authorization
 

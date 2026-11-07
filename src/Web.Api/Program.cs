@@ -18,7 +18,10 @@ if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
     app.UseSwaggerUI();
+}
 
+if (app.Environment.IsDevelopment() || app.Configuration.GetValue<bool>(MigrationExtensions.ApplyOnStartupKey))
+{
     app.ApplyMigrations();
 }
 

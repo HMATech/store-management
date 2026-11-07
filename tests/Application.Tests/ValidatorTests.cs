@@ -16,6 +16,7 @@ using Application.Roles.UpdateById;
 using Application.Sales.Create;
 using Application.Sales.UpdateDetailsById;
 using Application.Sales.UpdateEntriesById;
+using Application.Stocks.StockAdjustments.Create;
 using Application.Users.Register;
 using Application.Users.UpdateDetailById;
 using Application.Users.Login;
@@ -363,6 +364,29 @@ public class ValidatorTests
             .Validate(new RegisterUserCommand("a@b.com", "Passw0rd!", first!, null)).IsValid);
         Assert.Equal(expected, new UpdateUserDetailByIdCommandValidator()
             .Validate(new UpdateUserDetailByIdCommand(SomeId, first!, null)).IsValid);
+    }
+
+    [Theory]
+    [InlineData(5)]
+    [InlineData(-5)]
+    public void CreateStockAdjustment_AcceptsPositiveAndNegativeQuantities(int quantity)
+    {
+        var command = new CreateStockAdjustmentCommand(SomeId, quantity, "Stock count", When);
+
+        Assert.True(new CreateStockAdjustmentCommandValidator().Validate(command).IsValid);
+    }
+
+    [Fact]
+    public void CreateStockAdjustment_RejectsInvalidFields()
+    {
+        var validator = new CreateStockAdjustmentCommandValidator();
+        var valid = new CreateStockAdjustmentCommand(SomeId, 1, "Stock count", When);
+
+        AssertFails(validator.Validate(valid with { ProductId = Guid.Empty }), "ProductId");
+        AssertFails(validator.Validate(valid with { Quantity = 0 }), "Quantity");
+        AssertFails(validator.Validate(valid with { Reason = "" }), "Reason");
+        AssertFails(validator.Validate(valid with { Reason = null! }), "Reason");
+        AssertFails(validator.Validate(valid with { OccurrenceTime = default }), "OccurrenceTime");
     }
 
     private static CreateProductCommand ValidCreateProduct()
