@@ -5,6 +5,9 @@ namespace Web.Api.Infrastructure;
 
 public static class MigrationExtensions
 {
+    /// <summary>Applies pending migrations on startup outside Development when set to true.</summary>
+    public const string ApplyOnStartupKey = "Database:ApplyMigrationsOnStartup";
+
     public static IApplicationBuilder ApplyMigrations(this IApplicationBuilder app)
     {
         using var scope = app.ApplicationServices.CreateScope();
