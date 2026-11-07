@@ -3,6 +3,7 @@ using Domain.Products;
 using Domain.Purchases;
 using Domain.Roles;
 using Domain.Sales;
+using Domain.Stocks;
 using Domain.Users;
 using Microsoft.EntityFrameworkCore;
 
@@ -25,6 +26,7 @@ public interface IApplicationDbContext
     public DbSet<Sale> Sales { get; }
     public DbSet<SaleProductEntry> SaleProductEntries { get; }
     public DbSet<SaleTag> SaleTags { get; }
+    public DbSet<StockAdjustment> StockAdjustments { get; }
 
     Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
 }

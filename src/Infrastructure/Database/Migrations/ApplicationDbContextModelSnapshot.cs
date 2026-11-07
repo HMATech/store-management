@@ -399,6 +399,43 @@ namespace Infrastructure.Database.Migrations
                     b.ToTable("sale_tags", "public");
                 });
 
+            modelBuilder.Entity("Domain.Stocks.StockAdjustment", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<DateTime>("CreatedTime")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_time");
+
+                    b.Property<DateTime>("OccurrenceTime")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("occurrence_time");
+
+                    b.Property<Guid>("ProductId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("product_id");
+
+                    b.Property<int>("Quantity")
+                        .HasColumnType("integer")
+                        .HasColumnName("quantity");
+
+                    b.Property<string>("Reason")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("reason");
+
+                    b.HasKey("Id")
+                        .HasName("pk_stock_adjustment");
+
+                    b.HasIndex("ProductId")
+                        .HasDatabaseName("ix_stock_adjustment_product_id");
+
+                    b.ToTable("stock_adjustment", "public");
+                });
+
             modelBuilder.Entity("Domain.Users.User", b =>
                 {
                     b.Property<Guid>("Id")
@@ -774,6 +811,18 @@ namespace Infrastructure.Database.Migrations
 
                     b.Navigation("Name")
                         .IsRequired();
+                });
+
+            modelBuilder.Entity("Domain.Stocks.StockAdjustment", b =>
+                {
+                    b.HasOne("Domain.Products.Product", "Product")
+                        .WithMany()
+                        .HasForeignKey("ProductId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_stock_adjustment_product_product_id");
+
+                    b.Navigation("Product");
                 });
 
             modelBuilder.Entity("Domain.Users.User", b =>

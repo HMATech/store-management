@@ -88,6 +88,22 @@ public class RequestValidationTests(NoDatabaseApiFixture api) : IClassFixture<No
             "PUT", $"/sales/{SomeId}/entries",
             $$"""{"productEntries":[{"productId":"{{SomeId}}","quantity":0}]}""", "ProductEntries"
         },
+        {
+            "POST", "/stocks/adjustments",
+            $$"""{"productId":"{{SomeId}}","quantity":0,"reason":"Count","occurrenceTime":"{{When}}"}""", "Quantity"
+        },
+        {
+            "POST", "/stocks/adjustments",
+            $$"""{"productId":"{{SomeId}}","quantity":1,"reason":"","occurrenceTime":"{{When}}"}""", "Reason"
+        },
+        {
+            "POST", "/stocks/adjustments",
+            $$"""{"quantity":1,"reason":"Count","occurrenceTime":"{{When}}"}""", "ProductId"
+        },
+        {
+            "POST", "/stocks/adjustments",
+            $$"""{"productId":"{{SomeId}}","quantity":1,"reason":"Count"}""", "OccurrenceTime"
+        },
         { "POST", "/roles", """{"name":"ab"}""", "Role" },
         { "PUT", "/roles/1", """{"name":"ab"}""", "Name" },
         { "POST", "/users/login", """{"email":"not-an-email","password":"x"}""", "Email" },
@@ -123,6 +139,8 @@ public class RequestValidationTests(NoDatabaseApiFixture api) : IClassFixture<No
     [InlineData("POST", "/products", """{"name":"x","brandId":"abc"}""")]
     [InlineData("POST", "/purchases", """{"occurrenceTime":"not-a-date"}""")]
     [InlineData("PUT", $"/sales/{SomeId}/entries", """{"productEntries":[{"productId":"not-a-guid"}]}""")]
+    [InlineData("POST", "/stocks/adjustments", """{"productId":"not-a-guid","quantity":1}""")]
+    [InlineData("POST", "/stocks/adjustments", """{"quantity":"abc"}""")]
     public async Task MalformedJson_ReturnsBadRequest(string method, string path, string body)
     {
         var response = await SendJsonAsync(method, path, body);
@@ -208,6 +226,10 @@ public class RequestValidationTests(NoDatabaseApiFixture api) : IClassFixture<No
     [InlineData("/purchases", "pageSize=0", "pageSize")]
     [InlineData("/sales", "page=0", "page")]
     [InlineData("/sales", "pageSize=0", "pageSize")]
+    [InlineData("/stocks", "page=0", "page")]
+    [InlineData("/stocks", "pageSize=0", "pageSize")]
+    [InlineData("/stocks/adjustments", "page=0", "page")]
+    [InlineData("/stocks/adjustments", "pageSize=0", "pageSize")]
     public async Task InvalidPaging_ReturnsBadRequestWithFieldError(string path, string query, string field)
     {
         var response = await api.CreateClient().GetAsync($"{path}?{query}");

@@ -31,6 +31,9 @@ public class RoutingTests(NoDatabaseApiFixture api) : IClassFixture<NoDatabaseAp
         "GET /sales/", "POST /sales/", "GET /sales/{id:guid}", "DELETE /sales/{id:guid}",
         "PUT /sales/{id:guid}/details", "PUT /sales/{id:guid}/entries",
 
+        "GET /stocks/", "GET /stocks/{productId:guid}", "GET /stocks/adjustments/", "POST /stocks/adjustments/",
+        "GET /stocks/adjustments/{id:guid}", "DELETE /stocks/adjustments/{id:guid}",
+
         "GET /roles/", "POST /roles/", "GET /roles/{id:int}", "PUT /roles/{id:int}", "DELETE /roles/{id:int}",
         "GET /roles/users/{user}", "GET /roles/{role}/users", "POST /roles/{roleId}/users/{user}",
         "DELETE /roles/{roleId}/users/{user}",
@@ -74,6 +77,8 @@ public class RoutingTests(NoDatabaseApiFixture api) : IClassFixture<NoDatabaseAp
     [InlineData("/products/units/abc")]
     [InlineData("/purchases/not-a-guid")]
     [InlineData("/sales/not-a-guid")]
+    [InlineData("/stocks/not-a-guid")]
+    [InlineData("/stocks/adjustments/not-a-guid")]
     [InlineData("/unknown")]
     public async Task Get_WithInvalidRouteValue_ReturnsNotFound(string path)
     {

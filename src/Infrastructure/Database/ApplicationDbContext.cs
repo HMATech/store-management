@@ -2,6 +2,7 @@ using Domain.Products;
 using Domain.Purchases;
 using Domain.Roles;
 using Domain.Sales;
+using Domain.Stocks;
 using Domain.Users;
 using Domain.Common;
 using Domain.Brands;
@@ -31,6 +32,7 @@ public sealed class ApplicationDbContext : DbContext, IApplicationDbContext
     public DbSet<Sale> Sales { get; private set; }
     public DbSet<SaleProductEntry> SaleProductEntries { get; private set; }
     public DbSet<SaleTag> SaleTags { get; private set; }
+    public DbSet<StockAdjustment> StockAdjustments { get; private set; }
 
     public ApplicationDbContext(DbContextOptions<ApplicationDbContext> options,
         ILogger<ApplicationDbContext> logger)

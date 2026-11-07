@@ -4,6 +4,7 @@ using Domain.Products;
 using Domain.Purchases;
 using Domain.Roles;
 using Domain.Sales;
+using Domain.Stocks;
 using Domain.Users;
 using Infrastructure.Common;
 using Infrastructure.Database;
@@ -39,6 +40,7 @@ public class ModelConfigurationTests : IDisposable
     [InlineData(typeof(PurchaseProductEntry), "purchase_product_entry")]
     [InlineData(typeof(Sale), "sale")]
     [InlineData(typeof(SaleProductEntry), "sale_product_entry")]
+    [InlineData(typeof(StockAdjustment), "stock_adjustment")]
     public void Entity_MapsToSingularSnakeCaseTable(Type entityType, string table)
     {
         Assert.Equal(table, context.Model.FindEntityType(entityType)!.GetTableName());
@@ -55,6 +57,7 @@ public class ModelConfigurationTests : IDisposable
     [InlineData(typeof(SaleProductEntry), nameof(SaleProductEntry.ProductId), DeleteBehavior.Restrict)]
     [InlineData(typeof(SaleProductEntry), nameof(SaleProductEntry.PriceId), DeleteBehavior.Restrict)]
     [InlineData(typeof(SaleProductEntry), nameof(SaleProductEntry.SaleId), DeleteBehavior.Cascade)]
+    [InlineData(typeof(StockAdjustment), nameof(StockAdjustment.ProductId), DeleteBehavior.Restrict)]
     [InlineData(typeof(UserRole), nameof(UserRole.UserId), DeleteBehavior.Cascade)]
     [InlineData(typeof(UserRole), nameof(UserRole.RoleId), DeleteBehavior.Cascade)]
     public void ForeignKey_HasExpectedDeleteBehavior(Type entityType, string property, DeleteBehavior expected)
