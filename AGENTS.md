@@ -140,6 +140,14 @@ Use `TagsHelper.CreateSynchronizedTagsAsync` to sync tags on an entity (see the 
 
 An entry line is a product at a price, and it keeps that price when the product's price changes later. Repeated products in a request add together. On `PUT /{id}/entries`, a new entry joins a kept line only if that line is at the product's current price; otherwise it becomes a new line at the current price, so a product can have more than one line.
 
+### Stock
+
+- Stock isn't stored. It's worked out on each read as purchased minus sold plus adjusted, by `StockQueries.SelectStock`. Use that helper for anything that shows stock, rather than summing entries again.
+- A `StockAdjustment` records any other change, such as spoilage or a correction after counting. A positive quantity adds stock and a negative one removes it, and zero is rejected.
+- Stock can go negative, for example when a sale is recorded before its purchase. That's allowed so the records match what happened.
+- Purchases and sales count whole products. A product sold both singly and by the carton is two products.
+- Quantities are summed as `long`, so the totals in `ProductStockResponse` can't overflow.
+
 ### Authorization
 
 - A fallback policy in `AddAuthorizationInternal` makes every endpoint require a signed-in user, so new endpoints are protected without extra code. Don't add `.RequireAuthorization()` to endpoints.
