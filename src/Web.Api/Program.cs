@@ -22,6 +22,8 @@ if (app.Environment.IsDevelopment())
     app.ApplyMigrations();
 }
 
+await app.CreateInitialUserAsync();
+
 app.UseExceptionHandler();
 
 app.UseHttpsRedirection();
