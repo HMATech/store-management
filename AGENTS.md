@@ -146,6 +146,7 @@ Use `TagsHelper.CreateSynchronizedTagsAsync` to sync tags on an entity (see the 
 - **Sales:** an entry line is a product at a selling price line (`PriceId`), and it keeps that price when the product's price changes later. Repeated products in a request add together. On `PUT /{id}/entries`, a new entry joins a kept line only if that line is at the product's current price; otherwise it becomes a new line at the current price, so a product can have more than one line.
 - **Purchases:** an entry line is a product at a unit cost, the price actually paid to the supplier (`UnitCost`). It is entered with each entry and isn't linked to the selling price, so purchases never block deleting a price line. Repeats of the same product and cost add together, and the same product at two costs makes two lines. On `PUT /{id}/entries`, a kept line can have its quantity and unit cost corrected, a new entry joins a kept line with the same product and cost, and listing one line twice with different costs is a validation error.
 - Purchase responses report `unitCost` and `totalCost`; sale responses report `priceValue` and `totalPrice`.
+- A sale's `title` is optional: the endpoints store a missing title as an empty string, and the validators only reject `null`. A purchase's title is required, because it records where the goods came from.
 
 ### Stock
 
