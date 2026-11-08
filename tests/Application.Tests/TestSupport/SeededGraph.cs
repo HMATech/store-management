@@ -14,6 +14,7 @@ internal sealed class SeededGraph
     public const decimal CurrentPriceValue = 10m;
     public const decimal OldPriceValue = 8m;
     public const decimal OtherPriceValue = 4m;
+    public const decimal PurchaseUnitCost = 6m;
     public const int EntryQuantity = 3;
     public const int AdjustmentQuantity = -1;
 
@@ -68,7 +69,7 @@ internal sealed class SeededGraph
 
         var purchaseTag = PurchaseTag.CreateNew("Stock");
         var purchase = Purchase.CreateNew("Weekly restock", OccurredAt, earlier);
-        var purchaseEntry = PurchaseProductEntry.CreateNew(purchase.Id, product.Id, currentPrice.Id, EntryQuantity);
+        var purchaseEntry = PurchaseProductEntry.CreateNew(purchase.Id, product.Id, PurchaseUnitCost, EntryQuantity);
         purchase.UpdateProductEntries([purchaseEntry]);
         purchase.UpdateTags([purchaseTag]);
 

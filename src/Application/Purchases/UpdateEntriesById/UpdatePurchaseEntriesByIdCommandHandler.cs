@@ -8,7 +8,6 @@ using Shared;
 
 namespace Application.Purchases.UpdateEntriesById;
 
-// TODO: REFACTOR - FOR BETTER UPDATE FLOW
 internal sealed class UpdatePurchaseEntriesByIdCommandHandler(
     IApplicationDbContext dbContext,
     IDateTimeProvider dtProvider,
@@ -23,8 +22,6 @@ internal sealed class UpdatePurchaseEntriesByIdCommandHandler(
             var purchase = await dbContext.Purchases
                 .Include(p => p.Products)
                 .ThenInclude(p => p.Product)
-                .Include(p => p.Products)
-                .ThenInclude(p => p.ProductPrice)
                 .Include(p => p.Tags)
                 .FirstOrDefaultAsync(p => p.Id == command.Id, cancellationToken);
 
@@ -33,104 +30,49 @@ internal sealed class UpdatePurchaseEntriesByIdCommandHandler(
                 return PurchaseErrors.NotFound(command.Id);
             }
 
-            var dtNow = dtProvider.UtcNow;
+            var currentEntryIds = purchase.Products.Select(pe => pe.Id).ToHashSet();
+            var foreignEntryIds = command.ProductEntries
+                .Where(e => e.Id.HasValue && !currentEntryIds.Contains(e.Id.Value))
+                .Select(e => e.Id!.Value)
+                .Distinct()
+                .ToArray();
 
-            var inputEntryIds = command.ProductEntries.Select(e => e.Id);
-
-            var currentEntryIds = purchase.Products.Select(pe => pe.Id);
-            var foreignEntryIds = inputEntryIds
-                .Where(i => i.HasValue && !currentEntryIds.Contains(i.Value))
-                .Cast<Guid>();
-
-            if (foreignEntryIds.Any())
+            if (foreignEntryIds.Length > 0)
             {
                 return PurchaseErrors.ContainForeignEntries(purchase.Id, foreignEntryIds);
             }
 
-            var existingEntryIds = currentEntryIds.IntersectBy(inputEntryIds, i => i);
+            var inputNewEntries = command.ProductEntries.Where(e => !e.Id.HasValue).ToArray();
+            var inputNewProductIds = inputNewEntries.Select(e => e.ProductId).Distinct().ToArray();
 
-            var inputNewEntries = command.ProductEntries.Where(pe => !pe.Id.HasValue);
-            var inputExistingEntries = command.ProductEntries.Where(pe => pe.Id.HasValue);
+            var existingProductIds = await dbContext.Products
+                .Where(p => inputNewProductIds.Contains(p.Id))
+                .Select(p => p.Id)
+                .ToArrayAsync(cancellationToken);
 
-            var existingEntries = purchase.Products.Where(pe => existingEntryIds.Contains(pe.Id));
-
-            var existingInputProductIds = existingEntries.Select(e => e.ProductId);
-            var inputNewProductIds = inputNewEntries.Select(e => e.ProductId);
-
-            var inputCombinedProductIds = existingInputProductIds.Concat(inputNewProductIds);
-            var removedProducts = purchase.Products.Except(existingEntries);
-
-            var products = await dbContext.Products
-            .Select(p => new
-            {
-                p.Id,
-                CurrentPrice = p.Prices.Select(pp => new { pp.Id, pp.ValidToTime })
-                    .FirstOrDefault(pp => pp.ValidToTime == null)
-            })
-            .Where(p => inputCombinedProductIds.Contains(p.Id))
-            .ToArrayAsync(cancellationToken);
-
-            var invalidProducts = inputCombinedProductIds.ExceptBy(products.Select(p => p.Id), p => p);
-            if (invalidProducts.Any())
+            var invalidProducts = inputNewProductIds.Except(existingProductIds).ToArray();
+            if (invalidProducts.Length > 0)
             {
                 return PurchaseErrors.ContainNonExistingProducts(invalidProducts);
             }
 
-            var inputNewQuantities = inputNewEntries
-                .GroupBy(e => e.ProductId)
-                .ToDictionary(g => g.Key, g => g.Sum(e => e.Quantity));
-            var mergedProductIds = new HashSet<Guid>();
+            var keptEntries = UpdateKeptEntries(purchase, command.ProductEntries);
 
-            if (existingEntries.Any())
+            var removedEntries = purchase.Products.Where(pe => !keptEntries.Contains(pe)).ToArray();
+            if (removedEntries.Length > 0)
             {
-                var inputQuantities = inputExistingEntries
-                    .GroupBy(e => e.Id!.Value)
-                    .ToDictionary(g => g.Key, g => g.Sum(e => e.Quantity));
-                var currentPriceIds = products.ToDictionary(p => p.Id, p => p.CurrentPrice?.Id);
-
-                foreach (var entry in existingEntries)
-                {
-                    if (inputQuantities.TryGetValue(entry.Id, out var quantity))
-                    {
-                        // A line is a product at a price, so new units only join a line at the current price.
-                        if (inputNewQuantities.TryGetValue(entry.ProductId, out var newQuantity)
-                            && entry.PriceId == currentPriceIds[entry.ProductId]
-                            && mergedProductIds.Add(entry.ProductId))
-                        {
-                            quantity += newQuantity;
-                        }
-
-                        entry.UpdateQuantity(quantity);
-                    }
-                }
+                dbContext.PurchaseProductEntries.RemoveRange(removedEntries);
             }
 
-            if (removedProducts.Any())
-            {
-                dbContext.PurchaseProductEntries.RemoveRange(removedProducts);
-            }
+            AddNewEntries(purchase, keptEntries, inputNewEntries);
 
-            if (inputNewEntries.Any())
-            {
-                var inputNewProducts = products
-                    .Where(p => inputNewQuantities.ContainsKey(p.Id) && !mergedProductIds.Contains(p.Id));
-
-                var newProductEntries = inputNewProducts.Select(p => PurchaseProductEntry.CreateNew(
-                    purchase.Id, p.Id, p.CurrentPrice!.Id,
-                    inputNewQuantities[p.Id]
-                ));
-
-                dbContext.PurchaseProductEntries.AddRange(newProductEntries);
-            }
-
-            purchase.UpdateLastUpdatedTime(dtNow);
+            purchase.UpdateLastUpdatedTime(dtProvider.UtcNow);
 
             await dbContext.SaveChangesAsync(cancellationToken);
 
             purchase.Products.Clear();
             (await dbContext.PurchaseProductEntries
                 .Include(pe => pe.Product)
-                .Include(pe => pe.ProductPrice)
                 .AsNoTracking()
                 .Where(pe => pe.PurchaseId == purchase.Id)
                 .ToListAsync(cancellationToken)
@@ -160,5 +102,57 @@ internal sealed class UpdatePurchaseEntriesByIdCommandHandler(
                 "Unexpected error has occurred while updating purchase's product entries " +
                     $"with id '{command.Id}' to DB");
         }
+    }
+
+    /// <summary>
+    /// A line is a product at a unit cost, so new units join a kept line with the same product and cost,
+    /// and otherwise become a new line.
+    /// </summary>
+    private void AddNewEntries(Purchase purchase, List<PurchaseProductEntry> keptEntries,
+        IEnumerable<ProductEntryCommand> inputNewEntries)
+    {
+        var newQuantities = inputNewEntries
+            .GroupBy(e => (e.ProductId, e.UnitCost))
+            .Select(g => (g.Key.ProductId, g.Key.UnitCost, Quantity: g.Sum(e => e.Quantity)));
+
+        foreach (var (productId, unitCost, quantity) in newQuantities)
+        {
+            var matchingLine = keptEntries.FirstOrDefault(e => e.ProductId == productId && e.UnitCost == unitCost);
+            if (matchingLine != null)
+            {
+                matchingLine.UpdateQuantity(matchingLine.Quantity + quantity);
+            }
+            else
+            {
+                dbContext.PurchaseProductEntries.Add(
+                    PurchaseProductEntry.CreateNew(purchase.Id, productId, unitCost, quantity));
+            }
+        }
+    }
+
+    /// <summary>
+    /// Sets the quantity and unit cost of every line the request keeps. A line listed more than once
+    /// gets the sum of its quantities.
+    /// </summary>
+    private static List<PurchaseProductEntry> UpdateKeptEntries(Purchase purchase,
+        IEnumerable<ProductEntryCommand> inputEntries)
+    {
+        var inputByEntryId = inputEntries
+            .Where(e => e.Id.HasValue)
+            .GroupBy(e => e.Id!.Value)
+            .ToDictionary(g => g.Key, g => (Quantity: g.Sum(e => e.Quantity), g.First().UnitCost));
+
+        var keptEntries = new List<PurchaseProductEntry>();
+        foreach (var entry in purchase.Products)
+        {
+            if (inputByEntryId.TryGetValue(entry.Id, out var input))
+            {
+                entry.UpdateQuantity(input.Quantity);
+                entry.UpdateUnitCost(input.UnitCost);
+                keptEntries.Add(entry);
+            }
+        }
+
+        return keptEntries;
     }
 }

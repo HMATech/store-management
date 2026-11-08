@@ -52,7 +52,6 @@ public class ModelConfigurationTests : IDisposable
     [InlineData(typeof(ProductDetail), nameof(ProductDetail.ProductId), DeleteBehavior.Cascade)]
     [InlineData(typeof(ProductPrice), nameof(ProductPrice.ProductId), DeleteBehavior.Cascade)]
     [InlineData(typeof(PurchaseProductEntry), nameof(PurchaseProductEntry.ProductId), DeleteBehavior.Restrict)]
-    [InlineData(typeof(PurchaseProductEntry), nameof(PurchaseProductEntry.PriceId), DeleteBehavior.Restrict)]
     [InlineData(typeof(PurchaseProductEntry), nameof(PurchaseProductEntry.PurchaseId), DeleteBehavior.Cascade)]
     [InlineData(typeof(SaleProductEntry), nameof(SaleProductEntry.ProductId), DeleteBehavior.Restrict)]
     [InlineData(typeof(SaleProductEntry), nameof(SaleProductEntry.PriceId), DeleteBehavior.Restrict)]
@@ -66,6 +65,16 @@ public class ModelConfigurationTests : IDisposable
             .Single(fk => fk.Properties.Single().Name == property);
 
         Assert.Equal(expected, foreignKey.DeleteBehavior);
+    }
+
+    [Fact]
+    public void PurchaseProductEntry_StoresUnitCostAndHasNoPriceLink()
+    {
+        var entry = context.Model.FindEntityType(typeof(PurchaseProductEntry))!;
+        var table = StoreObjectIdentifier.Table(entry.GetTableName()!, entry.GetSchema());
+
+        Assert.Equal("unit_cost", entry.FindProperty(nameof(PurchaseProductEntry.UnitCost))!.GetColumnName(table));
+        Assert.DoesNotContain(entry.GetForeignKeys(), fk => fk.PrincipalEntityType.ClrType == typeof(ProductPrice));
     }
 
     [Fact]

@@ -143,7 +143,7 @@ public class StockIntegrationTests(PostgresApiFixture api)
         {
             title = PostgresApiFixture.Unique("Title"),
             tags = Array.Empty<string>(),
-            productEntries = new[] { new { id = product.Id, quantity } },
+            productEntries = new[] { new { id = product.Id, quantity, unitCost = 1m } },
             occurrenceTime = OccurredAt,
         });
 

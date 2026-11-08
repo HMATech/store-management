@@ -20,6 +20,14 @@ public class RequestValidationTests(NoDatabaseApiFixture api) : IClassFixture<No
         occurrenceTime = When,
     });
 
+    private static readonly string NegativeUnitCostBody = JsonSerializer.Serialize(new
+    {
+        title = "t",
+        tags = Array.Empty<string>(),
+        productEntries = new[] { new { id = SomeId, quantity = 1, unitCost = -1m } },
+        occurrenceTime = When,
+    });
+
     public static TheoryData<string, string, string, string> InvalidBodies => new()
     {
         { "POST", "/brands", """{"name":""}""", "Name" },
@@ -70,6 +78,15 @@ public class RequestValidationTests(NoDatabaseApiFixture api) : IClassFixture<No
         {
             "PUT", $"/purchases/{SomeId}/entries",
             $$"""{"productEntries":[{"productId":"{{SomeId}}","quantity":0}]}""", "ProductEntries"
+        },
+        {
+            "POST", "/purchases",
+            NegativeUnitCostBody,
+            "ProductEntries"
+        },
+        {
+            "PUT", $"/purchases/{SomeId}/entries",
+            $$"""{"productEntries":[{"productId":"{{SomeId}}","quantity":1,"unitCost":-1}]}""", "ProductEntries"
         },
         {
             "POST", "/sales",

@@ -160,9 +160,52 @@ public class ValidatorTests
         { ValidCreatePurchase() with { Tags = [""] }, "Tags" },
         { ValidCreatePurchase() with { OccurrenceTime = default }, "OccurrenceTime" },
         { ValidCreatePurchase() with { ProductEntries = [null!] }, "ProductEntries" },
-        { ValidCreatePurchase() with { ProductEntries = [new PurchaseCreateEntry(SomeId, 0)] }, "ProductEntries" },
-        { ValidCreatePurchase() with { ProductEntries = [new PurchaseCreateEntry(SomeId, -1)] }, "ProductEntries" },
+        { ValidCreatePurchase() with { ProductEntries = [new PurchaseCreateEntry(SomeId, 0, 1m)] }, "ProductEntries" },
+        { ValidCreatePurchase() with { ProductEntries = [new PurchaseCreateEntry(SomeId, -1, 1m)] }, "ProductEntries" },
+        {
+            ValidCreatePurchase() with { ProductEntries = [new PurchaseCreateEntry(SomeId, 1, -0.01m)] },
+            "ProductEntries"
+        },
     };
+
+    [Fact]
+    public void CreatePurchase_WithZeroUnitCost_Passes()
+    {
+        Assert.True(new CreatePurchaseCommandValidator().Validate(ValidCreatePurchase() with
+        {
+            ProductEntries = [new PurchaseCreateEntry(SomeId, 1, 0m)],
+        }).IsValid);
+    }
+
+    [Fact]
+    public void UpdatePurchaseEntries_WithNegativeUnitCost_Fails()
+    {
+        AssertFails(new UpdatePurchaseEntriesByIdCommandValidator().Validate(new UpdatePurchaseEntriesByIdCommand(
+            SomeId, [new PurchaseUpdateEntry(null, SomeId, 1, -1m)])), "ProductEntries");
+    }
+
+    [Fact]
+    public void UpdatePurchaseEntries_WithSameEntryAtTwoCosts_Fails()
+    {
+        var entryId = Guid.NewGuid();
+
+        var result = new UpdatePurchaseEntriesByIdCommandValidator().Validate(new UpdatePurchaseEntriesByIdCommand(
+            SomeId,
+            [new PurchaseUpdateEntry(entryId, SomeId, 1, 2m), new PurchaseUpdateEntry(entryId, SomeId, 1, 3m)]));
+
+        AssertFails(result, "ProductEntries");
+        Assert.Contains(result.Errors, e => e.ErrorMessage.Contains(entryId.ToString()));
+    }
+
+    [Fact]
+    public void UpdatePurchaseEntries_WithSameEntryAtOneCostTwice_Passes()
+    {
+        var entryId = Guid.NewGuid();
+
+        Assert.True(new UpdatePurchaseEntriesByIdCommandValidator().Validate(new UpdatePurchaseEntriesByIdCommand(
+            SomeId, [new PurchaseUpdateEntry(entryId, SomeId, 1, 2m), new PurchaseUpdateEntry(entryId, SomeId, 1, 2m)]))
+            .IsValid);
+    }
 
     [Theory]
     [MemberData(nameof(InvalidCreatePurchases))]
@@ -275,7 +318,7 @@ public class ValidatorTests
 
         Assert.Equal(expected, new UpdatePurchaseEntriesByIdCommandValidator()
             .Validate(new UpdatePurchaseEntriesByIdCommand(SomeId,
-                [new PurchaseUpdateEntry(null, productId, quantity)])).IsValid);
+                [new PurchaseUpdateEntry(null, productId, quantity, 1m)])).IsValid);
         Assert.Equal(expected, new UpdateSaleEntriesByIdCommandValidator()
             .Validate(new UpdateSaleEntriesByIdCommand(SomeId,
                 [new SaleUpdateEntry(null, productId, quantity)])).IsValid);
@@ -286,7 +329,8 @@ public class ValidatorTests
     {
         AssertFails(new CreatePurchaseCommandValidator().Validate(ValidCreatePurchase() with
         {
-            ProductEntries = [new PurchaseCreateEntry(SomeId, int.MaxValue), new PurchaseCreateEntry(SomeId, 1)],
+            ProductEntries =
+                [new PurchaseCreateEntry(SomeId, int.MaxValue, 1m), new PurchaseCreateEntry(SomeId, 1, 1m)],
         }), "ProductEntries");
         AssertFails(new CreateSaleCommandValidator().Validate(ValidCreateSale() with
         {
@@ -294,7 +338,7 @@ public class ValidatorTests
         }), "ProductEntries");
         AssertFails(new UpdatePurchaseEntriesByIdCommandValidator().Validate(
             new UpdatePurchaseEntriesByIdCommand(SomeId,
-            [new PurchaseUpdateEntry(null, SomeId, int.MaxValue), new PurchaseUpdateEntry(null, SomeId, 1)])),
+            [new PurchaseUpdateEntry(null, SomeId, int.MaxValue, 1m), new PurchaseUpdateEntry(null, SomeId, 1, 1m)])),
             "ProductEntries");
         AssertFails(new UpdateSaleEntriesByIdCommandValidator().Validate(new UpdateSaleEntriesByIdCommand(SomeId,
             [new SaleUpdateEntry(null, SomeId, int.MaxValue), new SaleUpdateEntry(null, SomeId, 1)])),
@@ -401,7 +445,7 @@ public class ValidatorTests
 
     private static CreatePurchaseCommand ValidCreatePurchase()
     {
-        return new CreatePurchaseCommand("Title", ["Tag"], [new PurchaseCreateEntry(SomeId, 1)], When);
+        return new CreatePurchaseCommand("Title", ["Tag"], [new PurchaseCreateEntry(SomeId, 1, 1m)], When);
     }
 
     private static CreateSaleCommand ValidCreateSale()

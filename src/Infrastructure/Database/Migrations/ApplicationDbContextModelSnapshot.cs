@@ -210,10 +210,6 @@ namespace Infrastructure.Database.Migrations
                         .HasColumnType("uuid")
                         .HasColumnName("id");
 
-                    b.Property<Guid>("PriceId")
-                        .HasColumnType("uuid")
-                        .HasColumnName("price_id");
-
                     b.Property<Guid>("ProductId")
                         .HasColumnType("uuid")
                         .HasColumnName("product_id");
@@ -226,11 +222,12 @@ namespace Infrastructure.Database.Migrations
                         .HasColumnType("integer")
                         .HasColumnName("quantity");
 
+                    b.Property<decimal>("UnitCost")
+                        .HasColumnType("numeric")
+                        .HasColumnName("unit_cost");
+
                     b.HasKey("Id")
                         .HasName("pk_purchase_product_entry");
-
-                    b.HasIndex("PriceId")
-                        .HasDatabaseName("ix_purchase_product_entry_price_id");
 
                     b.HasIndex("ProductId")
                         .HasDatabaseName("ix_purchase_product_entry_product_id");
@@ -632,13 +629,6 @@ namespace Infrastructure.Database.Migrations
 
             modelBuilder.Entity("Domain.Purchases.PurchaseProductEntry", b =>
                 {
-                    b.HasOne("Domain.Products.ProductPrice", "ProductPrice")
-                        .WithMany()
-                        .HasForeignKey("PriceId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired()
-                        .HasConstraintName("fk_purchase_product_entry_product_price_price_id");
-
                     b.HasOne("Domain.Products.Product", "Product")
                         .WithMany()
                         .HasForeignKey("ProductId")
@@ -654,8 +644,6 @@ namespace Infrastructure.Database.Migrations
                         .HasConstraintName("fk_purchase_product_entry_purchase_purchase_id");
 
                     b.Navigation("Product");
-
-                    b.Navigation("ProductPrice");
 
                     b.Navigation("Purchase");
                 });

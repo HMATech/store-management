@@ -31,6 +31,25 @@ internal sealed class UpdatePurchaseEntriesByIdCommandValidator
                             "should be at least 1");
                         isValid = false;
                     }
+
+                    if (entry.UnitCost < 0)
+                    {
+                        ctx.AddFailure($"Product entry's 'UnitCost' at index {i} for product id '{entry.Id}' " +
+                            "should not be negative");
+                        isValid = false;
+                    }
+                }
+
+                var conflictingEntryIds = entries
+                    .Where(e => e.Id.HasValue)
+                    .GroupBy(e => e.Id!.Value)
+                    .Where(g => g.Select(e => e.UnitCost).Distinct().Count() > 1)
+                    .Select(g => g.Key);
+                foreach (var entryId in conflictingEntryIds)
+                {
+                    ctx.AddFailure($"Product entry with id '{entryId}' is listed more than once " +
+                        "with different unit costs");
+                    isValid = false;
                 }
 
                 if (entries.Sum(e => (long)e.Quantity) > int.MaxValue)

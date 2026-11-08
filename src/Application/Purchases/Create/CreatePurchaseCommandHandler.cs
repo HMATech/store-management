@@ -21,19 +21,14 @@ internal sealed class CreatePurchaseCommandHandler(
         {
             var dtNow = dtProvider.UtcNow;
 
-            var inputProductIds = command.ProductEntries.Select(e => e.Id);
+            var inputProductIds = command.ProductEntries.Select(e => e.Id).Distinct().ToArray();
 
-            var products = await dbContext.Products
-                .Select(p => new
-                {
-                    p.Id,
-                    CurrentPrice = p.Prices.Select(pp => new { pp.Id, pp.ValidToTime })
-                        .FirstOrDefault(pp => pp.ValidToTime == null)
-                })
+            var productIds = await dbContext.Products
                 .Where(p => inputProductIds.Contains(p.Id))
+                .Select(p => p.Id)
                 .ToArrayAsync(cancellationToken);
 
-            var invalidProducts = inputProductIds.ExceptBy(products.Select(p => p.Id), p => p);
+            var invalidProducts = inputProductIds.Except(productIds);
             if (invalidProducts.Any())
             {
                 return PurchaseErrors.ContainNonExistingProducts(invalidProducts);
@@ -51,10 +46,11 @@ internal sealed class CreatePurchaseCommandHandler(
                 purchase.UpdateTags(purchaseTags.ToList());
             }
 
-            var productEntries = products.Select(p => PurchaseProductEntry.CreateNew(
-                purchase.Id, p.Id, p.CurrentPrice!.Id,
-                command.ProductEntries.Where(e => e.Id == p.Id).Sum(e => e.Quantity)
-            ));
+            // A line is a product at a unit cost, so repeats of the same product and cost add together.
+            var productEntries = command.ProductEntries
+                .GroupBy(e => (e.Id, e.UnitCost))
+                .Select(g => PurchaseProductEntry.CreateNew(purchase.Id, g.Key.Id, g.Key.UnitCost,
+                    g.Sum(e => e.Quantity)));
 
             purchase.UpdateProductEntries(productEntries.ToList());
             dbContext.Purchases.Add(purchase);

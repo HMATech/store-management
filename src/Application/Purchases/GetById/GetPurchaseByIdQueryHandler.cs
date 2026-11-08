@@ -21,8 +21,6 @@ internal sealed class GetPurchaseByIdQueryHandler(
             var purchase = await dbContext.Purchases
                 .Include(p => p.Products)
                 .ThenInclude(p => p.Product)
-                .Include(p => p.Products)
-                .ThenInclude(p => p.ProductPrice)
                 .Include(p => p.Tags)
                 .FirstOrDefaultAsync(p => p.Id == query.Id, cancellationToken);
 

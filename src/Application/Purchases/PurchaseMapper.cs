@@ -22,7 +22,7 @@ public static class PurchaseMapper
             purchase.Title,
             purchase.Tags.Select(t => t.Name.Value).ToArray(),
             purchase.Products.Select(p => p.ToProductEntryResponse()).ToArray(),
-            purchase.Products.Sum(p => p.ProductPrice!.Value * p.Quantity),
+            purchase.Products.Sum(p => p.UnitCost * p.Quantity),
             purchase.OccurenceTime,
             purchase.CreatedTime,
             purchase.LastUpdatedTime
@@ -31,10 +31,9 @@ public static class PurchaseMapper
 
     public static ProductEntryResponse ToProductEntryResponse(this PurchaseProductEntry entry)
     {
-        var priceValue = entry.ProductPrice!.Value;
         return new ProductEntryResponse(
             entry.Id, entry.ProductId, entry.Product!.Name,
-            entry.PriceId, priceValue, entry.Quantity, priceValue * entry.Quantity
+            entry.UnitCost, entry.Quantity, entry.UnitCost * entry.Quantity
         );
     }
 
@@ -54,7 +53,7 @@ public static class PurchaseMapper
         return new UpdatePurchaseEntriesByIdResponse(
             purchase.Id,
             purchase.Products.Select(p => p.ToProductEntryResponse()).ToArray(),
-            purchase.Products.Sum(p => p.ProductPrice!.Value * p.Quantity),
+            purchase.Products.Sum(p => p.UnitCost * p.Quantity),
             purchase.LastUpdatedTime
         );
     }

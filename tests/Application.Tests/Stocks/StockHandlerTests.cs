@@ -21,14 +21,14 @@ public class StockHandlerTests
     private readonly TestDatabase database = new();
 
     [Fact]
-    public async Task GetByProductId_SumsPurchasesSalesAndAdjustmentsAcrossPriceLines()
+    public async Task GetByProductId_SumsPurchasesSalesAndAdjustmentsAcrossLines()
     {
         var graph = await SeededGraph.CreateAsync(database);
         var purchase = Purchase.CreateNew("Second restock", SeededGraph.OccurredAt, FixedClock.Now);
         purchase.UpdateProductEntries(
         [
-            PurchaseProductEntry.CreateNew(purchase.Id, graph.Product.Id, graph.CurrentPrice.Id, 5),
-            PurchaseProductEntry.CreateNew(purchase.Id, graph.Product.Id, graph.OldPrice.Id, 2),
+            PurchaseProductEntry.CreateNew(purchase.Id, graph.Product.Id, 6m, 5),
+            PurchaseProductEntry.CreateNew(purchase.Id, graph.Product.Id, 5m, 2),
         ]);
         await database.SeedAsync(purchase,
             StockAdjustment.CreateNew(graph.Product.Id, 4, "Found in storage", SeededGraph.OccurredAt, FixedClock.Now));

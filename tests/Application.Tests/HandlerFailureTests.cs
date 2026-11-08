@@ -124,7 +124,7 @@ public class HandlerFailureTests
                 .HandleAsync(new UpdateProductUnitByIdCommand(g.Unit.Id, "New"), default),
         [nameof(CreatePurchaseCommandHandler)] = async (db, g) =>
             await new CreatePurchaseCommandHandler(db, new FixedClock(), Log<CreatePurchaseCommandHandler>())
-                .HandleAsync(new CreatePurchaseCommand("New", [], [new PurchaseCreateEntry(g.Product.Id, 1)], When),
+                .HandleAsync(new CreatePurchaseCommand("New", [], [new PurchaseCreateEntry(g.Product.Id, 1, 6m)], When),
                     default),
         [nameof(DeletePurchaseByIdCommandHandler)] = async (db, g) =>
             await new DeletePurchaseByIdCommandHandler(db, Log<DeletePurchaseByIdCommandHandler>())
@@ -137,7 +137,7 @@ public class HandlerFailureTests
             await new UpdatePurchaseEntriesByIdCommandHandler(db, new FixedClock(),
                     Log<UpdatePurchaseEntriesByIdCommandHandler>())
                 .HandleAsync(new UpdatePurchaseEntriesByIdCommand(g.Purchase.Id,
-                    [new PurchaseUpdateEntry(g.PurchaseEntry.Id, g.Product.Id, 1)]), default),
+                    [new PurchaseUpdateEntry(g.PurchaseEntry.Id, g.Product.Id, 1, 6m)]), default),
         [nameof(CreateSaleCommandHandler)] = async (db, g) =>
             await new CreateSaleCommandHandler(db, new FixedClock(), Log<CreateSaleCommandHandler>())
                 .HandleAsync(new CreateSaleCommand("New", [], [new SaleCreateEntry(g.Product.Id, 1)], When), default),
