@@ -120,6 +120,79 @@ public class StockIntegrationTests(PostgresApiFixture api)
         Assert.Equal("Products.InUse", (await response.ReadJsonAsync()).GetProperty("title").GetString());
     }
 
+    [Fact]
+    public async Task Product_WithMinimumOfZero_KeepsZeroInTheDatabase()
+    {
+        var product = await CreateProductAsync(new { minimumQuantity = 0 });
+
+        var body = await (await client.GetAsync($"/products/{product.Id}")).ReadJsonAsync();
+
+        Assert.Equal(0, body.GetProperty("stockDefinition").GetProperty("minimumQuantity").GetInt32());
+        Assert.Equal(0, (await GetStockAsync(product.Id)).GetProperty("minimumQuantity").GetInt32());
+    }
+
+    [Fact]
+    public async Task Product_WithoutStockDefinition_GetsTheDefault()
+    {
+        var product = await CreateProductAsync();
+
+        var stock = await GetStockAsync(product.Id);
+
+        Assert.Equal(5, stock.GetProperty("minimumQuantity").GetInt32());
+        Assert.Equal("Low", stock.GetProperty("status").GetString());
+    }
+
+    [Fact]
+    public async Task StockList_FiltersByStatusInSql()
+    {
+        var product = await CreateProductAsync(new { minimumQuantity = 2 });
+        await CreateTransactionAsync("/purchases", product, 10);
+
+        Assert.Equal(1, await CountAsync($"search={product.Name}&status=normal"));
+        Assert.Equal(0, await CountAsync($"search={product.Name}&status=low"));
+
+        await CreateTransactionAsync("/sales", product, 9);
+        Assert.Equal(1, await CountAsync($"search={product.Name}&status=low"));
+
+        await CreateTransactionAsync("/sales", product, 2);
+        Assert.Equal(1, await CountAsync($"search={product.Name}&status=negative"));
+        Assert.Equal("Negative", (await GetStockAsync(product.Id)).GetProperty("status").GetString());
+    }
+
+    [Fact]
+    public async Task UpdatingProductsMinimum_ChangesItsStatus()
+    {
+        var product = await CreateProductAsync(new { minimumQuantity = 2 });
+        await CreateTransactionAsync("/purchases", product, 4);
+
+        var response = await client.PutAsJsonAsync($"/products/{product.Id}", new
+        {
+            name = product.Name,
+            measure = 1f,
+            measureUnitId = await UnitIdOfAsync(product.Id),
+            price = 10m,
+            tags = Array.Empty<string>(),
+            stockDefinition = new { minimumQuantity = 6 },
+        });
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        Assert.Equal("Low", (await GetStockAsync(product.Id)).GetProperty("status").GetString());
+    }
+
+    private async Task<int> CountAsync(string query)
+    {
+        var response = await client.GetAsync($"/stocks?{query}");
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        return (await response.ReadJsonAsync()).GetProperty("totalCount").GetInt32();
+    }
+
+    private async Task<int> UnitIdOfAsync(string productId)
+    {
+        var body = await (await client.GetAsync($"/products/{productId}")).ReadJsonAsync();
+        return body.GetProperty("measureUnit").GetProperty("id").GetInt32();
+    }
+
     private async Task<JsonElement> GetStockAsync(string productId)
     {
         var response = await client.GetAsync($"/stocks/{productId}");
@@ -150,7 +223,7 @@ public class StockIntegrationTests(PostgresApiFixture api)
         Assert.Equal(HttpStatusCode.Created, response.StatusCode);
     }
 
-    private async Task<(string Id, string Name)> CreateProductAsync()
+    private async Task<(string Id, string Name)> CreateProductAsync(object? stockDefinition = null)
     {
         var name = PostgresApiFixture.Unique("Product");
         var brand = await client.PostAsJsonAsync("/brands", new { name = PostgresApiFixture.Unique("Brand") });
@@ -163,6 +236,7 @@ public class StockIntegrationTests(PostgresApiFixture api)
             measureUnitId = int.Parse(unit.CreatedId()),
             price = 10m,
             tags = Array.Empty<string>(),
+            stockDefinition,
         });
 
         Assert.Equal(HttpStatusCode.Created, product.StatusCode);

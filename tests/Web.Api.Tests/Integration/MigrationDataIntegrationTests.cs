@@ -1,3 +1,4 @@
+using Domain.Products;
 using Infrastructure.Database;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
@@ -29,6 +30,26 @@ public class MigrationDataIntegrationTests(PostgresApiFixture api)
         var query = $"SELECT unit_cost AS \"Value\" FROM public.purchase_product_entry WHERE id = '{entryId}'";
         var unitCost = await context.Database.SqlQueryRaw<decimal>(query).SingleAsync();
         Assert.Equal(12.5m, unitCost);
+    }
+
+    [Fact]
+    public async Task AddStockDefinitionToProduct_GivesExistingProductsTheDefaultMinimum()
+    {
+        using var host = new ApiHost("Production", api.ConnectionStringFor($"migration_{Guid.NewGuid():N}"));
+        using var scope = host.Services.CreateScope();
+        var context = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+        var migrator = context.GetService<IMigrator>();
+        var entryId = Guid.NewGuid();
+
+        await migrator.MigrateAsync("20261107160317_AddStockAdjustment");
+        await context.Database.ExecuteSqlRawAsync(SeedBeforeUnitCostSql(entryId));
+
+        await migrator.MigrateAsync();
+
+        var minimum = await context.Database
+            .SqlQueryRaw<int>("SELECT stock_minimum_quantity AS \"Value\" FROM public.product")
+            .SingleAsync();
+        Assert.Equal(StockDefinition.DefaultMinimumQuantity, minimum);
     }
 
     private static string SeedBeforeUnitCostSql(Guid entryId)

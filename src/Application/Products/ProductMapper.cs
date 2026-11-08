@@ -26,8 +26,14 @@ public static class ProductMapper
             product.Detail.Brand!.Name,
             product.Prices.FirstOrDefault()!.Value,
             product.Tags.Select(t => t.Name.Value).ToArray(),
+            product.StockDefinition.ToStockDefinitionResponse(),
             product.CreatedTime, product.LastUpdatedTime
         );
+    }
+
+    public static StockDefinitionResponse ToStockDefinitionResponse(this StockDefinition definition)
+    {
+        return new StockDefinitionResponse(definition.MinimumQuantity);
     }
 
     public static CreateProductResponse ToCreateResponse(this Product product)
@@ -45,6 +51,7 @@ public static class ProductMapper
             brand!.Name,
             price!.Value.ToString(),
             [.. product.Tags.Select(t => t.Name.Value)],
+            product.StockDefinition.ToStockDefinitionResponse(),
             product.CreatedTime,
             product.CreatedTime
         );
@@ -60,7 +67,8 @@ public static class ProductMapper
             detail.Measure,
             detail.MeasureUnit!.Name.Value,
             productPrice.Value,
-            [.. product.Tags.Select(t => t.Name.Value)]
+            [.. product.Tags.Select(t => t.Name.Value)],
+            product.StockDefinition.ToStockDefinitionResponse()
         );
     }
 

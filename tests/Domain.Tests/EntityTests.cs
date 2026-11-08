@@ -308,6 +308,33 @@ public class EntityTests
         }
     }
 
+    [Theory]
+    [InlineData(null, StockDefinition.DefaultMinimumQuantity)]
+    [InlineData(0, 0)]
+    [InlineData(12, 12)]
+    public void StockDefinition_CreateNew_FillsTheDefaultOnlyWhenEmpty(int? minimum, int expected)
+    {
+        Assert.Equal(expected, StockDefinition.CreateNew(minimum).MinimumQuantity);
+    }
+
+    [Fact]
+    public void Product_CreateNew_WithoutStockDefinition_UsesTheDefault()
+    {
+        var product = Product.CreateNew("Milk", null, 1, 1f, 1, Now);
+
+        Assert.Equal(StockDefinition.DefaultMinimumQuantity, product.StockDefinition.MinimumQuantity);
+    }
+
+    [Fact]
+    public void Product_UpdateStockDefinition_ReplacesIt()
+    {
+        var product = Product.CreateNew("Milk", null, 1, 1f, 1, Now, StockDefinition.CreateNew(3));
+
+        product.UpdateStockDefinition(StockDefinition.CreateNew(9));
+
+        Assert.Equal(9, product.StockDefinition.MinimumQuantity);
+    }
+
     [Fact]
     public void PurchaseProductEntry_UpdateUnitCost_ChangesIt()
     {

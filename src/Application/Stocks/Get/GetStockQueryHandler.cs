@@ -23,7 +23,9 @@ internal sealed class GetStockQueryHandler(
                 ? products.OrderBy(p => p.Name)
                 : products.OrderByDescending(p => p.Name);
 
-            return await PagedResponse<ProductStockResponse>.CreateAsync(products.SelectStock(dbContext),
+            StockStatus? status = StockQueries.TryParseStatus(query.Status, out var parsed) ? parsed : null;
+
+            return await PagedResponse<ProductStockResponse>.CreateAsync(products.SelectStock(dbContext, status),
                 query.Page, query.PageSize);
         }
         catch (OperationCanceledException ex)

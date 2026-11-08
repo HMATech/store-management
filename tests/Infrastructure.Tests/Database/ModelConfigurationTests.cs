@@ -78,6 +78,21 @@ public class ModelConfigurationTests : IDisposable
     }
 
     [Fact]
+    public void ProductStockDefinition_MapsToProductTableWithDefaultAndSentinel()
+    {
+        var definition = context.Model.FindEntityType(typeof(Product))!
+            .FindNavigation(nameof(Product.StockDefinition))!.TargetEntityType;
+        var table = StoreObjectIdentifier.Table(definition.GetTableName()!, definition.GetSchema());
+        var minimum = definition.FindProperty(nameof(StockDefinition.MinimumQuantity))!;
+
+        Assert.Equal("product", definition.GetTableName());
+        Assert.Equal("stock_minimum_quantity", minimum.GetColumnName(table));
+        Assert.Equal(StockDefinition.DefaultMinimumQuantity, minimum.GetDefaultValue());
+        // 0 is a real minimum, so it must not be the "unset" value that triggers the column default.
+        Assert.Equal(int.MinValue, minimum.Sentinel);
+    }
+
+    [Fact]
     public void UserRole_IsUniquePerUserAndRole_ButNotPerUserOrRole()
     {
         var indexes = context.Model.FindEntityType(typeof(UserRole))!.GetIndexes().ToList();

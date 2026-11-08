@@ -264,6 +264,80 @@ public class ProductHandlerTests
     }
 
     [Fact]
+    public async Task Create_WithoutStockDefinition_GetsTheDefaultMinimum()
+    {
+        var graph = await SeededGraph.CreateAsync(database);
+
+        var response = ResultAssert.Succeeded(await CreateAsync(new CreateProductCommand("Cheese", null, 2f,
+            graph.Unit.Id, graph.Brand.Id, 1m, [])));
+
+        Assert.Equal(StockDefinition.DefaultMinimumQuantity, response.StockDefinition.MinimumQuantity);
+        Assert.Equal(StockDefinition.DefaultMinimumQuantity, await MinimumQuantityAsync(response.Id));
+    }
+
+    [Theory]
+    [InlineData(12)]
+    [InlineData(0)]
+    public async Task Create_WithMinimumQuantity_StoresIt(int minimum)
+    {
+        var graph = await SeededGraph.CreateAsync(database);
+
+        var response = ResultAssert.Succeeded(await CreateAsync(new CreateProductCommand("Cheese", null, 2f,
+            graph.Unit.Id, graph.Brand.Id, 1m, [], new StockDefinitionCommand(minimum))));
+
+        Assert.Equal(minimum, response.StockDefinition.MinimumQuantity);
+        Assert.Equal(minimum, await MinimumQuantityAsync(response.Id));
+    }
+
+    [Fact]
+    public async Task Create_WithEmptyStockDefinition_GetsTheDefaultMinimum()
+    {
+        var graph = await SeededGraph.CreateAsync(database);
+
+        var response = ResultAssert.Succeeded(await CreateAsync(new CreateProductCommand("Cheese", null, 2f,
+            graph.Unit.Id, graph.Brand.Id, 1m, [], new StockDefinitionCommand(null))));
+
+        Assert.Equal(StockDefinition.DefaultMinimumQuantity, await MinimumQuantityAsync(response.Id));
+    }
+
+    [Fact]
+    public async Task UpdateById_WithStockDefinition_ChangesTheMinimum()
+    {
+        var graph = await SeededGraph.CreateAsync(database);
+
+        var response = ResultAssert.Succeeded(await UpdateAsync(new UpdateProductByIdCommand(graph.Product.Id,
+            "Milk", null, 1.5f, graph.Unit.Id, SeededGraph.CurrentPriceValue, [], new StockDefinitionCommand(20))));
+
+        Assert.Equal(20, response.StockDefinition.MinimumQuantity);
+        Assert.Equal(20, await MinimumQuantityAsync(graph.Product.Id));
+    }
+
+    [Fact]
+    public async Task UpdateById_WithoutStockDefinition_KeepsTheCurrentMinimum()
+    {
+        var graph = await SeededGraph.CreateAsync(database);
+        ResultAssert.Succeeded(await UpdateAsync(new UpdateProductByIdCommand(graph.Product.Id, "Milk", null, 1.5f,
+            graph.Unit.Id, SeededGraph.CurrentPriceValue, [], new StockDefinitionCommand(20))));
+
+        ResultAssert.Succeeded(await UpdateAsync(new UpdateProductByIdCommand(graph.Product.Id, "Milk", null, 1.5f,
+            graph.Unit.Id, SeededGraph.CurrentPriceValue, [])));
+
+        Assert.Equal(20, await MinimumQuantityAsync(graph.Product.Id));
+    }
+
+    [Fact]
+    public async Task Get_IncludesTheStockDefinition()
+    {
+        var graph = await SeededGraph.CreateAsync(database);
+
+        var page = await GetAsync(new GetProductQuery(null, SortOrder.ASC));
+
+        Assert.All(page.Responses, p => Assert.Equal(StockDefinition.DefaultMinimumQuantity,
+            p.StockDefinition.MinimumQuantity));
+        Assert.Contains(page.Responses, p => p.Id == graph.Product.Id);
+    }
+
+    [Fact]
     public async Task UpdatePriceById_ClosesCurrentPriceAndAddsNewOne()
     {
         var graph = await SeededGraph.CreateAsync(database);
@@ -295,6 +369,14 @@ public class ProductHandlerTests
         var result = await handler.HandleAsync(new UpdateProductPriceByIdCommand(Guid.NewGuid(), 20m), default);
 
         ResultAssert.Failed(result, "Products.NotFound", ErrorType.NotFound);
+    }
+
+    private Task<int> MinimumQuantityAsync(Guid productId)
+    {
+        return database.ReadAsync(c => c.Products
+            .Where(p => p.Id == productId)
+            .Select(p => p.StockDefinition.MinimumQuantity)
+            .SingleAsync());
     }
 
     private async Task<Result<CreateProductResponse>> CreateAsync(CreateProductCommand command)

@@ -27,5 +27,9 @@ internal sealed class UpdateProductByIdCommandValidator
             .Cascade(CascadeMode.Stop)
             .NotNull()
             .MustNotHaveAnyEmptyString();
+
+        RuleFor(c => c.StockDefinition!)
+            .SetValidator(new StockDefinitionCommandValidator())
+            .When(c => c.StockDefinition != null);
     }
 }

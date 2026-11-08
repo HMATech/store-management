@@ -28,6 +28,17 @@ public class RequestValidationTests(NoDatabaseApiFixture api) : IClassFixture<No
         occurrenceTime = When,
     });
 
+    private static readonly string NegativeMinimumProductBody = JsonSerializer.Serialize(new
+    {
+        name = "x",
+        brandId = 1,
+        measure = 1,
+        measureUnitId = 1,
+        price = 1,
+        tags = Array.Empty<string>(),
+        stockDefinition = new { minimumQuantity = -1 },
+    });
+
     public static TheoryData<string, string, string, string> InvalidBodies => new()
     {
         { "POST", "/brands", """{"name":""}""", "Name" },
@@ -61,6 +72,11 @@ public class RequestValidationTests(NoDatabaseApiFixture api) : IClassFixture<No
         {
             "POST", "/products",
             """{"name":"x","brandId":1,"measure":1,"measureUnitId":1,"price":1,"tags":[""]}""", "Tags"
+        },
+        {
+            "POST", "/products",
+            NegativeMinimumProductBody,
+            "StockDefinition.MinimumQuantity"
         },
         {
             "POST", "/purchases",
@@ -254,6 +270,18 @@ public class RequestValidationTests(NoDatabaseApiFixture api) : IClassFixture<No
         Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
         var problem = await response.Content.ReadFromJsonAsync<JsonElement>();
         Assert.True(problem.GetProperty(CustomHttpResults.ValidationErrorFieldName).TryGetProperty(field, out _));
+    }
+
+    [Theory]
+    [InlineData("1")]
+    [InlineData("empty")]
+    public async Task UnknownStockStatus_ReturnsBadRequest(string status)
+    {
+        var response = await api.CreateClient().GetAsync($"/stocks?status={status}");
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+        var problem = await response.Content.ReadFromJsonAsync<JsonElement>();
+        Assert.True(problem.GetProperty(CustomHttpResults.ValidationErrorFieldName).TryGetProperty("status", out _));
     }
 
     [Theory]

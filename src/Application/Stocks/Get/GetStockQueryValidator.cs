@@ -12,5 +12,11 @@ internal sealed class GetStockQueryValidator
 
         RuleFor(q => q.PageSize)
             .GreaterThanOrEqualTo(1);
+
+        RuleFor(q => q.Status)
+            .Must(s => StockQueries.TryParseStatus(s, out _))
+                .WithMessage($"'{{PropertyValue}}' isn't a stock status; use one of: " +
+                    string.Join(", ", Enum.GetNames<StockStatus>()))
+            .When(q => !string.IsNullOrEmpty(q.Status));
     }
 }

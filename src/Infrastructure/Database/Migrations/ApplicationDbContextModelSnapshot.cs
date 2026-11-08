@@ -517,6 +517,33 @@ namespace Infrastructure.Database.Migrations
                     b.ToTable("sale_sale_tag", "public");
                 });
 
+            modelBuilder.Entity("Domain.Products.Product", b =>
+                {
+                    b.OwnsOne("Domain.Products.StockDefinition", "StockDefinition", b1 =>
+                        {
+                            b1.Property<Guid>("ProductId")
+                                .HasColumnType("uuid")
+                                .HasColumnName("id");
+
+                            b1.Property<int>("MinimumQuantity")
+                                .ValueGeneratedOnAdd()
+                                .HasColumnType("integer")
+                                .HasDefaultValue(5)
+                                .HasColumnName("stock_minimum_quantity");
+
+                            b1.HasKey("ProductId");
+
+                            b1.ToTable("product", "public");
+
+                            b1.WithOwner()
+                                .HasForeignKey("ProductId")
+                                .HasConstraintName("fk_product_product_id");
+                        });
+
+                    b.Navigation("StockDefinition")
+                        .IsRequired();
+                });
+
             modelBuilder.Entity("Domain.Products.ProductDetail", b =>
                 {
                     b.HasOne("Domain.Brands.Brand", "Brand")
