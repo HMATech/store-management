@@ -52,6 +52,7 @@ using Application.Stocks.StockAdjustments.DeleteById;
 using Application.Stocks.StockAdjustments.Get;
 using Application.Stocks.StockAdjustments.GetById;
 using Application.Tests.TestSupport;
+using Application.Transactions.Get;
 using Application.Users.DeleteById;
 using Application.Users.Get;
 using Application.Users.GetById;
@@ -261,6 +262,9 @@ public class HandlerFailureTests
         [nameof(GetStockAdjustmentByIdQueryHandler)] = async db =>
             await new GetStockAdjustmentByIdQueryHandler(db, Log<GetStockAdjustmentByIdQueryHandler>())
                 .HandleAsync(new GetStockAdjustmentByIdQuery(Guid.NewGuid()), default),
+        [nameof(GetTransactionQueryHandler)] = async db =>
+            await new GetTransactionQueryHandler(db, Log<GetTransactionQueryHandler>())
+                .HandleAsync(new GetTransactionQuery(SortOrder.DESC, null, null, null, "UTC"), default),
         [nameof(GetDailyTotalsQueryHandler)] = async db =>
             await new GetDailyTotalsQueryHandler(db, Log<GetDailyTotalsQueryHandler>())
                 .HandleAsync(new GetDailyTotalsQuery(new DateOnly(2026, 1, 1), new DateOnly(2026, 1, 2), "UTC"),

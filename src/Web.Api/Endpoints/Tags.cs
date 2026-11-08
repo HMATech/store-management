@@ -14,4 +14,5 @@ public static class Tags
     public const string Stocks = "Stocks";
     public const string StockAdjustments = "Stock-Adjustments";
     public const string Reports = "Reports";
+    public const string Transactions = "Transactions";
 }

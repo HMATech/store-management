@@ -259,6 +259,8 @@ public class RequestValidationTests(NoDatabaseApiFixture api) : IClassFixture<No
     [InlineData("/stocks", "pageSize=0", "pageSize")]
     [InlineData("/stocks/adjustments", "page=0", "page")]
     [InlineData("/stocks/adjustments", "pageSize=0", "pageSize")]
+    [InlineData("/transactions", "page=0", "page")]
+    [InlineData("/transactions", "pageSize=0", "pageSize")]
     public async Task InvalidPaging_ReturnsBadRequestWithFieldError(string path, string query, string field)
     {
         var response = await api.CreateClient().GetAsync($"{path}?{query}");
@@ -290,6 +292,20 @@ public class RequestValidationTests(NoDatabaseApiFixture api) : IClassFixture<No
     public async Task InvalidDailyTotalsQuery_ReturnsBadRequestWithFieldError(string query, string field)
     {
         var response = await api.CreateClient().GetAsync($"/reports/daily-totals?{query}");
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+        var problem = await response.Content.ReadFromJsonAsync<JsonElement>();
+        Assert.True(problem.GetProperty(CustomHttpResults.ValidationErrorFieldName).TryGetProperty(field, out _));
+    }
+
+    [Theory]
+    [InlineData("kind=refund", "kind")]
+    [InlineData("kind=1", "kind")]
+    [InlineData("from=2026-01-10&to=2026-01-09", "to")]
+    [InlineData("timeZone=Mars/Olympus", "timeZone")]
+    public async Task InvalidTransactionQuery_ReturnsBadRequestWithFieldError(string query, string field)
+    {
+        var response = await api.CreateClient().GetAsync($"/transactions?{query}");
 
         Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
         var problem = await response.Content.ReadFromJsonAsync<JsonElement>();
