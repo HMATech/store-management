@@ -167,6 +167,12 @@ Use `TagsHelper.CreateSynchronizedTagsAsync` to sync tags on an entity (see the 
 - Each transaction's total is summed in SQL and only the grouping by local day happens in memory. A range covers at most 366 days.
 - The `occurenceFrom`/`occurenceTo` filters on `/purchases` and `/sales` still compare UTC dates.
 
+### Transaction history
+
+- `GET /transactions` lists sales and purchases together, newest first by default, as `TransactionSummaryResponse` rows: `kind` (`Sale` or `Purchase`), title, time, `lineCount`, `quantity` and `total` (selling price for a sale, cost for a purchase).
+- It filters by `kind` and by `from`/`to` days in `timeZone`, like the daily report, and pages with `page`/`pageSize`.
+- Both sides project to the same row type and are combined with `Concat` in SQL, so sorting, counting and paging cover both. Rows are ordered by time, then id, so pages don't overlap.
+
 ### Authorization
 
 - A fallback policy in `AddAuthorizationInternal` makes every endpoint require a signed-in user, so new endpoints are protected without extra code. Don't add `.RequireAuthorization()` to endpoints.
