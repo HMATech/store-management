@@ -256,6 +256,28 @@ public class RequestValidationTests(NoDatabaseApiFixture api) : IClassFixture<No
         Assert.True(problem.GetProperty(CustomHttpResults.ValidationErrorFieldName).TryGetProperty(field, out _));
     }
 
+    [Theory]
+    [InlineData("to=2026-01-10", "from")]
+    [InlineData("from=2026-01-10", "to")]
+    [InlineData("from=2026-01-10&to=2026-01-09", "to")]
+    [InlineData("from=2026-01-10&to=2026-01-10&timeZone=Mars/Olympus", "timeZone")]
+    public async Task InvalidDailyTotalsQuery_ReturnsBadRequestWithFieldError(string query, string field)
+    {
+        var response = await api.CreateClient().GetAsync($"/reports/daily-totals?{query}");
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+        var problem = await response.Content.ReadFromJsonAsync<JsonElement>();
+        Assert.True(problem.GetProperty(CustomHttpResults.ValidationErrorFieldName).TryGetProperty(field, out _));
+    }
+
+    [Fact]
+    public async Task DailyTotals_WithMalformedDate_ReturnsBadRequest()
+    {
+        var response = await api.CreateClient().GetAsync("/reports/daily-totals?from=yesterday&to=2026-01-10");
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+    }
+
     [Fact]
     public async Task DatabaseFailureInsideHandler_ReturnsSystemProblem_WithoutInternalDetails()
     {

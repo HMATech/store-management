@@ -29,6 +29,7 @@ using Application.Purchases.Get;
 using Application.Purchases.GetById;
 using Application.Purchases.UpdateDetailsById;
 using Application.Purchases.UpdateEntriesById;
+using Application.Reports.DailyTotals;
 using Application.Roles.AssignUser;
 using Application.Roles.Create;
 using Application.Roles.DeleteById;
@@ -260,6 +261,10 @@ public class HandlerFailureTests
         [nameof(GetStockAdjustmentByIdQueryHandler)] = async db =>
             await new GetStockAdjustmentByIdQueryHandler(db, Log<GetStockAdjustmentByIdQueryHandler>())
                 .HandleAsync(new GetStockAdjustmentByIdQuery(Guid.NewGuid()), default),
+        [nameof(GetDailyTotalsQueryHandler)] = async db =>
+            await new GetDailyTotalsQueryHandler(db, Log<GetDailyTotalsQueryHandler>())
+                .HandleAsync(new GetDailyTotalsQuery(new DateOnly(2026, 1, 1), new DateOnly(2026, 1, 2), "UTC"),
+                    default),
     };
 
     private readonly TestDatabase database = new();
