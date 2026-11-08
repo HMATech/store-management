@@ -8,8 +8,9 @@ internal sealed class UpdateSaleDetailsByIdCommandValidator
 {
     public UpdateSaleDetailsByIdCommandValidator()
     {
+        // A sale's title is optional, so it may be empty but not missing.
         RuleFor(c => c.Title)
-            .NotEmpty();
+            .NotNull();
 
         RuleFor(c => c.Tags)
             .Cascade(CascadeMode.Stop)

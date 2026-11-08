@@ -106,16 +106,12 @@ public class RequestValidationTests(NoDatabaseApiFixture api) : IClassFixture<No
         },
         {
             "POST", "/sales",
-            $$"""{"title":"","tags":[],"productEntries":[],"occurrenceTime":"{{When}}"}""", "Title"
-        },
-        {
-            "POST", "/sales",
             ZeroQuantityBody,
             "ProductEntries"
         },
         {
             "PUT", $"/sales/{SomeId}/details",
-            $$"""{"title":"","tags":[],"occurrenceTime":"{{When}}"}""", "Title"
+            """{"tags":[],"occurrenceTime":"0001-01-01T00:00:00Z"}""", "OccurrenceTime"
         },
         {
             "PUT", $"/sales/{SomeId}/entries",

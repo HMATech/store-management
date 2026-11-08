@@ -222,7 +222,7 @@ public class ValidatorTests
 
     public static TheoryData<CreateSaleCommand, string> InvalidCreateSales => new()
     {
-        { ValidCreateSale() with { Title = "" }, "Title" },
+        { ValidCreateSale() with { Title = null! }, "Title" },
         { ValidCreateSale() with { Tags = [""] }, "Tags" },
         { ValidCreateSale() with { OccurrenceTime = default }, "OccurrenceTime" },
         { ValidCreateSale() with { ProductEntries = [null!] }, "ProductEntries" },
@@ -287,14 +287,37 @@ public class ValidatorTests
     [InlineData("Title", true, true)]
     [InlineData("", true, false)]
     [InlineData("Title", false, false)]
-    public void UpdatePurchaseAndSaleDetails_RequireTitleAndOccurrence(string title, bool hasTime, bool expected)
+    public void UpdatePurchaseDetails_RequiresTitleAndOccurrence(string title, bool hasTime, bool expected)
     {
         var time = hasTime ? When : default;
 
         Assert.Equal(expected, new UpdatePurchaseDetailsByIdCommandValidator()
             .Validate(new UpdatePurchaseDetailsByIdCommand(SomeId, title, [], time)).IsValid);
+    }
+
+    [Theory]
+    [InlineData("Title", true, true)]
+    [InlineData("", true, true)]
+    [InlineData(null, true, false)]
+    [InlineData("Title", false, false)]
+    public void UpdateSaleDetails_AllowsAnEmptyTitleButRequiresOccurrence(string? title, bool hasTime, bool expected)
+    {
+        var time = hasTime ? When : default;
+
         Assert.Equal(expected, new UpdateSaleDetailsByIdCommandValidator()
-            .Validate(new UpdateSaleDetailsByIdCommand(SomeId, title, [], time)).IsValid);
+            .Validate(new UpdateSaleDetailsByIdCommand(SomeId, title!, [], time)).IsValid);
+    }
+
+    [Fact]
+    public void CreateSale_WithEmptyTitle_Passes()
+    {
+        Assert.True(new CreateSaleCommandValidator().Validate(ValidCreateSale() with { Title = "" }).IsValid);
+    }
+
+    [Fact]
+    public void CreatePurchase_WithEmptyTitle_StillFails()
+    {
+        AssertFails(new CreatePurchaseCommandValidator().Validate(ValidCreatePurchase() with { Title = "" }), "Title");
     }
 
     [Fact]

@@ -49,6 +49,42 @@ public class TransactionIntegrationTests(PostgresApiFixture api)
     }
 
     [Fact]
+    public async Task Sale_WithoutTitle_IsCreatedAndUpdatedWithAnEmptyTitle()
+    {
+        var product = await CreateProductAsync(10m);
+
+        var created = await client.PostAsJsonAsync("/sales", new
+        {
+            tags = Array.Empty<string>(),
+            productEntries = new[] { new { id = product, quantity = 1 } },
+            occurrenceTime = OccurredAt,
+        });
+        Assert.Equal(HttpStatusCode.Created, created.StatusCode);
+        var id = created.CreatedId();
+        Assert.Equal("", (await (await client.GetAsync($"/sales/{id}")).ReadJsonAsync())
+            .GetProperty("title").GetString());
+
+        var updated = await client.PutAsJsonAsync($"/sales/{id}/details",
+            new { tags = Array.Empty<string>(), occurrenceTime = OccurredAt });
+        Assert.Equal(HttpStatusCode.OK, updated.StatusCode);
+    }
+
+    [Fact]
+    public async Task Purchase_WithoutTitle_ReturnsBadRequest()
+    {
+        var product = await CreateProductAsync(10m);
+
+        var response = await client.PostAsJsonAsync(Purchases, new
+        {
+            tags = Array.Empty<string>(),
+            productEntries = new[] { new { id = product, quantity = 1, unitCost = 7m } },
+            occurrenceTime = OccurredAt,
+        });
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+    }
+
+    [Fact]
     public async Task Purchase_RecordsUnitCostSeparatelyFromSellingPrice()
     {
         var product = await CreateProductAsync(10m);

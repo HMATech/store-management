@@ -47,6 +47,20 @@ public class SaleHandlerTests
     }
 
     [Fact]
+    public async Task Create_WithEmptyTitle_StoresIt()
+    {
+        var graph = await SeededGraph.CreateAsync(database);
+
+        var response = ResultAssert.Succeeded(await CreateAsync(new CreateSaleCommand("", [],
+            [new CreateEntry(graph.Product.Id, 1)], OccurredAt)));
+
+        Assert.Equal("", await database.ReadAsync(c => c.Sales
+            .Where(s => s.Id == response.Id)
+            .Select(s => s.Title)
+            .SingleAsync()));
+    }
+
+    [Fact]
     public async Task Create_ReusesExistingTagInsteadOfDuplicatingIt()
     {
         var graph = await SeededGraph.CreateAsync(database);
