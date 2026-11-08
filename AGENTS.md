@@ -28,7 +28,12 @@ Apply these to all work, however small the change.
 
 ## Branching
 
-Always create a new branch before writing changes, and never work directly on `main`. Feature branches go under the `feature/` prefix, for example `feature/sales-endpoints`. Bug fix branches go under the `fix/` prefix, for example `fix/known-bugs`.
+Always create a new branch before writing changes, and never work directly on `main`. Feature branches go under the `feature/` prefix and bug fix branches under the `fix/` prefix.
+
+Name the branch after the work in a few kebab-case words, so the name alone says what changes. A single word such as `feature/stock` is too vague.
+
+- Good: `feature/purchase-entries-record-buying-price`, `feature/daily-sales-and-purchase-totals`, `fix/sale-entry-merge-ignores-old-price`
+- Too vague: `feature/stock`, `feature/purchases`, `fix/bugs`
 
 ## Stack
 
@@ -138,7 +143,9 @@ Use `TagsHelper.CreateSynchronizedTagsAsync` to sync tags on an entity (see the 
 
 ### Purchase and sale entries
 
-An entry line is a product at a price, and it keeps that price when the product's price changes later. Repeated products in a request add together. On `PUT /{id}/entries`, a new entry joins a kept line only if that line is at the product's current price; otherwise it becomes a new line at the current price, so a product can have more than one line.
+- **Sales:** an entry line is a product at a selling price line (`PriceId`), and it keeps that price when the product's price changes later. Repeated products in a request add together. On `PUT /{id}/entries`, a new entry joins a kept line only if that line is at the product's current price; otherwise it becomes a new line at the current price, so a product can have more than one line.
+- **Purchases:** an entry line is a product at a unit cost, the price actually paid to the supplier (`UnitCost`). It is entered with each entry and isn't linked to the selling price, so purchases never block deleting a price line. Repeats of the same product and cost add together, and the same product at two costs makes two lines. On `PUT /{id}/entries`, a kept line can have its quantity and unit cost corrected, a new entry joins a kept line with the same product and cost, and listing one line twice with different costs is a validation error.
+- Purchase responses report `unitCost` and `totalCost`; sale responses report `priceValue` and `totalPrice`.
 
 ### Stock
 
