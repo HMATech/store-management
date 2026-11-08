@@ -155,7 +155,8 @@ Use `TagsHelper.CreateSynchronizedTagsAsync` to sync tags on an entity (see the 
 - Purchases and sales count whole products. A product sold both singly and by the carton is two products.
 - Quantities are summed as `long`, so the totals in `ProductStockResponse` can't overflow.
 - Each product has a `StockDefinition`: the rules for judging its stock, set when the product is added. `MinimumQuantity` is the first rule and defaults to `StockDefinition.DefaultMinimumQuantity` (5) when left empty. Add future rules as properties on `StockDefinition` and its command and response, not as loose product fields. On `PUT /products/{id}`, leaving `stockDefinition` out keeps the current one.
-- Stock responses include `minimumQuantity` and a `status`: `Negative` below zero, `Low` from zero up to the minimum, `Normal` above it. `StockQueries.StatusOf` decides it, and the `status` filter on `GET /stocks` applies the same rules in SQL. Keep the two in step.
+- Stock responses include `minimumQuantity` and a `status`: `Negative` below zero, `Low` from zero up to the minimum, `Normal` above it. `StockQueries.StatusOf` decides it, and `StockQueries.WhereStockStatus` applies the same rules in SQL. Keep the two in step, and use `WhereStockStatus` for any status filter.
+- Product responses (`GET /products` and `GET /products/{id}`) include `stock` (`quantity` and `status`), so a product list doesn't need a second call. `GET /products?stockStatus=` filters by status. The list pages the products first, then loads the stock of that page in one query.
 - The minimum's column has a database default of 5 for existing rows and a sentinel of `int.MinValue`, so EF always writes the value and a minimum of 0 isn't replaced by the default.
 
 ### Reports
