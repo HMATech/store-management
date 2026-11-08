@@ -155,6 +155,13 @@ Use `TagsHelper.CreateSynchronizedTagsAsync` to sync tags on an entity (see the 
 - Purchases and sales count whole products. A product sold both singly and by the carton is two products.
 - Quantities are summed as `long`, so the totals in `ProductStockResponse` can't overflow.
 
+### Reports
+
+- `GET /reports/daily-totals?from=&to=&timeZone=` returns sales and purchase totals and counts for every day in the range, including days with nothing, plus totals for the whole range. Sales are valued at their selling price and purchases at their unit cost.
+- Occurrence times are stored in UTC, so days are counted in the `timeZone` the caller passes (an IANA id such as `Asia/Jakarta`, `UTC` by default). The frontend should pass the store's time zone.
+- Each transaction's total is summed in SQL and only the grouping by local day happens in memory. A range covers at most 366 days.
+- The `occurenceFrom`/`occurenceTo` filters on `/purchases` and `/sales` still compare UTC dates.
+
 ### Authorization
 
 - A fallback policy in `AddAuthorizationInternal` makes every endpoint require a signed-in user, so new endpoints are protected without extra code. Don't add `.RequireAuthorization()` to endpoints.
