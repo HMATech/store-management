@@ -4,6 +4,7 @@ public sealed record ProductResponse(
     Guid Id, string Name, string? Description,
     float Measure, MeasureUnitResponse MeasureUnit, string Brand,
     decimal Price, string[] Tags, StockDefinitionResponse StockDefinition,
+    ProductStockSummaryResponse Stock,
     DateTime CreatedTime, DateTime LastUpdatedTime
 );
 

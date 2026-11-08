@@ -6,33 +6,52 @@ namespace Application.Stocks;
 internal static class StockQueries
 {
     /// <summary>
-    /// Projects products to their stock, optionally keeping only one status. Quantities are summed as long so many
-    /// large entries can't overflow, and the status filter runs in SQL so paging counts stay right.
+    /// Projects products to their stock. Quantities are summed as long so many large entries can't overflow.
     /// </summary>
     public static IQueryable<ProductStockResponse> SelectStock(this IQueryable<Product> products,
         IApplicationDbContext dbContext, StockStatus? status = null)
     {
+        return products
+            .WhereStockStatus(dbContext, status)
+            .Select(p => new ProductStockResponse(
+                p.Id,
+                p.Name,
+                dbContext.PurchaseProductEntries.Where(e => e.ProductId == p.Id).Sum(e => (long)e.Quantity),
+                dbContext.SaleProductEntries.Where(e => e.ProductId == p.Id).Sum(e => (long)e.Quantity),
+                dbContext.StockAdjustments.Where(a => a.ProductId == p.Id).Sum(a => (long)a.Quantity),
+                p.StockDefinition.MinimumQuantity));
+    }
+
+    /// <summary>
+    /// Keeps only products whose stock has the given status, or all of them when it's null. Runs in SQL, so paging
+    /// counts stay right. It applies the same rules as <see cref="StatusOf"/>; keep the two in step.
+    /// </summary>
+    public static IQueryable<Product> WhereStockStatus(this IQueryable<Product> products,
+        IApplicationDbContext dbContext, StockStatus? status)
+    {
+        if (status == null)
+        {
+            return products;
+        }
+
         var stocks = products.Select(p => new
         {
             p.Id,
-            p.Name,
             p.StockDefinition.MinimumQuantity,
-            Purchased = dbContext.PurchaseProductEntries.Where(e => e.ProductId == p.Id).Sum(e => (long)e.Quantity),
-            Sold = dbContext.SaleProductEntries.Where(e => e.ProductId == p.Id).Sum(e => (long)e.Quantity),
-            Adjusted = dbContext.StockAdjustments.Where(a => a.ProductId == p.Id).Sum(a => (long)a.Quantity),
+            Quantity = dbContext.PurchaseProductEntries.Where(e => e.ProductId == p.Id).Sum(e => (long)e.Quantity)
+                - dbContext.SaleProductEntries.Where(e => e.ProductId == p.Id).Sum(e => (long)e.Quantity)
+                + dbContext.StockAdjustments.Where(a => a.ProductId == p.Id).Sum(a => (long)a.Quantity),
         });
 
-        stocks = status switch
+        var matchingIds = status switch
         {
-            StockStatus.Negative => stocks.Where(s => s.Purchased - s.Sold + s.Adjusted < 0),
-            StockStatus.Low => stocks.Where(s => s.Purchased - s.Sold + s.Adjusted >= 0
-                && s.Purchased - s.Sold + s.Adjusted <= s.MinimumQuantity),
-            StockStatus.Normal => stocks.Where(s => s.Purchased - s.Sold + s.Adjusted > s.MinimumQuantity),
-            _ => stocks,
+            StockStatus.Negative => stocks.Where(s => s.Quantity < 0),
+            StockStatus.Low => stocks.Where(s => s.Quantity >= 0 && s.Quantity <= s.MinimumQuantity),
+            _ => stocks.Where(s => s.Quantity > s.MinimumQuantity),
         };
 
-        return stocks.Select(s => new ProductStockResponse(s.Id, s.Name, s.Purchased, s.Sold, s.Adjusted,
-            s.MinimumQuantity));
+        var ids = matchingIds.Select(s => s.Id);
+        return products.Where(p => ids.Contains(p.Id));
     }
 
     /// <summary>Reads a status by name, ignoring case. Unlike <see cref="Enum.TryParse{TEnum}(string?, out TEnum)"/>,
@@ -46,7 +65,7 @@ internal static class StockQueries
     }
 
     /// <summary>
-    /// Decides a stock status. The status filter in <see cref="SelectStock"/> applies the same rules in SQL.
+    /// Decides a stock status. <see cref="WhereStockStatus"/> applies the same rules in SQL.
     /// </summary>
     public static StockStatus StatusOf(long quantity, int minimumQuantity)
     {

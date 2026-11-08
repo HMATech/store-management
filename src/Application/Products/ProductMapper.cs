@@ -8,13 +8,14 @@ using Application.Products.ProductUnits;
 using Application.Products.ProductUnits.Create;
 using Application.Products.ProductUnits.UpdateById;
 using Application.Products.UpdateById;
+using Application.Stocks;
 using Domain.Products;
 
 namespace Application.Products;
 
 public static class ProductMapper
 {
-    public static ProductResponse ToProductResponse(this Product product)
+    public static ProductResponse ToProductResponse(this Product product, ProductStockResponse stock)
     {
         var measureUnit = product.Detail.MeasureUnit;
         var productUnit = new MeasureUnitResponse(measureUnit!.Id, measureUnit.Name.Value);
@@ -27,6 +28,7 @@ public static class ProductMapper
             product.Prices.FirstOrDefault()!.Value,
             product.Tags.Select(t => t.Name.Value).ToArray(),
             product.StockDefinition.ToStockDefinitionResponse(),
+            new ProductStockSummaryResponse(stock.Quantity, stock.Status),
             product.CreatedTime, product.LastUpdatedTime
         );
     }

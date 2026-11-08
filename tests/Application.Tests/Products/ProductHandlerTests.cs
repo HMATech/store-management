@@ -6,6 +6,7 @@ using Application.Products.Get;
 using Application.Products.GetById;
 using Application.Products.UpdateById;
 using Application.Products.UpdatePriceById;
+using Application.Stocks;
 using Application.Tests.TestSupport;
 using Domain.Products;
 using Microsoft.EntityFrameworkCore;
@@ -335,6 +336,82 @@ public class ProductHandlerTests
         Assert.All(page.Responses, p => Assert.Equal(StockDefinition.DefaultMinimumQuantity,
             p.StockDefinition.MinimumQuantity));
         Assert.Contains(page.Responses, p => p.Id == graph.Product.Id);
+    }
+
+    [Fact]
+    public async Task Get_IncludesEachProductsStock()
+    {
+        await SeededGraph.CreateAsync(database);
+
+        var page = await GetAsync(new GetProductQuery(null, SortOrder.ASC));
+
+        // Butter has nothing (0, at or below the minimum); Milk was bought 3, sold 3 and adjusted by -1.
+        Assert.Equal([new ProductStockSummaryResponse(0, StockStatus.Low),
+            new ProductStockSummaryResponse(-1, StockStatus.Negative)], page.Responses.Select(p => p.Stock));
+    }
+
+    [Theory]
+    [InlineData("negative", "Milk")]
+    [InlineData("Low", "Butter")]
+    public async Task Get_FiltersByStockStatusAndCountsOnlyMatches(string status, string expected)
+    {
+        await SeededGraph.CreateAsync(database);
+
+        var page = await GetAsync(new GetProductQuery(null, SortOrder.ASC, StockStatus: status));
+
+        Assert.Equal(expected, Assert.Single(page.Responses).Name);
+        Assert.Equal(1, page.TotalCount);
+    }
+
+    [Fact]
+    public async Task Get_WithStatusNoProductHas_ReturnsEmptyPage()
+    {
+        await SeededGraph.CreateAsync(database);
+
+        var page = await GetAsync(new GetProductQuery(null, SortOrder.ASC, StockStatus: "normal"));
+
+        Assert.Empty(page.Responses);
+        Assert.Equal(0, page.TotalCount);
+    }
+
+    [Fact]
+    public async Task Get_PagesAndKeepsStockMatchedToItsProduct()
+    {
+        await SeededGraph.CreateAsync(database);
+
+        var page = await GetAsync(new GetProductQuery(null, SortOrder.ASC, Page: 2, PageSize: 1));
+
+        var product = Assert.Single(page.Responses);
+        Assert.Equal("Milk", product.Name);
+        Assert.Equal(-1, product.Stock.Quantity);
+        Assert.Equal(2, page.TotalCount);
+        Assert.False(page.HasNextPage);
+    }
+
+    [Fact]
+    public async Task GetById_IncludesTheProductsStock()
+    {
+        var graph = await SeededGraph.CreateAsync(database);
+        await using var context = database.CreateContext();
+        var handler = new GetProductByIdQueryHandler(context, NullLogger<GetProductByIdQueryHandler>.Instance);
+
+        var response = ResultAssert.Succeeded(await handler.HandleAsync(new GetProductByIdQuery(graph.Product.Id),
+            default));
+
+        Assert.Equal(new ProductStockSummaryResponse(-1, StockStatus.Negative), response.Stock);
+    }
+
+    [Theory]
+    [InlineData(null, true)]
+    [InlineData("negative", true)]
+    [InlineData("1", false)]
+    [InlineData("sold-out", false)]
+    public void GetQueryValidator_AcceptsOnlyStockStatusNames(string? status, bool expected)
+    {
+        var result = new GetProductQueryValidator().Validate(new GetProductQuery(null, SortOrder.ASC,
+            StockStatus: status));
+
+        Assert.Equal(expected, result.IsValid);
     }
 
     [Fact]

@@ -273,15 +273,17 @@ public class RequestValidationTests(NoDatabaseApiFixture api) : IClassFixture<No
     }
 
     [Theory]
-    [InlineData("1")]
-    [InlineData("empty")]
-    public async Task UnknownStockStatus_ReturnsBadRequest(string status)
+    [InlineData("/stocks?status=1", "status")]
+    [InlineData("/stocks?status=empty", "status")]
+    [InlineData("/products?stockStatus=1", "stockStatus")]
+    [InlineData("/products?stockStatus=sold-out", "stockStatus")]
+    public async Task UnknownStockStatus_ReturnsBadRequest(string path, string field)
     {
-        var response = await api.CreateClient().GetAsync($"/stocks?status={status}");
+        var response = await api.CreateClient().GetAsync(path);
 
         Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
         var problem = await response.Content.ReadFromJsonAsync<JsonElement>();
-        Assert.True(problem.GetProperty(CustomHttpResults.ValidationErrorFieldName).TryGetProperty("status", out _));
+        Assert.True(problem.GetProperty(CustomHttpResults.ValidationErrorFieldName).TryGetProperty(field, out _));
     }
 
     [Theory]

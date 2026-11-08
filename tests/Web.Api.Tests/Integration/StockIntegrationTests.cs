@@ -179,6 +179,37 @@ public class StockIntegrationTests(PostgresApiFixture api)
         Assert.Equal("Low", (await GetStockAsync(product.Id)).GetProperty("status").GetString());
     }
 
+    [Fact]
+    public async Task ProductList_IncludesStockAndFiltersByStatusInSql()
+    {
+        var product = await CreateProductAsync(new { minimumQuantity = 2 });
+        await CreateTransactionAsync("/purchases", product, 6);
+        await CreateTransactionAsync("/sales", product, 9);
+
+        var negative = await (await client.GetAsync($"/products?search={product.Name}&stockStatus=Negative"))
+            .ReadJsonAsync();
+        var low = await (await client.GetAsync($"/products?search={product.Name}&stockStatus=low"))
+            .ReadJsonAsync();
+
+        Assert.Equal(1, negative.GetProperty("totalCount").GetInt32());
+        Assert.Equal(0, low.GetProperty("totalCount").GetInt32());
+        var stock = negative.GetProperty("responses")[0].GetProperty("stock");
+        Assert.Equal(-3, stock.GetProperty("quantity").GetInt64());
+        Assert.Equal("Negative", stock.GetProperty("status").GetString());
+    }
+
+    [Fact]
+    public async Task ProductById_IncludesItsStock()
+    {
+        var product = await CreateProductAsync();
+        await CreateTransactionAsync("/purchases", product, 8);
+
+        var body = await (await client.GetAsync($"/products/{product.Id}")).ReadJsonAsync();
+
+        Assert.Equal(8, body.GetProperty("stock").GetProperty("quantity").GetInt64());
+        Assert.Equal("Normal", body.GetProperty("stock").GetProperty("status").GetString());
+    }
+
     private async Task<int> CountAsync(string query)
     {
         var response = await client.GetAsync($"/stocks?{query}");
