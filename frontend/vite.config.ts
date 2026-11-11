@@ -27,8 +27,20 @@ export default defineConfig({
       },
     }),
   ],
-  // The API's development CORS policy allows http://localhost:3000.
-  server: { port: 3000, strictPort: true },
+  server: {
+    port: 3000,
+    strictPort: true,
+    // In development the app calls /api on its own origin, and this passes the call on to the API. The
+    // browser then needn't trust the API's HTTPS development certificate.
+    proxy: {
+      '/api': {
+        target: 'https://localhost:7001',
+        changeOrigin: true,
+        secure: false,
+        rewrite: (path) => path.replace(/^\/api/, ''),
+      },
+    },
+  },
   preview: { port: 3000, strictPort: true },
   test: {
     environment: 'jsdom',

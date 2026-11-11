@@ -293,8 +293,9 @@ npm run lint
 npm run build    # Type-checks, then builds dist/ with the service worker
 ```
 
-- The API's base URL comes from `VITE_API_URL` (`.env.development` points at `https://localhost:7001`). Never hard-code it, because a packaged app calls the API from another origin.
-- The dev server must stay on port 3000 to match `Cors:AllowedOrigins` in the backend.
+- The API's base URL comes from `VITE_API_URL`. Never hard-code it, because a packaged app calls the API from another origin.
+- In development it is `/api`, which the dev server passes on to `https://localhost:7001` (the proxy in `vite.config.ts`). The browser then needn't trust the API's development certificate, and the calls are same-origin.
+- A built app calls the API directly, so its origin must be in the backend's `Cors:AllowedOrigins`. The dev server stays on port 3000, the origin allowed in development.
 
 ### Structure
 
