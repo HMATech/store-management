@@ -1,4 +1,4 @@
-# Builds the Web.Api image. Run from the repo root: docker build -t store-management-api .
+# Builds the Web.Api image. Run from this folder: docker build -t store-management-api .
 
 FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
 WORKDIR /src
