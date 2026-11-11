@@ -1,6 +1,6 @@
 # Store Management
 
-A store management app. The ASP.NET Core API is in `backend/`, and a React frontend is planned.
+A store management app. The ASP.NET Core API is in `backend/` and the React app in `frontend/`.
 
 ## Run with Docker
 
@@ -15,3 +15,7 @@ The database is kept in the `db-data` volume, and migrations are applied when th
 ## Develop the backend
 
 From `backend/`, run `dotnet build Backend.sln` and `dotnet test Backend.sln`. See [AGENTS.md](AGENTS.md) for the full commands and conventions.
+
+## Develop the frontend
+
+From `frontend/`, run `npm install`, then `npm run dev` (http://localhost:3000) and `npm test`. The backend must be running for the app to sign in.

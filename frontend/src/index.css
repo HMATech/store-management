@@ -1,0 +1,46 @@
+@import 'tailwindcss';
+@import './styles/tokens.css';
+
+/* Tokens whose names fall outside Tailwind's namespaces, mapped to the utilities that use them. */
+@theme inline {
+  --font-sans: var(--font-family-base);
+  --text-sm: var(--font-size-sm);
+  --text-base: var(--font-size-md);
+  --text-lg: var(--font-size-lg);
+  --text-2xl: var(--font-size-2xl);
+
+  --min-height-touch-min: var(--size-touch-min);
+  --min-height-control-md: var(--size-control-md);
+  --min-height-control-lg: var(--size-control-lg);
+}
+
+html {
+  /* The browser's tap flash fights the components' own pressed states. */
+  -webkit-tap-highlight-color: transparent;
+  -webkit-text-size-adjust: 100%;
+  /* The app has its own scroll areas, and pull-to-refresh would reload a half-entered sale. */
+  overscroll-behavior: none;
+}
+
+body {
+  background: var(--color-bg-page);
+  color: var(--color-text-default);
+  font-family: var(--font-family-base);
+  font-size: var(--font-size-md);
+}
+
+/* Below 16px, iOS zooms into a focused field and stays zoomed. */
+input,
+textarea,
+select {
+  font-size: max(16px, 1em);
+}
+
+/* Controls answer a tap at once, and a long press doesn't select their label. */
+button,
+a,
+[role='button'] {
+  touch-action: manipulation;
+  user-select: none;
+  -webkit-user-select: none;
+}
