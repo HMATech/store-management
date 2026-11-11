@@ -1,6 +1,15 @@
-# Store Management Backend
+# Store Management
 
-ASP.NET Core Minimal API backend for a store management app. It covers users, roles, brands, products (with prices, units and tags), purchases and sales.
+A store management app: an ASP.NET Core Minimal API backend, with a React frontend to come. It covers users, roles, brands, products (with prices, units and tags), purchases and sales.
+
+## Repository layout
+
+| Path                 | Holds                                                                  |
+| -------------------- | ---------------------------------------------------------------------- |
+| `backend/`           | The API: `src/`, `tests/`, `Backend.sln`, `Directory.*.props`, `Dockerfile` |
+| `docker-compose.yml` | Runs the deployed app, with its `.env.example`                         |
+
+Paths in the backend sections below, from [Stack](#stack) on, are relative to `backend/` unless they say otherwise.
 
 For commit messages, follow [COMMIT_STYLE.md](COMMIT_STYLE.md).
 
@@ -44,7 +53,7 @@ Name the branch after the work in a few kebab-case words, so the name alone says
 
 ## Commands
 
-Run these from the repo root.
+Run these from the `backend` folder.
 
 ```sh
 dotnet build Backend.sln
@@ -64,6 +73,8 @@ dotnet ef migrations add <Name> --project src/Infrastructure --startup-project s
 
 ### Docker
 
+Run these from the repo root. The compose file builds the API image from `backend/`.
+
 ```sh
 cp .env.example .env            # Then fill in the secrets
 docker compose up -d --build    # API on http://localhost:8080, with PostgreSQL in a volume
@@ -74,7 +85,7 @@ docker compose up -d --build    # API on http://localhost:8080, with PostgreSQL 
 
 ## Testing
 
-Always write tests for code changes, including negative cases. If a change needs a test project that doesn't exist, create it and add it to `Backend.sln` as part of that change. Run the tests with `dotnet test Backend.sln` before committing.
+Always write tests for code changes, including negative cases. If a change needs a test project that doesn't exist, create it and add it to `Backend.sln` as part of that change. Run the tests with `dotnet test Backend.sln` from `backend/` before committing.
 
 - **Framework:** use xUnit. Add test package versions to `Directory.Packages.props` like any other package.
 - **Location:** test projects go in `tests/`, next to `src/`, with one project per layer named `<Layer>.Tests`, such as `tests/Application.Tests` or `tests/Web.Api.Tests`.
