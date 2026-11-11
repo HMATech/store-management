@@ -23,8 +23,6 @@ internal sealed class GetPurchaseQueryHandler(
             var result = dbContext.Purchases
                 .Include(p => p.Products)
                 .ThenInclude(p => p.Product)
-                .Include(p => p.Products)
-                .ThenInclude(p => p.ProductPrice)
                 .Include(p => p.Tags)
                 .Where(p =>
                     (string.IsNullOrEmpty(query.Search)
@@ -32,9 +30,9 @@ internal sealed class GetPurchaseQueryHandler(
                     && (!occurenceFrom.HasValue || p.OccurenceTime >= occurenceFrom)
                     && (!occurenceTo.HasValue || p.OccurenceTime <= occurenceTo)
                     && (!query.TotalFrom.HasValue
-                        || p.Products.Sum(p => p.ProductPrice!.Value * p.Quantity) >= query.TotalFrom)
+                        || p.Products.Sum(p => p.UnitCost * p.Quantity) >= query.TotalFrom)
                     && (!query.TotalTo.HasValue
-                        || p.Products.Sum(p => p.ProductPrice!.Value * p.Quantity) <= query.TotalTo)
+                        || p.Products.Sum(p => p.UnitCost * p.Quantity) <= query.TotalTo)
                 )
                 .AsQueryable();
             

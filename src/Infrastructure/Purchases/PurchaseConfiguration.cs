@@ -45,11 +45,5 @@ internal sealed class PurchaseProductEntryConfiguration : IEntityTypeConfigurati
             .WithMany()
             .HasForeignKey(spe => spe.ProductId)
             .OnDelete(DeleteBehavior.Restrict);
-
-        builder
-            .HasOne(pe => pe.ProductPrice)
-            .WithMany()
-            .HasForeignKey(spe => spe.PriceId)
-            .OnDelete(DeleteBehavior.Restrict);
     }
 }

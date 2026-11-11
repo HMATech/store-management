@@ -29,6 +29,7 @@ using Application.Purchases.Get;
 using Application.Purchases.GetById;
 using Application.Purchases.UpdateDetailsById;
 using Application.Purchases.UpdateEntriesById;
+using Application.Reports.DailyTotals;
 using Application.Roles.AssignUser;
 using Application.Roles.Create;
 using Application.Roles.DeleteById;
@@ -51,6 +52,7 @@ using Application.Stocks.StockAdjustments.DeleteById;
 using Application.Stocks.StockAdjustments.Get;
 using Application.Stocks.StockAdjustments.GetById;
 using Application.Tests.TestSupport;
+using Application.Transactions.Get;
 using Application.Users.DeleteById;
 using Application.Users.Get;
 using Application.Users.GetById;
@@ -124,7 +126,7 @@ public class HandlerFailureTests
                 .HandleAsync(new UpdateProductUnitByIdCommand(g.Unit.Id, "New"), default),
         [nameof(CreatePurchaseCommandHandler)] = async (db, g) =>
             await new CreatePurchaseCommandHandler(db, new FixedClock(), Log<CreatePurchaseCommandHandler>())
-                .HandleAsync(new CreatePurchaseCommand("New", [], [new PurchaseCreateEntry(g.Product.Id, 1)], When),
+                .HandleAsync(new CreatePurchaseCommand("New", [], [new PurchaseCreateEntry(g.Product.Id, 1, 6m)], When),
                     default),
         [nameof(DeletePurchaseByIdCommandHandler)] = async (db, g) =>
             await new DeletePurchaseByIdCommandHandler(db, Log<DeletePurchaseByIdCommandHandler>())
@@ -137,7 +139,7 @@ public class HandlerFailureTests
             await new UpdatePurchaseEntriesByIdCommandHandler(db, new FixedClock(),
                     Log<UpdatePurchaseEntriesByIdCommandHandler>())
                 .HandleAsync(new UpdatePurchaseEntriesByIdCommand(g.Purchase.Id,
-                    [new PurchaseUpdateEntry(g.PurchaseEntry.Id, g.Product.Id, 1)]), default),
+                    [new PurchaseUpdateEntry(g.PurchaseEntry.Id, g.Product.Id, 1, 6m)]), default),
         [nameof(CreateSaleCommandHandler)] = async (db, g) =>
             await new CreateSaleCommandHandler(db, new FixedClock(), Log<CreateSaleCommandHandler>())
                 .HandleAsync(new CreateSaleCommand("New", [], [new SaleCreateEntry(g.Product.Id, 1)], When), default),
@@ -260,6 +262,13 @@ public class HandlerFailureTests
         [nameof(GetStockAdjustmentByIdQueryHandler)] = async db =>
             await new GetStockAdjustmentByIdQueryHandler(db, Log<GetStockAdjustmentByIdQueryHandler>())
                 .HandleAsync(new GetStockAdjustmentByIdQuery(Guid.NewGuid()), default),
+        [nameof(GetTransactionQueryHandler)] = async db =>
+            await new GetTransactionQueryHandler(db, Log<GetTransactionQueryHandler>())
+                .HandleAsync(new GetTransactionQuery(SortOrder.DESC, null, null, null, "UTC"), default),
+        [nameof(GetDailyTotalsQueryHandler)] = async db =>
+            await new GetDailyTotalsQueryHandler(db, Log<GetDailyTotalsQueryHandler>())
+                .HandleAsync(new GetDailyTotalsQuery(new DateOnly(2026, 1, 1), new DateOnly(2026, 1, 2), "UTC"),
+                    default),
     };
 
     private readonly TestDatabase database = new();

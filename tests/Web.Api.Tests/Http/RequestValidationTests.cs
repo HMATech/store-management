@@ -20,6 +20,25 @@ public class RequestValidationTests(NoDatabaseApiFixture api) : IClassFixture<No
         occurrenceTime = When,
     });
 
+    private static readonly string NegativeUnitCostBody = JsonSerializer.Serialize(new
+    {
+        title = "t",
+        tags = Array.Empty<string>(),
+        productEntries = new[] { new { id = SomeId, quantity = 1, unitCost = -1m } },
+        occurrenceTime = When,
+    });
+
+    private static readonly string NegativeMinimumProductBody = JsonSerializer.Serialize(new
+    {
+        name = "x",
+        brandId = 1,
+        measure = 1,
+        measureUnitId = 1,
+        price = 1,
+        tags = Array.Empty<string>(),
+        stockDefinition = new { minimumQuantity = -1 },
+    });
+
     public static TheoryData<string, string, string, string> InvalidBodies => new()
     {
         { "POST", "/brands", """{"name":""}""", "Name" },
@@ -55,6 +74,11 @@ public class RequestValidationTests(NoDatabaseApiFixture api) : IClassFixture<No
             """{"name":"x","brandId":1,"measure":1,"measureUnitId":1,"price":1,"tags":[""]}""", "Tags"
         },
         {
+            "POST", "/products",
+            NegativeMinimumProductBody,
+            "StockDefinition.MinimumQuantity"
+        },
+        {
             "POST", "/purchases",
             $$"""{"title":"","tags":[],"productEntries":[],"occurrenceTime":"{{When}}"}""", "Title"
         },
@@ -72,8 +96,13 @@ public class RequestValidationTests(NoDatabaseApiFixture api) : IClassFixture<No
             $$"""{"productEntries":[{"productId":"{{SomeId}}","quantity":0}]}""", "ProductEntries"
         },
         {
-            "POST", "/sales",
-            $$"""{"title":"","tags":[],"productEntries":[],"occurrenceTime":"{{When}}"}""", "Title"
+            "POST", "/purchases",
+            NegativeUnitCostBody,
+            "ProductEntries"
+        },
+        {
+            "PUT", $"/purchases/{SomeId}/entries",
+            $$"""{"productEntries":[{"productId":"{{SomeId}}","quantity":1,"unitCost":-1}]}""", "ProductEntries"
         },
         {
             "POST", "/sales",
@@ -82,7 +111,7 @@ public class RequestValidationTests(NoDatabaseApiFixture api) : IClassFixture<No
         },
         {
             "PUT", $"/sales/{SomeId}/details",
-            $$"""{"title":"","tags":[],"occurrenceTime":"{{When}}"}""", "Title"
+            """{"tags":[],"occurrenceTime":"0001-01-01T00:00:00Z"}""", "OccurrenceTime"
         },
         {
             "PUT", $"/sales/{SomeId}/entries",
@@ -230,6 +259,8 @@ public class RequestValidationTests(NoDatabaseApiFixture api) : IClassFixture<No
     [InlineData("/stocks", "pageSize=0", "pageSize")]
     [InlineData("/stocks/adjustments", "page=0", "page")]
     [InlineData("/stocks/adjustments", "pageSize=0", "pageSize")]
+    [InlineData("/transactions", "page=0", "page")]
+    [InlineData("/transactions", "pageSize=0", "pageSize")]
     public async Task InvalidPaging_ReturnsBadRequestWithFieldError(string path, string query, string field)
     {
         var response = await api.CreateClient().GetAsync($"{path}?{query}");
@@ -237,6 +268,56 @@ public class RequestValidationTests(NoDatabaseApiFixture api) : IClassFixture<No
         Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
         var problem = await response.Content.ReadFromJsonAsync<JsonElement>();
         Assert.True(problem.GetProperty(CustomHttpResults.ValidationErrorFieldName).TryGetProperty(field, out _));
+    }
+
+    [Theory]
+    [InlineData("/stocks?status=1", "status")]
+    [InlineData("/stocks?status=empty", "status")]
+    [InlineData("/products?stockStatus=1", "stockStatus")]
+    [InlineData("/products?stockStatus=sold-out", "stockStatus")]
+    public async Task UnknownStockStatus_ReturnsBadRequest(string path, string field)
+    {
+        var response = await api.CreateClient().GetAsync(path);
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+        var problem = await response.Content.ReadFromJsonAsync<JsonElement>();
+        Assert.True(problem.GetProperty(CustomHttpResults.ValidationErrorFieldName).TryGetProperty(field, out _));
+    }
+
+    [Theory]
+    [InlineData("to=2026-01-10", "from")]
+    [InlineData("from=2026-01-10", "to")]
+    [InlineData("from=2026-01-10&to=2026-01-09", "to")]
+    [InlineData("from=2026-01-10&to=2026-01-10&timeZone=Mars/Olympus", "timeZone")]
+    public async Task InvalidDailyTotalsQuery_ReturnsBadRequestWithFieldError(string query, string field)
+    {
+        var response = await api.CreateClient().GetAsync($"/reports/daily-totals?{query}");
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+        var problem = await response.Content.ReadFromJsonAsync<JsonElement>();
+        Assert.True(problem.GetProperty(CustomHttpResults.ValidationErrorFieldName).TryGetProperty(field, out _));
+    }
+
+    [Theory]
+    [InlineData("kind=refund", "kind")]
+    [InlineData("kind=1", "kind")]
+    [InlineData("from=2026-01-10&to=2026-01-09", "to")]
+    [InlineData("timeZone=Mars/Olympus", "timeZone")]
+    public async Task InvalidTransactionQuery_ReturnsBadRequestWithFieldError(string query, string field)
+    {
+        var response = await api.CreateClient().GetAsync($"/transactions?{query}");
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+        var problem = await response.Content.ReadFromJsonAsync<JsonElement>();
+        Assert.True(problem.GetProperty(CustomHttpResults.ValidationErrorFieldName).TryGetProperty(field, out _));
+    }
+
+    [Fact]
+    public async Task DailyTotals_WithMalformedDate_ReturnsBadRequest()
+    {
+        var response = await api.CreateClient().GetAsync("/reports/daily-totals?from=yesterday&to=2026-01-10");
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
     }
 
     [Fact]

@@ -1,6 +1,7 @@
 using Application.Abstractions.Data;
 using Application.Abstractions.Messaging;
 using Application.Common;
+using Application.Stocks;
 using Domain.Products;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
@@ -32,7 +33,12 @@ internal sealed class GetProductByIdQueryHandler(
                 return ProductErrors.NotFound(query.Id);
             }
 
-            return product.ToProductResponse();
+            var stock = await dbContext.Products
+                .Where(p => p.Id == query.Id)
+                .SelectStock(dbContext)
+                .SingleAsync(cancellationToken);
+
+            return product.ToProductResponse(stock);
         }
         catch (OperationCanceledException ex)
         {

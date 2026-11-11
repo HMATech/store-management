@@ -34,6 +34,8 @@ public class RoutingTests(NoDatabaseApiFixture api) : IClassFixture<NoDatabaseAp
         "GET /stocks/", "GET /stocks/{productId:guid}", "GET /stocks/adjustments/", "POST /stocks/adjustments/",
         "GET /stocks/adjustments/{id:guid}", "DELETE /stocks/adjustments/{id:guid}",
 
+        "GET /reports/daily-totals", "GET /transactions/",
+
         "GET /roles/", "POST /roles/", "GET /roles/{id:int}", "PUT /roles/{id:int}", "DELETE /roles/{id:int}",
         "GET /roles/users/{user}", "GET /roles/{role}/users", "POST /roles/{roleId}/users/{user}",
         "DELETE /roles/{roleId}/users/{user}",

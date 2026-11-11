@@ -8,7 +8,8 @@ namespace Web.Api.Endpoints.Stocks;
 
 internal sealed class Get : StockEndpoint
 {
-    public sealed record GetStockRequest(string? Search, string? SortOrder, int Page = 1, int PageSize = 10);
+    public sealed record GetStockRequest(string? Search, string? SortOrder, int Page = 1, int PageSize = 10,
+        string? Status = null);
 
     public override IEndpointRouteBuilder MapEndpoint(IEndpointRouteBuilder app)
     {
@@ -20,7 +21,7 @@ internal sealed class Get : StockEndpoint
         {
             var query = new GetStockQuery(request.Search,
                 Enum.TryParse<SortOrder>(request.SortOrder, out var order)
-                ? order : SortOrder.ASC, request.Page, request.PageSize);
+                ? order : SortOrder.ASC, request.Page, request.PageSize, request.Status);
 
             var result = await handler.HandleAsync(query, cancellationToken);
 

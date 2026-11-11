@@ -8,7 +8,7 @@ namespace Web.Api.Endpoints.Products;
 internal sealed class Get : ProductEndpoint
 {
     public sealed record GetProductRequest(string? Search,
-        string? SortOrder, int Page = 1, int PageSize = 10);
+        string? SortOrder, int Page = 1, int PageSize = 10, string? StockStatus = null);
 
     public override IEndpointRouteBuilder MapEndpoint(IEndpointRouteBuilder app)
     {
@@ -20,7 +20,7 @@ internal sealed class Get : ProductEndpoint
         {
             var query = new GetProductQuery(request.Search,
                 Enum.TryParse<SortOrder>(request.SortOrder, out var order)
-                ? order : SortOrder.ASC, request.Page, request.PageSize);
+                ? order : SortOrder.ASC, request.Page, request.PageSize, request.StockStatus);
 
             var result = await handler.HandleAsync(query, cancellationToken);
 

@@ -28,7 +28,12 @@ Apply these to all work, however small the change.
 
 ## Branching
 
-Always create a new branch before writing changes, and never work directly on `main`. Feature branches go under the `feature/` prefix, for example `feature/sales-endpoints`. Bug fix branches go under the `fix/` prefix, for example `fix/known-bugs`.
+Always create a new branch before writing changes, and never work directly on `main`. Feature branches go under the `feature/` prefix and bug fix branches under the `fix/` prefix.
+
+Name the branch after the work in a few kebab-case words, so the name alone says what changes. A single word such as `feature/stock` is too vague.
+
+- Good: `feature/purchase-entries-record-buying-price`, `feature/daily-sales-and-purchase-totals`, `fix/sale-entry-merge-ignores-old-price`
+- Too vague: `feature/stock`, `feature/purchases`, `fix/bugs`
 
 ## Stack
 
@@ -138,7 +143,10 @@ Use `TagsHelper.CreateSynchronizedTagsAsync` to sync tags on an entity (see the 
 
 ### Purchase and sale entries
 
-An entry line is a product at a price, and it keeps that price when the product's price changes later. Repeated products in a request add together. On `PUT /{id}/entries`, a new entry joins a kept line only if that line is at the product's current price; otherwise it becomes a new line at the current price, so a product can have more than one line.
+- **Sales:** an entry line is a product at a selling price line (`PriceId`), and it keeps that price when the product's price changes later. Repeated products in a request add together. On `PUT /{id}/entries`, a new entry joins a kept line only if that line is at the product's current price; otherwise it becomes a new line at the current price, so a product can have more than one line.
+- **Purchases:** an entry line is a product at a unit cost, the price actually paid to the supplier (`UnitCost`). It is entered with each entry and isn't linked to the selling price, so purchases never block deleting a price line. Repeats of the same product and cost add together, and the same product at two costs makes two lines. On `PUT /{id}/entries`, a kept line can have its quantity and unit cost corrected, a new entry joins a kept line with the same product and cost, and listing one line twice with different costs is a validation error.
+- Purchase responses report `unitCost` and `totalCost`; sale responses report `priceValue` and `totalPrice`.
+- A sale's `title` is optional: the endpoints store a missing title as an empty string, and the validators only reject `null`. A purchase's title is required, because it records where the goods came from.
 
 ### Stock
 
@@ -147,6 +155,23 @@ An entry line is a product at a price, and it keeps that price when the product'
 - Stock can go negative, for example when a sale is recorded before its purchase. That's allowed so the records match what happened.
 - Purchases and sales count whole products. A product sold both singly and by the carton is two products.
 - Quantities are summed as `long`, so the totals in `ProductStockResponse` can't overflow.
+- Each product has a `StockDefinition`: the rules for judging its stock, set when the product is added. `MinimumQuantity` is the first rule and defaults to `StockDefinition.DefaultMinimumQuantity` (5) when left empty. Add future rules as properties on `StockDefinition` and its command and response, not as loose product fields. On `PUT /products/{id}`, leaving `stockDefinition` out keeps the current one.
+- Stock responses include `minimumQuantity` and a `status`: `Negative` below zero, `Low` from zero up to the minimum, `Normal` above it. `StockQueries.StatusOf` decides it, and `StockQueries.WhereStockStatus` applies the same rules in SQL. Keep the two in step, and use `WhereStockStatus` for any status filter.
+- Product responses (`GET /products` and `GET /products/{id}`) include `stock` (`quantity` and `status`), so a product list doesn't need a second call. `GET /products?stockStatus=` filters by status. The list pages the products first, then loads the stock of that page in one query.
+- The minimum's column has a database default of 5 for existing rows and a sentinel of `int.MinValue`, so EF always writes the value and a minimum of 0 isn't replaced by the default.
+
+### Reports
+
+- `GET /reports/daily-totals?from=&to=&timeZone=` returns sales and purchase totals and counts for every day in the range, including days with nothing, plus totals for the whole range. Sales are valued at their selling price and purchases at their unit cost.
+- Occurrence times are stored in UTC, so days are counted in the `timeZone` the caller passes (an IANA id such as `Asia/Jakarta`, `UTC` by default). The frontend should pass the store's time zone.
+- Each transaction's total is summed in SQL and only the grouping by local day happens in memory. A range covers at most 366 days.
+- The `occurenceFrom`/`occurenceTo` filters on `/purchases` and `/sales` still compare UTC dates.
+
+### Transaction history
+
+- `GET /transactions` lists sales and purchases together, newest first by default, as `TransactionSummaryResponse` rows: `kind` (`Sale` or `Purchase`), title, time, `lineCount`, `quantity` and `total` (selling price for a sale, cost for a purchase).
+- It filters by `kind` and by `from`/`to` days in `timeZone`, like the daily report, and pages with `page`/`pageSize`.
+- Both sides project to the same row type and are combined with `Concat` in SQL, so sorting, counting and paging cover both. Rows are ordered by time, then id, so pages don't overlap.
 
 ### Authorization
 

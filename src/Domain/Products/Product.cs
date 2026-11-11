@@ -7,6 +7,7 @@ public sealed class Product
     public ICollection<ProductPrice> Prices { get; private set; } = new List<ProductPrice>();
     public ProductDetail Detail { get; private set; } = default!;
     public ICollection<ProductTag> Tags { get; private set; } = new List<ProductTag>();
+    public StockDefinition StockDefinition { get; private set; } = StockDefinition.CreateNew(null);
     public DateTime CreatedTime { get; private set; }
     public DateTime LastUpdatedTime { get; private set; }
 
@@ -32,6 +33,11 @@ public sealed class Product
         Prices.Add(price);
     }
 
+    public void UpdateStockDefinition(StockDefinition stockDefinition)
+    {
+        StockDefinition = stockDefinition;
+    }
+
     public void UpdateLastUpdatedTime(DateTime dateTime)
     {
         LastUpdatedTime = dateTime;
@@ -39,7 +45,7 @@ public sealed class Product
 
     public static Product CreateNew(string name, string? description,
         int brandId, float measure, int measureUnitId,
-        DateTime CreatedTime)
+        DateTime CreatedTime, StockDefinition? stockDefinition = null)
     {
         var id = Guid.NewGuid();
         return new()
@@ -47,6 +53,7 @@ public sealed class Product
             Id = id,
             Name = name,
             Detail = ProductDetail.CreateNew(id, description, brandId, measure, measureUnitId),
+            StockDefinition = stockDefinition ?? StockDefinition.CreateNew(null),
             CreatedTime = CreatedTime,
             LastUpdatedTime = CreatedTime,
         };

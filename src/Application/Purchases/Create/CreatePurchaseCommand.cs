@@ -9,4 +9,4 @@ public sealed record CreatePurchaseCommand(
     DateTime OccurrenceTime
 ) : ICommand<CreatePurchaseResponse>;
 
-public sealed record ProductEntryCommand(Guid Id, int Quantity);
+public sealed record ProductEntryCommand(Guid Id, int Quantity, decimal UnitCost);

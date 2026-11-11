@@ -9,8 +9,9 @@ internal sealed class Create : SaleEndpoint
 {
     public sealed record ProductEntry(Guid Id, int Quantity);
 
+    /// <param name="Title">Optional; a sale is usually identified by its time and items.</param>
     public sealed record CreateSaleRequest(
-        string Title,
+        string? Title,
         string[] Tags,
         ProductEntry[] ProductEntries,
         DateTime OccurrenceTime
@@ -26,7 +27,7 @@ internal sealed class Create : SaleEndpoint
         ) =>
         {
             var command = new CreateSaleCommand(
-                request.Title,
+                request.Title ?? string.Empty,
                 request.Tags,
                 request.ProductEntries?.Select(e => e == null ? null! : new ProductEntryCommand(
                     e.Id, e.Quantity

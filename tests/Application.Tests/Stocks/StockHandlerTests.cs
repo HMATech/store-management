@@ -8,6 +8,7 @@ using Application.Stocks.StockAdjustments.DeleteById;
 using Application.Stocks.StockAdjustments.Get;
 using Application.Stocks.StockAdjustments.GetById;
 using Application.Tests.TestSupport;
+using Domain.Products;
 using Domain.Purchases;
 using Domain.Stocks;
 using Microsoft.EntityFrameworkCore;
@@ -21,22 +22,24 @@ public class StockHandlerTests
     private readonly TestDatabase database = new();
 
     [Fact]
-    public async Task GetByProductId_SumsPurchasesSalesAndAdjustmentsAcrossPriceLines()
+    public async Task GetByProductId_SumsPurchasesSalesAndAdjustmentsAcrossLines()
     {
         var graph = await SeededGraph.CreateAsync(database);
         var purchase = Purchase.CreateNew("Second restock", SeededGraph.OccurredAt, FixedClock.Now);
         purchase.UpdateProductEntries(
         [
-            PurchaseProductEntry.CreateNew(purchase.Id, graph.Product.Id, graph.CurrentPrice.Id, 5),
-            PurchaseProductEntry.CreateNew(purchase.Id, graph.Product.Id, graph.OldPrice.Id, 2),
+            PurchaseProductEntry.CreateNew(purchase.Id, graph.Product.Id, 6m, 5),
+            PurchaseProductEntry.CreateNew(purchase.Id, graph.Product.Id, 5m, 2),
         ]);
         await database.SeedAsync(purchase,
             StockAdjustment.CreateNew(graph.Product.Id, 4, "Found in storage", SeededGraph.OccurredAt, FixedClock.Now));
 
         var stock = ResultAssert.Succeeded(await GetByProductIdAsync(graph.Product.Id));
 
-        Assert.Equal(new ProductStockResponse(graph.Product.Id, "Milk", Purchased: 10, Sold: 3, Adjusted: 3), stock);
+        Assert.Equal(new ProductStockResponse(graph.Product.Id, "Milk", Purchased: 10, Sold: 3, Adjusted: 3,
+            MinimumQuantity: StockDefinition.DefaultMinimumQuantity), stock);
         Assert.Equal(10, stock.Quantity);
+        Assert.Equal(StockStatus.Normal, stock.Status);
     }
 
     [Fact]
@@ -46,7 +49,8 @@ public class StockHandlerTests
 
         var stock = ResultAssert.Succeeded(await GetByProductIdAsync(graph.OtherProduct.Id));
 
-        Assert.Equal(new ProductStockResponse(graph.OtherProduct.Id, "Butter", 0, 0, 0), stock);
+        Assert.Equal(new ProductStockResponse(graph.OtherProduct.Id, "Butter", 0, 0, 0,
+            StockDefinition.DefaultMinimumQuantity), stock);
         Assert.Equal(0, stock.Quantity);
     }
 
@@ -111,6 +115,84 @@ public class StockHandlerTests
 
         Assert.Equal("Milk", Assert.Single(page.Responses).ProductName);
         Assert.Equal(2, page.TotalCount);
+    }
+
+    [Fact]
+    public async Task Get_ReportsEachProductsStatus()
+    {
+        await SeededGraph.CreateAsync(database);
+
+        var page = ResultAssert.Succeeded(await GetAsync(new GetStockQuery(null, SortOrder.ASC)));
+
+        // Milk is at -1 and Butter at 0, which is at or below the default minimum.
+        Assert.Equal([StockStatus.Low, StockStatus.Negative], page.Responses.Select(s => s.Status));
+    }
+
+    [Theory]
+    [InlineData("negative", "Milk")]
+    [InlineData("LOW", "Butter")]
+    [InlineData("Normal", "Cheese")]
+    public async Task Get_FiltersByStatusIgnoringCase(string status, string expected)
+    {
+        var graph = await SeededGraph.CreateAsync(database);
+        await AddProductWithStockAsync(graph, "Cheese", stock: 10, minimum: 2);
+
+        var page = ResultAssert.Succeeded(await GetAsync(new GetStockQuery(null, SortOrder.ASC, Status: status)));
+
+        Assert.Equal(expected, Assert.Single(page.Responses).ProductName);
+        Assert.Equal(1, page.TotalCount);
+    }
+
+    [Theory]
+    [InlineData(3, 3, StockStatus.Low)]
+    [InlineData(4, 3, StockStatus.Normal)]
+    [InlineData(0, 0, StockStatus.Low)]
+    [InlineData(1, 0, StockStatus.Normal)]
+    public async Task Get_JudgesStatusAgainstTheProductsOwnMinimum(int stock, int minimum, StockStatus expected)
+    {
+        var graph = await SeededGraph.CreateAsync(database);
+        await AddProductWithStockAsync(graph, "Cheese", stock, minimum);
+
+        var page = ResultAssert.Succeeded(await GetAsync(new GetStockQuery("Cheese", SortOrder.ASC)));
+
+        var cheese = Assert.Single(page.Responses);
+        Assert.Equal(minimum, cheese.MinimumQuantity);
+        Assert.Equal(expected, cheese.Status);
+    }
+
+    [Theory]
+    [InlineData(-1, 5, StockStatus.Negative)]
+    [InlineData(0, 5, StockStatus.Low)]
+    [InlineData(5, 5, StockStatus.Low)]
+    [InlineData(6, 5, StockStatus.Normal)]
+    [InlineData(0, 0, StockStatus.Low)]
+    public void StatusOf_ComparesQuantityWithMinimum(long quantity, int minimum, StockStatus expected)
+    {
+        Assert.Equal(expected, StockQueries.StatusOf(quantity, minimum));
+    }
+
+    [Theory]
+    [InlineData("low", true, StockStatus.Low)]
+    [InlineData("NEGATIVE", true, StockStatus.Negative)]
+    [InlineData("1", false, StockStatus.Normal)]
+    [InlineData("", false, StockStatus.Normal)]
+    [InlineData(null, false, StockStatus.Normal)]
+    [InlineData("empty", false, StockStatus.Normal)]
+    public void TryParseStatus_AcceptsOnlyNames(string? value, bool expected, StockStatus status)
+    {
+        Assert.Equal(expected, StockQueries.TryParseStatus(value, out var parsed));
+        Assert.Equal(status, parsed);
+    }
+
+    [Fact]
+    public async Task GetByProductId_ReportsStatusAndMinimum()
+    {
+        var graph = await SeededGraph.CreateAsync(database);
+
+        var stock = ResultAssert.Succeeded(await GetByProductIdAsync(graph.Product.Id));
+
+        Assert.Equal(StockStatus.Negative, stock.Status);
+        Assert.Equal(StockDefinition.DefaultMinimumQuantity, stock.MinimumQuantity);
     }
 
     [Fact]
@@ -238,6 +320,15 @@ public class StockHandlerTests
 
         ResultAssert.Failed(result, "Stocks.AdjustmentNotFound", ErrorType.NotFound);
         Assert.Equal(1, await database.ReadAsync(c => c.StockAdjustments.CountAsync()));
+    }
+
+    private async Task AddProductWithStockAsync(SeededGraph graph, string name, int stock, int minimum)
+    {
+        var product = Product.CreateNew(name, null, graph.Brand.Id, 1f, graph.Unit.Id, FixedClock.Now,
+            StockDefinition.CreateNew(minimum));
+        var purchase = Purchase.CreateNew("Stock " + name, SeededGraph.OccurredAt, FixedClock.Now);
+        purchase.UpdateProductEntries([PurchaseProductEntry.CreateNew(purchase.Id, product.Id, 1m, stock)]);
+        await database.SeedAsync(product, purchase);
     }
 
     private async Task<Result<ProductStockResponse>> GetByProductIdAsync(Guid productId)

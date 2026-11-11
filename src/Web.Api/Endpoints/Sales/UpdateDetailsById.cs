@@ -7,8 +7,9 @@ namespace Web.Api.Endpoints.Sales;
 
 internal sealed class UpdateDetailsById : SaleEndpoint
 {
+    /// <param name="Title">Optional; leaving it out clears the title.</param>
     public sealed record UpdateSaleDetailRequest(
-        string Title,
+        string? Title,
         string[] Tags,
         DateTime OccurrenceTime
     );
@@ -24,7 +25,7 @@ internal sealed class UpdateDetailsById : SaleEndpoint
         {
             var command = new UpdateSaleDetailsByIdCommand(
                 id,
-                request.Title,
+                request.Title ?? string.Empty,
                 request.Tags,
                 request.OccurrenceTime
             );

@@ -64,6 +64,11 @@ internal sealed class UpdateProductByIdCommandHandler(
             detail.UpdateDescription(command.Description);
             detail.UpdateMeasure(command.Measure, unit);
 
+            if (command.StockDefinition != null)
+            {
+                product.UpdateStockDefinition(StockDefinition.CreateNew(command.StockDefinition.MinimumQuantity));
+            }
+
             var productTags = await TagsHelper.CreateSynchronizedTagsAsync(command.Tags, ProductTag.CreateNew,
                 product.Tags, dbContext.ProductTags, cancellationToken);
 

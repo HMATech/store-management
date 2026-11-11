@@ -33,6 +33,13 @@ internal sealed class CreatePurchaseCommandValidator
                             "should be at least 1");
                         isValid = false;
                     }
+
+                    if (entry.UnitCost < 0)
+                    {
+                        ctx.AddFailure($"Product entry's 'UnitCost' at index {i} for product id '{entry.Id}' " +
+                            "should not be negative");
+                        isValid = false;
+                    }
                 }
 
                 if (entries.Sum(e => (long)e.Quantity) > int.MaxValue)

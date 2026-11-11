@@ -7,7 +7,7 @@ namespace Web.Api.Endpoints.Purchases;
 
 internal sealed class Create : PurchaseEndpoint
 {
-    public sealed record ProductEntry(Guid Id, int Quantity);
+    public sealed record ProductEntry(Guid Id, int Quantity, decimal UnitCost);
 
     public sealed record CreatePurchaseRequest(
         string Title,
@@ -29,7 +29,7 @@ internal sealed class Create : PurchaseEndpoint
                 request.Title,
                 request.Tags,
                 request.ProductEntries?.Select(e => e == null ? null! : new ProductEntryCommand(
-                    e.Id, e.Quantity
+                    e.Id, e.Quantity, e.UnitCost
                 )).ToList()!,
                 request.OccurrenceTime
             );

@@ -239,7 +239,7 @@ public class EntityTests
     public void Purchase_CreateNew_AndUpdates()
     {
         var purchase = Purchase.CreateNew("Weekly", Now, Now);
-        var entry = PurchaseProductEntry.CreateNew(purchase.Id, Guid.NewGuid(), Guid.NewGuid(), 2);
+        var entry = PurchaseProductEntry.CreateNew(purchase.Id, Guid.NewGuid(), 2.5m, 2);
         var tag = PurchaseTag.CreateNew("Stock");
 
         Assert.NotEqual(Guid.Empty, purchase.Id);
@@ -288,22 +288,60 @@ public class EntityTests
         var productId = Guid.NewGuid();
         var priceId = Guid.NewGuid();
 
-        var purchaseEntry = PurchaseProductEntry.CreateNew(parentId, productId, priceId, 2);
+        var purchaseEntry = PurchaseProductEntry.CreateNew(parentId, productId, 2.5m, 2);
         var saleEntry = SaleProductEntry.CreateNew(parentId, productId, priceId, 2);
 
         Assert.Equal(parentId, purchaseEntry.PurchaseId);
+        Assert.Equal(2.5m, purchaseEntry.UnitCost);
         Assert.Equal(parentId, saleEntry.SaleId);
+        Assert.Equal(priceId, saleEntry.PriceId);
 
         foreach (var entry in new ProductEntry[] { purchaseEntry, saleEntry })
         {
             Assert.NotEqual(Guid.Empty, entry.Id);
             Assert.Equal(productId, entry.ProductId);
-            Assert.Equal(priceId, entry.PriceId);
             Assert.Equal(2, entry.Quantity);
 
             entry.UpdateQuantity(5);
 
             Assert.Equal(5, entry.Quantity);
         }
+    }
+
+    [Theory]
+    [InlineData(null, StockDefinition.DefaultMinimumQuantity)]
+    [InlineData(0, 0)]
+    [InlineData(12, 12)]
+    public void StockDefinition_CreateNew_FillsTheDefaultOnlyWhenEmpty(int? minimum, int expected)
+    {
+        Assert.Equal(expected, StockDefinition.CreateNew(minimum).MinimumQuantity);
+    }
+
+    [Fact]
+    public void Product_CreateNew_WithoutStockDefinition_UsesTheDefault()
+    {
+        var product = Product.CreateNew("Milk", null, 1, 1f, 1, Now);
+
+        Assert.Equal(StockDefinition.DefaultMinimumQuantity, product.StockDefinition.MinimumQuantity);
+    }
+
+    [Fact]
+    public void Product_UpdateStockDefinition_ReplacesIt()
+    {
+        var product = Product.CreateNew("Milk", null, 1, 1f, 1, Now, StockDefinition.CreateNew(3));
+
+        product.UpdateStockDefinition(StockDefinition.CreateNew(9));
+
+        Assert.Equal(9, product.StockDefinition.MinimumQuantity);
+    }
+
+    [Fact]
+    public void PurchaseProductEntry_UpdateUnitCost_ChangesIt()
+    {
+        var entry = PurchaseProductEntry.CreateNew(Guid.NewGuid(), Guid.NewGuid(), 2.5m, 2);
+
+        entry.UpdateUnitCost(3m);
+
+        Assert.Equal(3m, entry.UnitCost);
     }
 }

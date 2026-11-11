@@ -27,6 +27,17 @@ internal sealed class ProductConfiguration : IEntityTypeConfiguration<Product>
             .HasForeignKey<ProductDetail>(pd => pd.ProductId)
             .IsRequired()
             .OnDelete(DeleteBehavior.Cascade);
+
+        // Stored in the product table, one column per rule. The column default fills existing rows; the sentinel
+        // makes EF always write the value, so a minimum of 0 isn't mistaken for "unset" and replaced by the default.
+        builder.OwnsOne(p => p.StockDefinition, sd =>
+        {
+            sd.Property(d => d.MinimumQuantity)
+                .HasColumnName("stock_minimum_quantity")
+                .HasDefaultValue(StockDefinition.DefaultMinimumQuantity)
+                .HasSentinel(int.MinValue);
+        });
+        builder.Navigation(p => p.StockDefinition).IsRequired();
     }
 }
 

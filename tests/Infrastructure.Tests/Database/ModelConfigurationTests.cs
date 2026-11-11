@@ -52,7 +52,6 @@ public class ModelConfigurationTests : IDisposable
     [InlineData(typeof(ProductDetail), nameof(ProductDetail.ProductId), DeleteBehavior.Cascade)]
     [InlineData(typeof(ProductPrice), nameof(ProductPrice.ProductId), DeleteBehavior.Cascade)]
     [InlineData(typeof(PurchaseProductEntry), nameof(PurchaseProductEntry.ProductId), DeleteBehavior.Restrict)]
-    [InlineData(typeof(PurchaseProductEntry), nameof(PurchaseProductEntry.PriceId), DeleteBehavior.Restrict)]
     [InlineData(typeof(PurchaseProductEntry), nameof(PurchaseProductEntry.PurchaseId), DeleteBehavior.Cascade)]
     [InlineData(typeof(SaleProductEntry), nameof(SaleProductEntry.ProductId), DeleteBehavior.Restrict)]
     [InlineData(typeof(SaleProductEntry), nameof(SaleProductEntry.PriceId), DeleteBehavior.Restrict)]
@@ -66,6 +65,31 @@ public class ModelConfigurationTests : IDisposable
             .Single(fk => fk.Properties.Single().Name == property);
 
         Assert.Equal(expected, foreignKey.DeleteBehavior);
+    }
+
+    [Fact]
+    public void PurchaseProductEntry_StoresUnitCostAndHasNoPriceLink()
+    {
+        var entry = context.Model.FindEntityType(typeof(PurchaseProductEntry))!;
+        var table = StoreObjectIdentifier.Table(entry.GetTableName()!, entry.GetSchema());
+
+        Assert.Equal("unit_cost", entry.FindProperty(nameof(PurchaseProductEntry.UnitCost))!.GetColumnName(table));
+        Assert.DoesNotContain(entry.GetForeignKeys(), fk => fk.PrincipalEntityType.ClrType == typeof(ProductPrice));
+    }
+
+    [Fact]
+    public void ProductStockDefinition_MapsToProductTableWithDefaultAndSentinel()
+    {
+        var definition = context.Model.FindEntityType(typeof(Product))!
+            .FindNavigation(nameof(Product.StockDefinition))!.TargetEntityType;
+        var table = StoreObjectIdentifier.Table(definition.GetTableName()!, definition.GetSchema());
+        var minimum = definition.FindProperty(nameof(StockDefinition.MinimumQuantity))!;
+
+        Assert.Equal("product", definition.GetTableName());
+        Assert.Equal("stock_minimum_quantity", minimum.GetColumnName(table));
+        Assert.Equal(StockDefinition.DefaultMinimumQuantity, minimum.GetDefaultValue());
+        // 0 is a real minimum, so it must not be the "unset" value that triggers the column default.
+        Assert.Equal(int.MinValue, minimum.Sentinel);
     }
 
     [Fact]

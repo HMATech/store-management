@@ -7,7 +7,7 @@ namespace Web.Api.Endpoints.Purchases;
 
 internal sealed class UpdateEntriesById : PurchaseEndpoint
 {
-    public sealed record ProductEntry(Guid? Id, Guid ProductId, int Quantity);
+    public sealed record ProductEntry(Guid? Id, Guid ProductId, int Quantity, decimal UnitCost);
 
     public sealed record UpdatePurchaseRequest(
         ProductEntry[] ProductEntries
@@ -25,7 +25,7 @@ internal sealed class UpdateEntriesById : PurchaseEndpoint
             var command = new UpdatePurchaseEntriesByIdCommand(
                 id,
                 request.ProductEntries?.Select(e => e == null ? null! : new ProductEntryCommand(
-                    e.Id, e.ProductId, e.Quantity
+                    e.Id, e.ProductId, e.Quantity, e.UnitCost
                 )).ToList()!
             );
 
