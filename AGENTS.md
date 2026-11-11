@@ -1,15 +1,16 @@
 # Store Management
 
-A store management app: an ASP.NET Core Minimal API backend, with a React frontend to come. It covers users, roles, brands, products (with prices, units and tags), purchases and sales.
+A store management app: an ASP.NET Core Minimal API backend and a React frontend. It covers users, roles, brands, products (with prices, units and tags), purchases and sales.
 
 ## Repository layout
 
 | Path                 | Holds                                                                  |
 | -------------------- | ---------------------------------------------------------------------- |
 | `backend/`           | The API: `src/`, `tests/`, `Backend.sln`, `Directory.*.props`, `Dockerfile` |
+| `frontend/`          | The React app: a Vite single-page PWA                                  |
 | `docker-compose.yml` | Runs the deployed app, with its `.env.example`                         |
 
-Paths in the backend sections below, from [Stack](#stack) on, are relative to `backend/` unless they say otherwise.
+The sections from [Stack](#stack) to [Known misnamed files](#known-misnamed-files) are about the backend, and their paths are relative to `backend/` unless they say otherwise. [Frontend](#frontend) covers `frontend/`.
 
 For commit messages, follow [COMMIT_STYLE.md](COMMIT_STYLE.md).
 
@@ -268,3 +269,66 @@ These file names don't match the types they contain. Use the type names when sea
 | `Application/Products/ProductTags/ProductUnitResponse.cs`    | `ProductTagResponse`          |
 | `Application/Roles/UnassignUser/UnssignUserCommandHandler.cs` | `UnassignUserCommandHandler` |
 | `Web.Api/Endpoints/Products/ProductPrices/ProductUnitEndpoint.cs` | `ProductPriceEndpoint`   |
+
+## Frontend
+
+A React single-page app in `frontend/`, installable as a PWA. Its users aren't tech-savvy, so the UI is in everyday Bahasa Indonesia. Code, comments and tests are in English.
+
+### Stack
+
+- React 19 and TypeScript on Vite, with React Router and TanStack Query for anything that calls the API
+- Tailwind CSS 4, with `cva` and `clsx` for component variants
+- `vite-plugin-pwa` for the manifest and service worker
+- Vitest with Testing Library (jsdom), and oxlint
+
+### Commands
+
+Run these from the `frontend` folder.
+
+```sh
+npm install
+npm run dev      # http://localhost:3000, the origin the API allows in development
+npm test         # Vitest, no backend needed
+npm run lint
+npm run build    # Type-checks, then builds dist/ with the service worker
+```
+
+- The API's base URL comes from `VITE_API_URL` (`.env.development` points at `https://localhost:7001`). Never hard-code it, because a packaged app calls the API from another origin.
+- The dev server must stay on port 3000 to match `Cors:AllowedOrigins` in the backend.
+
+### Structure
+
+| Path               | Holds                                                                    |
+| ------------------ | ------------------------------------------------------------------------ |
+| `src/lib/`         | `api.ts` (the only place that calls `fetch`), `session.ts`, `config.ts`  |
+| `src/features/`    | One folder per feature, such as `auth/`, with its API calls and hooks    |
+| `src/components/`  | Shared UI components                                                     |
+| `src/pages/`       | One component per screen                                                 |
+| `src/styles/`      | `tokens.css`, the design tokens                                          |
+| `src/test/`        | Test setup and fixtures                                                  |
+
+### Design system
+
+The design lives in the Loom (Penpot) file "Dashboard", and the frontend follows it rather than a library's defaults.
+
+- **Tokens:** `src/styles/tokens.css` holds the tokens under the same names as Loom (`color.bg.page` is `--color-bg-page`). Components use only the semantic tokens, through Tailwind utilities such as `bg-bg-page`. Never write a raw colour or size in a component.
+- **Dark mode** changes token values, not names. It follows the system, and `data-theme="light"` or `"dark"` on `<html>` forces one.
+- **Components** mirror Loom's components and variant names: `Button` has `kind`, as Loom's Button has Kind. Define variants with `cva`.
+- **Layout** is flex or grid with `min-height` tokens. Fixed heights are only for icons.
+- **For these users:** body text is 16px (14px at the smallest), touch targets are at least 44px and main buttons 56px, every icon has a text label, and a screen has one primary action.
+- Token values are provisional until they are synced from Loom. Sync them before relying on exact colours.
+
+### Conventions
+
+- **API calls** go through `apiRequest` in `src/lib/api.ts`. It adds the bearer token, throws `ApiError` (status 0 means no response arrived), and ends the session on a 401.
+- **The session token** is read and written only through `src/lib/session.ts`, so its storage can change in one place.
+- **Messages** tell the user what to do next in plain words, and never show an error code or the API's English text.
+- **Mobile:** gate hover styles behind hover-capable devices (Tailwind's `hover:` does), give controls an `:active` state, keep inputs at 16px or more, use `dvh` for full-height layouts, and never disable zoom.
+- **Motion** is short and subtle, and off under `prefers-reduced-motion`.
+
+### Testing
+
+- Test files sit next to the code as `*.test.ts(x)`.
+- Test through what the user sees: find elements by role and label, and assert on the Indonesian text.
+- Stub `fetch` with `vi.stubGlobal`; build tokens and responses with `src/test/fixtures.ts`.
+- Cover the failure paths: invalid input, a refused request, no connection, and a malformed response.
