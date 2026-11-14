@@ -84,6 +84,19 @@ public class ProductUnitHandlerTests
     }
 
     [Theory]
+    [InlineData("gr")]
+    [InlineData("GRAM")]
+    [InlineData("  gRa  ")]
+    public async Task Get_SearchIgnoresLetterCaseAndOuterSpaces(string search)
+    {
+        await database.SeedAsync(ProductUnit.CreateNew("Litre"), ProductUnit.CreateNew("Gram"));
+
+        var value = await GetAsync(new GetProductUnitQuery(search, SortOrder.ASC));
+
+        Assert.Equal("Gram", Assert.Single(value).Name);
+    }
+
+    [Theory]
     [InlineData(SortOrder.ASC, new[] { "Gram", "Litre" })]
     [InlineData(SortOrder.DESC, new[] { "Litre", "Gram" })]
     public async Task Get_SortsByName(SortOrder order, string[] expected)

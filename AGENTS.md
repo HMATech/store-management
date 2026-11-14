@@ -144,6 +144,10 @@ Handlers, validators and endpoints are discovered automatically, so they don't n
 
 `ValidationDecorator` runs validators for both commands and queries, so adding an `AbstractValidator<T>` for either is enough.
 
+### Search
+
+A list's `search` ignores letter case and spaces around the text, so `indomie` finds `Indomie Goreng`. Lower-case and trim the text once (`query.Search?.ToLower().Trim()`), then compare it with the lower-cased column, or with `Name.Normalized` where the entity has one. A blank search returns everything.
+
 ### Dates
 
 - Use `IDateTimeProvider.UtcNow` rather than `DateTime.UtcNow`.

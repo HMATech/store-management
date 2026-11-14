@@ -197,6 +197,41 @@ public class CatalogIntegrationTests(PostgresApiFixture api)
         Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
     }
 
+    [Theory]
+    [InlineData("/products")]
+    [InlineData("/stocks")]
+    public async Task ProductSearch_IgnoresLetterCaseAndOuterSpaces(string path)
+    {
+        var (brandId, unitId) = await CreateBrandAndUnitAsync();
+        var name = PostgresApiFixture.Unique("Indomie Goreng");
+        await CreateProductAsync(name, brandId, unitId, 3500m, []);
+
+        foreach (var search in new[] { name.ToLowerInvariant(), name.ToUpperInvariant(), $"  {name}  " })
+        {
+            var page = await (await client.GetAsync($"{path}?search={Uri.EscapeDataString(search)}")).ReadJsonAsync();
+
+            Assert.Equal(1, page.GetProperty("totalCount").GetInt32());
+        }
+    }
+
+    [Theory]
+    [InlineData("/brands")]
+    [InlineData("/products/tags")]
+    [InlineData("/products/units")]
+    public async Task NamedResourceSearch_IgnoresLetterCase(string path)
+    {
+        var name = PostgresApiFixture.Unique("Sembako");
+        await client.PostAsJsonAsync(path, new { name });
+
+        foreach (var search in new[] { name.ToLowerInvariant(), name.ToUpperInvariant() })
+        {
+            var body = await (await client.GetAsync($"{path}?search={Uri.EscapeDataString(search)}")).ReadJsonAsync();
+            var items = body.ValueKind == JsonValueKind.Array ? body : body.GetProperty("responses");
+
+            Assert.Equal(1, items.GetArrayLength());
+        }
+    }
+
     private async Task<(int BrandId, int UnitId)> CreateBrandAndUnitAsync()
     {
         var brand = await client.PostAsJsonAsync("/brands", new { name = PostgresApiFixture.Unique("Brand") });

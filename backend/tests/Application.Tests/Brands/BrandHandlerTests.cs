@@ -78,6 +78,19 @@ public class BrandHandlerTests
     }
 
     [Theory]
+    [InlineData("glo")]
+    [InlineData("GLOBEX")]
+    [InlineData("  gLo  ")]
+    public async Task Get_SearchIgnoresLetterCaseAndOuterSpaces(string search)
+    {
+        await database.SeedAsync(Brand.CreateNew("Acme", FixedClock.Now), Brand.CreateNew("Globex", FixedClock.Now));
+
+        var value = await GetAsync(new GetBrandQuery(search, SortOrder.ASC));
+
+        Assert.Equal("Globex", Assert.Single(value.Responses).Name);
+    }
+
+    [Theory]
     [InlineData(SortOrder.ASC, new[] { "Acme", "Globex" })]
     [InlineData(SortOrder.DESC, new[] { "Globex", "Acme" })]
     public async Task Get_SortsByName(SortOrder order, string[] expected)

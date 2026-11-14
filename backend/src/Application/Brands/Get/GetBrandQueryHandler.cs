@@ -16,8 +16,9 @@ internal sealed class GetBrandQueryHandler(
     {
         try
         {
+            var search = query.Search?.ToLower().Trim();
             var brands = dbContext.Brands
-                .Where(r => string.IsNullOrEmpty(query.Search) || r.Name.Contains(query.Search))
+                .Where(r => string.IsNullOrEmpty(search) || r.Name.ToLower().Contains(search))
                 .AsQueryable();
 
             brands = query.SortOrder == SortOrder.ASC

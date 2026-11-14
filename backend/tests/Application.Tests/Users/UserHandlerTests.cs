@@ -46,6 +46,9 @@ public class UserHandlerTests
     [Theory]
     [InlineData("Jan", 1)]
     [InlineData("Doe", 1)]
+    [InlineData("jan", 1)]
+    [InlineData("DOE", 1)]
+    [InlineData("  bOb ", 1)]
     [InlineData("missing", 0)]
     [InlineData(null, 2)]
     public async Task Get_SearchesFirstAndLastName(string? search, int expected)

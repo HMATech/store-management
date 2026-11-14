@@ -16,8 +16,9 @@ internal sealed class GetStockQueryHandler(
     {
         try
         {
+            var search = query.Search?.ToLower().Trim();
             var products = dbContext.Products
-                .Where(p => string.IsNullOrEmpty(query.Search) || p.Name.Contains(query.Search));
+                .Where(p => string.IsNullOrEmpty(search) || p.Name.ToLower().Contains(search));
 
             products = query.SortOrder == SortOrder.ASC
                 ? products.OrderBy(p => p.Name)
