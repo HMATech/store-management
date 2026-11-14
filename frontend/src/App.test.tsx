@@ -1,33 +1,16 @@
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
-import { render, screen } from '@testing-library/react'
-import userEvent from '@testing-library/user-event'
-import { MemoryRouter } from 'react-router'
+import { screen } from '@testing-library/react'
+import type userEvent from '@testing-library/user-event'
 import { describe, expect, it, vi } from 'vitest'
-import { App } from './App'
 import { clearSession, setToken } from './lib/session'
-import { createJwt, jsonResponse } from './test/fixtures'
+import { createJwt, jsonResponse, requestedPaths, stubApi } from './test/fixtures'
+import { renderApp } from './test/render'
 
-function renderApp(path = '/') {
-  const queryClient = new QueryClient({ defaultOptions: { mutations: { retry: false } } })
-  render(
-    <QueryClientProvider client={queryClient}>
-      <MemoryRouter initialEntries={[path]}>
-        <App />
-      </MemoryRouter>
-    </QueryClientProvider>,
-  )
-  return userEvent.setup()
-}
+type User = ReturnType<typeof userEvent.setup>
 
-function mockLogin(response: Response | Error | DOMException) {
-  const fetchMock = vi.fn<typeof fetch>(() =>
-    response instanceof Response ? Promise.resolve(response) : Promise.reject(response),
-  )
-  vi.stubGlobal('fetch', fetchMock)
-  return fetchMock
-}
+const loginButton = () => screen.findByRole('button', { name: 'Masuk' })
+const homeAction = () => screen.findByRole('link', { name: /Catat Penjualan/ })
 
-async function fillAndSubmit(user: ReturnType<typeof userEvent.setup>, email: string, password: string) {
+async function fillAndSubmit(user: User, email: string, password: string) {
   if (email !== '') {
     await user.type(screen.getByLabelText('Email'), email)
   }
@@ -38,74 +21,87 @@ async function fillAndSubmit(user: ReturnType<typeof userEvent.setup>, email: st
 }
 
 describe('routing by session', () => {
-  it('sends a signed-out visitor to the login screen', () => {
+  it('sends a signed-out visitor to the login screen', async () => {
     renderApp('/')
 
-    expect(screen.getByRole('heading', { name: 'Warung Ortu' })).toBeInTheDocument()
+    expect(await loginButton()).toBeInTheDocument()
   })
 
-  it('sends a visitor with an expired token to the login screen', () => {
+  it('sends a visitor with an expired token to the login screen', async () => {
     setToken(createJwt(-1))
 
     renderApp('/')
 
-    expect(screen.getByRole('heading', { name: 'Warung Ortu' })).toBeInTheDocument()
+    expect(await loginButton()).toBeInTheDocument()
   })
 
-  it('shows the home screen to a signed-in user', () => {
+  it('shows the home screen to a signed-in user', async () => {
+    stubApi({})
     setToken(createJwt())
 
     renderApp('/')
 
-    expect(screen.getByRole('heading', { name: 'Beranda' })).toBeInTheDocument()
+    expect(await homeAction()).toBeInTheDocument()
   })
 
-  it('takes a signed-in user away from the login screen', () => {
+  it('takes a signed-in user away from the login screen', async () => {
+    stubApi({})
     setToken(createJwt())
 
     renderApp('/login')
 
-    expect(screen.getByRole('heading', { name: 'Beranda' })).toBeInTheDocument()
+    expect(await homeAction()).toBeInTheDocument()
   })
 
-  it('sends an unknown address to the home screen', () => {
+  it('sends an unknown address to the home screen', async () => {
+    stubApi({})
     setToken(createJwt())
 
     renderApp('/tidak-ada')
 
-    expect(screen.getByRole('heading', { name: 'Beranda' })).toBeInTheDocument()
+    expect(await homeAction()).toBeInTheDocument()
   })
 
-  it('returns to the login screen after signing out', async () => {
+  it('returns to the login screen after signing out from the account screen', async () => {
+    stubApi({})
     setToken(createJwt())
-    const user = renderApp('/')
+    const user = renderApp('/akun')
 
     await user.click(screen.getByRole('button', { name: 'Keluar' }))
 
-    expect(await screen.findByRole('heading', { name: 'Warung Ortu' })).toBeInTheDocument()
+    expect(await loginButton()).toBeInTheDocument()
   })
 
   it('returns to the login screen when the session ends elsewhere', async () => {
+    stubApi({})
     setToken(createJwt())
     renderApp('/')
 
     clearSession()
 
-    expect(await screen.findByRole('heading', { name: 'Warung Ortu' })).toBeInTheDocument()
+    expect(await loginButton()).toBeInTheDocument()
+  })
+
+  it('returns to the login screen when the API rejects the token', async () => {
+    stubApi({ '/reports/daily-totals': () => new Response(null, { status: 401 }) })
+    setToken(createJwt())
+
+    renderApp('/')
+
+    expect(await loginButton()).toBeInTheDocument()
   })
 })
 
 describe('signing in', () => {
   it('opens the home screen with the right email and password', async () => {
-    const fetchMock = mockLogin(jsonResponse(200, { id: 'user-1', jwt: createJwt() }))
+    const api = stubApi({ '/users/login': () => jsonResponse(200, { id: 'user-1', jwt: createJwt() }) })
     const user = renderApp('/login')
 
     await fillAndSubmit(user, '  admin@store.local ', 'Admin123!')
 
-    expect(await screen.findByRole('heading', { name: 'Beranda' })).toBeInTheDocument()
-    const [url, init] = fetchMock.mock.calls[0]
-    expect(String(url)).toMatch(/\/users\/login$/)
-    expect(init?.body).toBe('{"email":"admin@store.local","password":"Admin123!"}')
+    expect(await homeAction()).toBeInTheDocument()
+    expect(requestedPaths(api)[0]).toMatch(/\/users\/login$/)
+    expect(api.mock.calls[0][1]?.body).toBe('{"email":"admin@store.local","password":"Admin123!"}')
   })
 
   it.each([
@@ -114,17 +110,17 @@ describe('signing in', () => {
     ['admin', 'Admin123!', 'Email belum benar. Contoh: nama@email.com'],
     ['admin@store.local', '', 'Kata sandi belum diisi.'],
   ])('asks to fix email "%s" and password "%s" without calling the API', async (email, password, message) => {
-    const fetchMock = mockLogin(jsonResponse(200, {}))
+    const api = stubApi({})
     const user = renderApp('/login')
 
     await fillAndSubmit(user, email, password)
 
     expect(screen.getByText(message)).toBeInTheDocument()
-    expect(fetchMock).not.toHaveBeenCalled()
+    expect(api).not.toHaveBeenCalled()
   })
 
   it('marks the field that needs fixing as invalid', async () => {
-    mockLogin(jsonResponse(200, {}))
+    stubApi({})
     const user = renderApp('/login')
 
     await fillAndSubmit(user, '', '')
@@ -134,23 +130,36 @@ describe('signing in', () => {
     expect(screen.getByLabelText('Kata sandi')).toBeInvalid()
   })
 
-  it.each([
-    [
-      'a wrong email or password',
-      jsonResponse(400, { title: 'Users.IncorrectCredential' }),
-      'Email atau kata sandi salah. Coba lagi.',
-    ],
-    ['no connection', new TypeError('Failed to fetch'), 'Tidak bisa terhubung. Periksa internet, lalu coba lagi.'],
-    ['a server error', jsonResponse(500, { title: 'System Error' }), 'Ada gangguan. Coba lagi sebentar lagi.'],
-    ['a response without a token', jsonResponse(200, {}), 'Ada gangguan. Coba lagi sebentar lagi.'],
-  ])('stays on the login screen and explains %s', async (_, response, message) => {
-    mockLogin(response)
+  it('shows a wrong email or password on the password field', async () => {
+    stubApi({ '/users/login': () => jsonResponse(400, { title: 'Users.IncorrectCredential' }) })
     const user = renderApp('/login')
 
     await fillAndSubmit(user, 'admin@store.local', 'salah')
 
+    const password = screen.getByLabelText('Kata sandi')
+    await vi.waitFor(() => expect(password).toBeInvalid())
+    expect(password).toHaveAccessibleDescription('Email atau kata sandi salah. Coba lagi.')
+    expect(screen.queryByRole('alert')).not.toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Masuk' })).toBeInTheDocument()
+  })
+
+  it.each([
+    [
+      'no connection',
+      () => Promise.reject<Response>(new TypeError('Failed to fetch')),
+      'Tidak bisa terhubung. Periksa internet, lalu coba lagi.',
+    ],
+    ['a server error', () => jsonResponse(500, { title: 'System Error' }), 'Ada gangguan. Coba lagi sebentar lagi.'],
+    ['a response without a token', () => jsonResponse(200, {}), 'Ada gangguan. Coba lagi sebentar lagi.'],
+  ])('stays on the login screen and explains %s', async (_, respond, message) => {
+    stubApi({ '/users/login': respond })
+    const user = renderApp('/login')
+
+    await fillAndSubmit(user, 'admin@store.local', 'Admin123!')
+
     expect(await screen.findByRole('alert')).toHaveTextContent(message)
-    expect(screen.getByRole('heading', { name: 'Warung Ortu' })).toBeInTheDocument()
+    expect(screen.getByLabelText('Kata sandi')).toBeValid()
+    expect(screen.getByRole('button', { name: 'Masuk' })).toBeInTheDocument()
   })
 
   it('hides the password until asked to show it, and hides it again', async () => {
@@ -169,19 +178,18 @@ describe('signing in', () => {
   })
 
   it('does not submit the form when showing the password', async () => {
-    const fetchMock = mockLogin(jsonResponse(200, {}))
+    const api = stubApi({})
     const user = renderApp('/login')
     await user.type(screen.getByLabelText('Email'), 'admin@store.local')
     await user.type(screen.getByLabelText('Kata sandi'), 'Admin123!')
 
     await user.click(screen.getByRole('button', { name: 'Lihat' }))
 
-    expect(fetchMock).not.toHaveBeenCalled()
+    expect(api).not.toHaveBeenCalled()
   })
 
   it('blocks a second submit while signing in', async () => {
-    const fetchMock = vi.fn<typeof fetch>(() => new Promise(() => {}))
-    vi.stubGlobal('fetch', fetchMock)
+    const api = stubApi({ '/users/login': () => new Promise<Response>(() => {}) })
     const user = renderApp('/login')
 
     await fillAndSubmit(user, 'admin@store.local', 'Admin123!')
@@ -189,6 +197,6 @@ describe('signing in', () => {
     const button = await screen.findByRole('button', { name: 'Sedang masuk…' })
     expect(button).toBeDisabled()
     await user.type(screen.getByLabelText('Kata sandi'), '{Enter}')
-    expect(fetchMock).toHaveBeenCalledTimes(1)
+    expect(api).toHaveBeenCalledTimes(1)
   })
 })

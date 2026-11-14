@@ -15,6 +15,13 @@ export function getToken(): string | null {
   return token === null || isExpired(token) ? null : token
 }
 
+/** The signed-in user's id (the token's `sub` claim), or null when there is no session. */
+export function getUserId(): string | null {
+  const token = getToken()
+  const sub = token === null ? undefined : readClaims(token)?.sub
+  return typeof sub === 'string' && sub !== '' ? sub : null
+}
+
 export function setToken(token: string): void {
   try {
     localStorage.setItem(StorageKey, token)
@@ -60,19 +67,21 @@ function notify(): void {
 
 /** True when the token's `exp` claim has passed. A token that can't be read counts as expired. */
 function isExpired(token: string): boolean {
+  const exp = readClaims(token)?.exp
+  return typeof exp !== 'number' || exp * 1000 <= Date.now()
+}
+
+/** The token's payload, or null when it can't be read. */
+function readClaims(token: string): Record<string, unknown> | null {
   const payload = token.split('.')[1]
   if (payload === undefined) {
-    return true
+    return null
   }
 
   try {
-    const json = atob(payload.replace(/-/g, '+').replace(/_/g, '/'))
-    const claims: unknown = JSON.parse(json)
-    if (typeof claims !== 'object' || claims === null || !('exp' in claims)) {
-      return true
-    }
-    return typeof claims.exp !== 'number' || claims.exp * 1000 <= Date.now()
+    const claims: unknown = JSON.parse(atob(payload.replace(/-/g, '+').replace(/_/g, '/')))
+    return typeof claims === 'object' && claims !== null ? (claims as Record<string, unknown>) : null
   } catch {
-    return true
+    return null
   }
 }

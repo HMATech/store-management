@@ -1,5 +1,6 @@
 import { cva, type VariantProps } from 'class-variance-authority'
 import type { ButtonHTMLAttributes } from 'react'
+import { Link, type LinkProps } from 'react-router'
 
 /** Mirrors the Button component in Loom, with its Kind variants. It hugs its label; pass `w-full` to fill. */
 const button = cva(
@@ -26,4 +27,11 @@ type ButtonProps = ButtonHTMLAttributes<HTMLButtonElement> & VariantProps<typeof
 
 export function Button({ kind, className, type = 'button', ...props }: ButtonProps) {
   return <button type={type} className={button({ kind, className })} {...props} />
+}
+
+type ButtonLinkProps = LinkProps & VariantProps<typeof button>
+
+/** A link that looks like a Button, for actions that open another screen. */
+export function ButtonLink({ kind, className, ...props }: ButtonLinkProps) {
+  return <Link className={button({ kind, className })} {...props} />
 }
