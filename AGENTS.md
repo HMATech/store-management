@@ -278,6 +278,7 @@ A React single-page app in `frontend/`, installable as a PWA. Its users aren't t
 
 - React 19 and TypeScript on Vite, with React Router and TanStack Query for anything that calls the API
 - Tailwind CSS 4, with `cva` and `clsx` for component variants
+- Lucide icons (`lucide-react`), the icon set the design uses, and the Inter font bundled through `@fontsource-variable/inter` so it works offline
 - `vite-plugin-pwa` for the manifest and service worker
 - Vitest with Testing Library (jsdom), and oxlint
 
@@ -312,12 +313,14 @@ npm run build    # Type-checks, then builds dist/ with the service worker
 
 The design lives in the Loom (Penpot) file "Dashboard", and the frontend follows it rather than a library's defaults.
 
-- **Tokens:** `src/styles/tokens.css` holds the tokens under the same names as Loom (`color.bg.page` is `--color-bg-page`). Components use only the semantic tokens, through Tailwind utilities such as `bg-bg-page`. Never write a raw colour or size in a component.
+- **Tokens:** `src/styles/tokens.css` is a copy of Loom's token sets under the same names (`color.bg.canvas` is `--color-bg-canvas`). Components use only the semantic tokens, through Tailwind utilities such as `bg-bg-canvas`. Never write a raw colour in a component. When a token changes, change it in Loom first, then here, and update the sync date in the file.
+- **Spacing is in pixels.** Loom names a spacing step by its pixels, so `p-16` is 16px and `gap-8` is 8px. Use only Loom's steps: 2, 4, 6, 8, 10, 12, 14, 16, 20, 24, 28, 32, 36, 40.
+- **Text sizes** map as `text-xs` 14, `text-sm` 15, `text-base` 16 (Loom's `md`), `text-lg` 17, `text-xl` 18, `text-2xl` 20, `text-3xl` 22, `text-4xl` 26, `text-5xl` 28, all at a 1.3 line height. Border widths are `border-thin`, `border-medium` and `border-thick`.
+- **Screens:** before building a screen, read its board in Loom for the layout, tokens and wording, and compare a screenshot of the result with the board.
 - **Dark mode** changes token values, not names. It follows the system, and `data-theme="light"` or `"dark"` on `<html>` forces one.
-- **Components** mirror Loom's components and variant names: `Button` has `kind`, as Loom's Button has Kind. Define variants with `cva`.
+- **Components** mirror Loom's components and variant names: `Button` has `kind`, as Loom's Button has Kind. Define variants with `cva`. Icons are decorative next to their text label, so mark them `aria-hidden`.
 - **Layout** is flex or grid with `min-height` tokens. Fixed heights are only for icons.
 - **For these users:** body text is 16px (14px at the smallest), touch targets are at least 44px and main buttons 56px, every icon has a text label, and a screen has one primary action.
-- Token values are provisional until they are synced from Loom. Sync them before relying on exact colours.
 
 ### Conventions
 
