@@ -16,9 +16,9 @@ export default defineConfig({
         lang: 'id',
         display: 'standalone',
         start_url: '/',
-        // Keep in step with --color-bg-page in src/styles/tokens.css.
-        theme_color: '#f8fafc',
-        background_color: '#f8fafc',
+        // Keep in step with --color-bg-surface in src/styles/tokens.css.
+        theme_color: '#ffffff',
+        background_color: '#ffffff',
         icons: [
           { src: 'icons/icon-192.png', sizes: '192x192', type: 'image/png' },
           { src: 'icons/icon-512.png', sizes: '512x512', type: 'image/png' },

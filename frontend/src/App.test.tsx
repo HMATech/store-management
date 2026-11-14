@@ -41,7 +41,7 @@ describe('routing by session', () => {
   it('sends a signed-out visitor to the login screen', () => {
     renderApp('/')
 
-    expect(screen.getByRole('heading', { name: 'Masuk' })).toBeInTheDocument()
+    expect(screen.getByRole('heading', { name: 'Warung Ortu' })).toBeInTheDocument()
   })
 
   it('sends a visitor with an expired token to the login screen', () => {
@@ -49,7 +49,7 @@ describe('routing by session', () => {
 
     renderApp('/')
 
-    expect(screen.getByRole('heading', { name: 'Masuk' })).toBeInTheDocument()
+    expect(screen.getByRole('heading', { name: 'Warung Ortu' })).toBeInTheDocument()
   })
 
   it('shows the home screen to a signed-in user', () => {
@@ -82,7 +82,7 @@ describe('routing by session', () => {
 
     await user.click(screen.getByRole('button', { name: 'Keluar' }))
 
-    expect(await screen.findByRole('heading', { name: 'Masuk' })).toBeInTheDocument()
+    expect(await screen.findByRole('heading', { name: 'Warung Ortu' })).toBeInTheDocument()
   })
 
   it('returns to the login screen when the session ends elsewhere', async () => {
@@ -91,7 +91,7 @@ describe('routing by session', () => {
 
     clearSession()
 
-    expect(await screen.findByRole('heading', { name: 'Masuk' })).toBeInTheDocument()
+    expect(await screen.findByRole('heading', { name: 'Warung Ortu' })).toBeInTheDocument()
   })
 })
 
@@ -150,7 +150,33 @@ describe('signing in', () => {
     await fillAndSubmit(user, 'admin@store.local', 'salah')
 
     expect(await screen.findByRole('alert')).toHaveTextContent(message)
-    expect(screen.getByRole('heading', { name: 'Masuk' })).toBeInTheDocument()
+    expect(screen.getByRole('heading', { name: 'Warung Ortu' })).toBeInTheDocument()
+  })
+
+  it('hides the password until asked to show it, and hides it again', async () => {
+    const user = renderApp('/login')
+    const password = screen.getByLabelText('Kata sandi')
+    await user.type(password, 'Admin123!')
+
+    expect(password).toHaveAttribute('type', 'password')
+
+    await user.click(screen.getByRole('button', { name: 'Lihat' }))
+    expect(password).toHaveAttribute('type', 'text')
+    expect(password).toHaveValue('Admin123!')
+
+    await user.click(screen.getByRole('button', { name: 'Sembunyikan' }))
+    expect(password).toHaveAttribute('type', 'password')
+  })
+
+  it('does not submit the form when showing the password', async () => {
+    const fetchMock = mockLogin(jsonResponse(200, {}))
+    const user = renderApp('/login')
+    await user.type(screen.getByLabelText('Email'), 'admin@store.local')
+    await user.type(screen.getByLabelText('Kata sandi'), 'Admin123!')
+
+    await user.click(screen.getByRole('button', { name: 'Lihat' }))
+
+    expect(fetchMock).not.toHaveBeenCalled()
   })
 
   it('blocks a second submit while signing in', async () => {
