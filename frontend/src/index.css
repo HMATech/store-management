@@ -4,14 +4,34 @@
 /* Tokens whose names fall outside Tailwind's namespaces, mapped to the utilities that use them. */
 @theme inline {
   --font-sans: var(--font-family-base);
+
+  /* Loom's font.size.md is Tailwind's `text-base`. Every size uses the design's 1.3 line height. */
+  --text-xs: var(--font-size-xs);
+  --text-xs--line-height: 1.3;
   --text-sm: var(--font-size-sm);
+  --text-sm--line-height: 1.3;
   --text-base: var(--font-size-md);
+  --text-base--line-height: 1.3;
   --text-lg: var(--font-size-lg);
+  --text-lg--line-height: 1.3;
+  --text-xl: var(--font-size-xl);
+  --text-xl--line-height: 1.3;
   --text-2xl: var(--font-size-2xl);
+  --text-2xl--line-height: 1.3;
+  --text-3xl: var(--font-size-3xl);
+  --text-3xl--line-height: 1.3;
+  --text-4xl: var(--font-size-4xl);
+  --text-4xl--line-height: 1.3;
+  --text-5xl: var(--font-size-5xl);
+  --text-5xl--line-height: 1.3;
 
   --min-height-touch-min: var(--size-touch-min);
   --min-height-control-md: var(--size-control-md);
   --min-height-control-lg: var(--size-control-lg);
+
+  --border-width-thin: var(--border-thin);
+  --border-width-medium: var(--border-medium);
+  --border-width-thick: var(--border-thick);
 }
 
 html {
@@ -23,10 +43,11 @@ html {
 }
 
 body {
-  background: var(--color-bg-page);
+  background: var(--color-bg-canvas);
   color: var(--color-text-default);
   font-family: var(--font-family-base);
   font-size: var(--font-size-md);
+  line-height: 1.3;
 }
 
 /* Below 16px, iOS zooms into a focused field and stays zoomed. */

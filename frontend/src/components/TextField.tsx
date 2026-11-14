@@ -1,36 +1,51 @@
 import clsx from 'clsx'
-import { useId, type InputHTMLAttributes } from 'react'
+import type { LucideIcon } from 'lucide-react'
+import { useId, type InputHTMLAttributes, type ReactNode } from 'react'
 
-type TextFieldProps = Omit<InputHTMLAttributes<HTMLInputElement>, 'id'> & {
+export type TextFieldProps = Omit<InputHTMLAttributes<HTMLInputElement>, 'id'> & {
   label: string
+  /** Decorative icon at the start of the field. */
+  icon?: LucideIcon
+  /** A control at the end of the field, such as the password field's show button. */
+  trailing?: ReactNode
   /** Shown under the field, which is then marked invalid. */
   error?: string
 }
 
-/** A labelled input. Mirrors the Text field component in Loom (Type Text/Password, and its Error state). */
-export function TextField({ label, error, className, ...props }: TextFieldProps) {
+/** A labelled input. Mirrors the Text field component in Loom (Type Text, and its Error state). */
+export function TextField({ label, icon: Icon, trailing, error, className, ...props }: TextFieldProps) {
   const id = useId()
   const errorId = `${id}-error`
+  const hasError = error !== undefined
 
   return (
-    <div className="flex flex-col gap-2">
-      <label htmlFor={id} className="font-medium">
+    <div className="flex flex-col gap-8">
+      <label htmlFor={id} className="text-sm font-semibold">
         {label}
       </label>
-      <input
-        id={id}
-        aria-invalid={error !== undefined}
-        aria-describedby={error !== undefined ? errorId : undefined}
+      <div
         className={clsx(
-          'min-h-control-lg rounded-lg border bg-bg-surface px-4 text-text-default',
-          'focus-visible:outline-2 focus-visible:outline-primary-default',
-          error !== undefined ? 'border-danger-default' : 'border-border-default',
-          className,
+          'flex min-h-control-lg items-center gap-12 rounded-md bg-bg-surface px-16',
+          'focus-within:outline-2 focus-within:outline-offset-2 focus-within:outline-primary-default',
+          hasError ? 'border-thick border-danger-default' : 'border-medium border-border-strong',
         )}
-        {...props}
-      />
-      {error !== undefined && (
-        <p id={errorId} className="text-sm text-danger-default">
+      >
+        {Icon !== undefined && <Icon aria-hidden className="size-22 shrink-0 text-text-subtle" />}
+        <input
+          id={id}
+          aria-invalid={hasError}
+          aria-describedby={hasError ? errorId : undefined}
+          className={clsx(
+            'min-w-0 flex-1 self-stretch bg-transparent py-14 text-lg outline-none',
+            'placeholder:text-text-subtle',
+            className,
+          )}
+          {...props}
+        />
+        {trailing}
+      </div>
+      {hasError && (
+        <p id={errorId} className="text-xs font-medium text-danger-default">
           {error}
         </p>
       )}

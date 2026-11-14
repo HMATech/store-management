@@ -1,84 +1,161 @@
 /*
- * Design tokens, named after the Loom (Penpot) file "Dashboard": a `primitives` set and a semantic set per
- * mode. Components use only the semantic tokens, so switching mode changes values, never names.
+ * Design tokens, copied from the Loom (Penpot) file "Dashboard": the `primitives` set, then `semantic/light`,
+ * with `semantic/dark` below. A Loom token `color.bg.canvas` is `--color-bg-canvas` here. Components use only
+ * the semantic tokens, so switching mode changes values, never names.
  *
- * PROVISIONAL: the values below are stand-ins until they are synced from Loom. Replace values here, not in
- * components.
+ * Synced from Loom on 2026-11-14. Change a value in Loom first, then here.
  *
  * `@theme static` puts every token on :root and makes Tailwind utilities from the ones in its namespaces
- * (`--color-bg-page` gives `bg-bg-page`, `--radius-lg` gives `rounded-lg`).
+ * (`--color-bg-canvas` gives `bg-bg-canvas`, `--radius-md` gives `rounded-md`).
  */
 @theme static {
-  /* primitives */
-  --color-green-50: #f0fdf4;
-  --color-green-400: #4ade80;
-  --color-green-500: #22c55e;
-  --color-green-700: #15803d;
-  --color-green-800: #166534;
-  --color-red-50: #fef2f2;
-  --color-red-400: #f87171;
-  --color-red-700: #b91c1c;
-  --color-red-950: #450a0a;
-  --color-slate-50: #f8fafc;
-  --color-slate-300: #cbd5e1;
-  --color-slate-400: #94a3b8;
-  --color-slate-500: #64748b;
-  --color-slate-700: #334155;
-  --color-slate-800: #1e293b;
-  --color-slate-900: #0f172a;
-  --color-white: #ffffff;
+  /* primitives: color */
+  --color-green-50: #e1f1e8;
+  --color-green-100: #d5eedf;
+  --color-green-300: #5cc48c;
+  --color-green-700: #1e7a4c;
+  --color-green-800: #14402a;
+  --color-green-900: #123524;
+  --color-green-950: #0a2416;
+  --color-blue-50: #e1ecf9;
+  --color-blue-300: #7eb3f2;
+  --color-blue-700: #1d5fa8;
+  --color-blue-900: #16273d;
+  --color-amber-50: #fcefd2;
+  --color-amber-300: #edbb5c;
+  --color-amber-800: #8a5200;
+  --color-amber-900: #382a0e;
+  --color-red-50: #fde4e1;
+  --color-red-300: #f4907e;
+  --color-red-700: #b42318;
+  --color-red-900: #3e1b17;
+  --color-neutral-0: #ffffff;
+  --color-neutral-50: #f4f5f2;
+  --color-neutral-100: #e6e9e4;
+  --color-neutral-200: #dde1db;
+  --color-neutral-250: #c9cfca;
+  --color-neutral-300: #bfc6be;
+  --color-neutral-400: #9aa39c;
+  --color-neutral-500: #6e7671;
+  --color-neutral-600: #4d5651;
+  --color-neutral-700: #3a433d;
+  --color-neutral-800: #2a322d;
+  --color-neutral-850: #212823;
+  --color-neutral-900: #18201b;
+  --color-neutral-925: #181e1a;
+  --color-neutral-950: #111613;
+  --color-neutral-1000: #000000;
 
-  --radius-md: 8px;
-  --radius-lg: 12px;
+  /*
+   * primitives: spacing. Loom names a step by its pixels (spacing.16 is 16px), so one spacing unit is 1px
+   * and `p-16` means 16px. Use only the steps Loom has: 2 4 6 8 10 12 14 16 20 24 28 32 36 40.
+   */
+  --spacing: 1px;
 
-  --font-family-base: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
-  --font-size-sm: 14px;
+  /* primitives: radius */
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 16px;
+  --radius-xl: 20px;
+  --radius-full: 999px;
+
+  /* primitives: font */
+  --font-family-base: 'Inter Variable', 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  --font-size-xs: 14px;
+  --font-size-sm: 15px;
   --font-size-md: 16px;
-  --font-size-lg: 18px;
-  --font-size-2xl: 24px;
+  --font-size-lg: 17px;
+  --font-size-xl: 18px;
+  --font-size-2xl: 20px;
+  --font-size-3xl: 22px;
+  --font-size-4xl: 26px;
+  --font-size-5xl: 28px;
+  --font-weight-regular: 400;
+  --font-weight-medium: 500;
+  --font-weight-semibold: 600;
+  --font-weight-bold: 700;
+  --font-weight-extrabold: 800;
 
+  /* primitives: border width */
+  --border-thin: 1px;
+  --border-medium: 1.5px;
+  --border-thick: 2px;
+
+  /* semantic/light */
+  --color-bg-canvas: var(--color-neutral-50);
+  --color-bg-surface: var(--color-neutral-0);
+  --color-bg-sunken: var(--color-neutral-100);
+  --color-bg-inverse: var(--color-neutral-900);
+  --color-border-default: var(--color-neutral-200);
+  --color-border-strong: var(--color-neutral-300);
+  --color-text-default: var(--color-neutral-900);
+  --color-text-muted: var(--color-neutral-600);
+  --color-text-subtle: var(--color-neutral-500);
+  --color-text-inverse: var(--color-neutral-0);
+  --color-primary-default: var(--color-green-700);
+  --color-primary-soft: var(--color-green-50);
+  --color-primary-on: var(--color-neutral-0);
+  --color-primary-on-muted: var(--color-green-100);
+  --color-info-default: var(--color-blue-700);
+  --color-info-soft: var(--color-blue-50);
+  --color-warning-default: var(--color-amber-800);
+  --color-warning-soft: var(--color-amber-50);
+  --color-danger-default: var(--color-red-700);
+  --color-danger-soft: var(--color-red-50);
+  --color-danger-on: var(--color-neutral-0);
+  --color-shadow: var(--color-neutral-1000);
   --size-touch-min: 44px;
   --size-control-md: 48px;
   --size-control-lg: 56px;
-
-  /* semantic/light */
-  --color-bg-page: var(--color-slate-50);
-  --color-bg-surface: var(--color-white);
-  --color-border-default: var(--color-slate-300);
-  --color-text-default: var(--color-slate-900);
-  --color-text-muted: var(--color-slate-500);
-  --color-text-on-primary: var(--color-white);
-  --color-primary-default: var(--color-green-700);
-  --color-primary-pressed: var(--color-green-800);
-  --color-danger-default: var(--color-red-700);
-  --color-danger-bg: var(--color-red-50);
 }
 
 /* semantic/dark: follows the system unless data-theme="light" is set, and is forced by data-theme="dark". */
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme='light']) {
-    --color-bg-page: var(--color-slate-900);
-    --color-bg-surface: var(--color-slate-800);
-    --color-border-default: var(--color-slate-700);
-    --color-text-default: var(--color-slate-50);
-    --color-text-muted: var(--color-slate-400);
-    --color-text-on-primary: var(--color-slate-900);
-    --color-primary-default: var(--color-green-500);
-    --color-primary-pressed: var(--color-green-400);
-    --color-danger-default: var(--color-red-400);
-    --color-danger-bg: var(--color-red-950);
+    --color-bg-canvas: var(--color-neutral-950);
+    --color-bg-surface: var(--color-neutral-925);
+    --color-bg-sunken: var(--color-neutral-850);
+    --color-bg-inverse: var(--color-neutral-50);
+    --color-border-default: var(--color-neutral-800);
+    --color-border-strong: var(--color-neutral-700);
+    --color-text-default: var(--color-neutral-50);
+    --color-text-muted: var(--color-neutral-250);
+    --color-text-subtle: var(--color-neutral-400);
+    --color-text-inverse: var(--color-neutral-900);
+    --color-primary-default: var(--color-green-300);
+    --color-primary-soft: var(--color-green-900);
+    --color-primary-on: var(--color-green-950);
+    --color-primary-on-muted: var(--color-green-800);
+    --color-info-default: var(--color-blue-300);
+    --color-info-soft: var(--color-blue-900);
+    --color-warning-default: var(--color-amber-300);
+    --color-warning-soft: var(--color-amber-900);
+    --color-danger-default: var(--color-red-300);
+    --color-danger-soft: var(--color-red-900);
+    --color-danger-on: var(--color-neutral-950);
   }
 }
 
 :root[data-theme='dark'] {
-  --color-bg-page: var(--color-slate-900);
-  --color-bg-surface: var(--color-slate-800);
-  --color-border-default: var(--color-slate-700);
-  --color-text-default: var(--color-slate-50);
-  --color-text-muted: var(--color-slate-400);
-  --color-text-on-primary: var(--color-slate-900);
-  --color-primary-default: var(--color-green-500);
-  --color-primary-pressed: var(--color-green-400);
-  --color-danger-default: var(--color-red-400);
-  --color-danger-bg: var(--color-red-950);
+  --color-bg-canvas: var(--color-neutral-950);
+  --color-bg-surface: var(--color-neutral-925);
+  --color-bg-sunken: var(--color-neutral-850);
+  --color-bg-inverse: var(--color-neutral-50);
+  --color-border-default: var(--color-neutral-800);
+  --color-border-strong: var(--color-neutral-700);
+  --color-text-default: var(--color-neutral-50);
+  --color-text-muted: var(--color-neutral-250);
+  --color-text-subtle: var(--color-neutral-400);
+  --color-text-inverse: var(--color-neutral-900);
+  --color-primary-default: var(--color-green-300);
+  --color-primary-soft: var(--color-green-900);
+  --color-primary-on: var(--color-green-950);
+  --color-primary-on-muted: var(--color-green-800);
+  --color-info-default: var(--color-blue-300);
+  --color-info-soft: var(--color-blue-900);
+  --color-warning-default: var(--color-amber-300);
+  --color-warning-soft: var(--color-amber-900);
+  --color-danger-default: var(--color-red-300);
+  --color-danger-soft: var(--color-red-900);
+  --color-danger-on: var(--color-neutral-950);
 }

@@ -1,19 +1,21 @@
 import { cva, type VariantProps } from 'class-variance-authority'
 import type { ButtonHTMLAttributes } from 'react'
 
-/** Variants mirror the Button component in Loom (Kind). */
+/** Mirrors the Button component in Loom, with its Kind variants. It hugs its label; pass `w-full` to fill. */
 const button = cva(
   [
-    'inline-flex min-h-control-lg w-full items-center justify-center rounded-lg px-6 text-lg font-bold',
-    'transition-[transform,background-color] duration-100 ease-out motion-reduce:transition-none',
+    'inline-flex min-h-control-lg items-center justify-center gap-10 rounded-md px-20 py-16',
+    'text-lg font-semibold',
+    'transition-transform duration-100 ease-out motion-reduce:transition-none',
     'active:scale-[0.97] disabled:opacity-60 disabled:active:scale-100',
     'focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary-default',
   ],
   {
     variants: {
       kind: {
-        primary: 'bg-primary-default text-text-on-primary hover:bg-primary-pressed active:bg-primary-pressed',
-        secondary: 'border border-border-default bg-bg-surface text-text-default',
+        primary: 'bg-primary-default text-primary-on',
+        secondary: 'border-medium border-primary-default bg-bg-surface text-primary-default',
+        danger: 'bg-danger-default text-danger-on',
       },
     },
     defaultVariants: { kind: 'primary' },

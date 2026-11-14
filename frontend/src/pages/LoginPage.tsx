@@ -1,7 +1,10 @@
 import { useMutation } from '@tanstack/react-query'
+import { Mail, Store, User } from 'lucide-react'
 import { useState, type FormEvent } from 'react'
 import { Navigate } from 'react-router'
 import { Button } from '../components/Button'
+import { InfoNote } from '../components/InfoNote'
+import { PasswordField } from '../components/PasswordField'
 import { TextField } from '../components/TextField'
 import { login } from '../features/auth/login'
 import { useIsSignedIn } from '../features/auth/useIsSignedIn'
@@ -34,46 +37,55 @@ export function LoginPage() {
   }
 
   return (
-    <main className="mx-auto flex min-h-dvh w-full max-w-md flex-col justify-center gap-8 px-4 py-8">
-      <header className="flex flex-col gap-2">
-        <h1 className="text-2xl font-bold">Masuk</h1>
-        <p className="text-text-muted">Masukkan email dan kata sandi untuk mulai.</p>
-      </header>
+    <main className="min-h-dvh bg-bg-surface">
+      <div className="mx-auto flex min-h-dvh w-full max-w-[420px] flex-col justify-center gap-32 px-24 py-40">
+        <header className="flex flex-col items-center gap-12 text-center">
+          <div className="flex size-80 items-center justify-center rounded-xl bg-primary-soft">
+            <Store aria-hidden className="size-40 text-primary-default" />
+          </div>
+          <h1 className="text-5xl font-bold">Warung Ortu</h1>
+          <p className="text-text-muted">Masuk untuk mulai mencatat jualan</p>
+        </header>
 
-      <form onSubmit={handleSubmit} noValidate className="flex flex-col gap-6">
-        <TextField
-          label="Email"
-          type="email"
-          name="email"
-          autoComplete="username"
-          autoCapitalize="none"
-          autoCorrect="off"
-          enterKeyHint="next"
-          value={email}
-          onChange={(event) => setEmail(event.target.value)}
-          error={fieldErrors.email}
-        />
-        <TextField
-          label="Kata sandi"
-          type="password"
-          name="password"
-          autoComplete="current-password"
-          enterKeyHint="done"
-          value={password}
-          onChange={(event) => setPassword(event.target.value)}
-          error={fieldErrors.password}
-        />
+        <form onSubmit={handleSubmit} noValidate className="flex flex-col gap-20">
+          <TextField
+            label="Email"
+            icon={Mail}
+            type="email"
+            name="email"
+            autoComplete="username"
+            autoCapitalize="none"
+            autoCorrect="off"
+            enterKeyHint="next"
+            value={email}
+            onChange={(event) => setEmail(event.target.value)}
+            error={fieldErrors.email}
+          />
+          <PasswordField
+            label="Kata sandi"
+            name="password"
+            autoComplete="current-password"
+            enterKeyHint="done"
+            value={password}
+            onChange={(event) => setPassword(event.target.value)}
+            error={fieldErrors.password}
+          />
 
-        {signIn.isError && (
-          <p role="alert" className="rounded-lg bg-danger-bg p-4 text-danger-default">
-            {describeFailure(signIn.error)}
-          </p>
-        )}
+          {signIn.isError && (
+            <p role="alert" className="rounded-md bg-danger-soft p-16 font-medium text-danger-default">
+              {describeFailure(signIn.error)}
+            </p>
+          )}
 
-        <Button type="submit" disabled={signIn.isPending}>
-          {signIn.isPending ? 'Sedang masuk…' : 'Masuk'}
-        </Button>
-      </form>
+          <Button type="submit" className="w-full" disabled={signIn.isPending}>
+            {signIn.isPending ? 'Sedang masuk…' : 'Masuk'}
+          </Button>
+        </form>
+
+        <InfoNote icon={User}>
+          Lupa kata sandi? Minta tolong pemilik akun untuk mengaturnya ulang.
+        </InfoNote>
+      </div>
     </main>
   )
 }
