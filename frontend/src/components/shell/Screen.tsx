@@ -12,15 +12,17 @@ type ScreenProps = {
    * the back button instead of the account button. Pair it with `<AppShell bottomNavigation={false}>`.
    */
   backTo?: string
+  /** The screen's main action, shown beside the title in place of the account button. */
+  action?: ReactNode
   children: ReactNode
 }
 
 /**
  * A screen inside the app shell: its top bar, then its content. Mirrors the Top bar component in Loom
- * (Type Main with the account button, or Type Back). On wide screens the sidebar has the account button
- * and the navigation, so neither button shows.
+ * (Type Main with the account button or an action button, or Type Back). On wide screens the sidebar has
+ * the account button and the navigation, so neither of those shows.
  */
-export function Screen({ title, subtitle, backTo, children }: ScreenProps) {
+export function Screen({ title, subtitle, backTo, action, children }: ScreenProps) {
   return (
     <main className="flex flex-1 flex-col">
       <header
@@ -44,7 +46,10 @@ export function Screen({ title, subtitle, backTo, children }: ScreenProps) {
         )}
         <div className="flex items-center justify-between gap-12">
           <h1 className="min-w-0 truncate text-4xl font-bold">{title}</h1>
-          {backTo === undefined && <AccountButton className="max-w-[50%] shrink-0 lg:hidden" />}
+          {action}
+          {action === undefined && backTo === undefined && (
+            <AccountButton className="max-w-[50%] shrink-0 lg:hidden" />
+          )}
         </div>
         {subtitle !== undefined && <p className="text-sm text-text-muted">{subtitle}</p>}
       </header>

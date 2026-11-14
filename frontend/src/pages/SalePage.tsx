@@ -1,11 +1,12 @@
-import { keepPreviousData, useInfiniteQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { Search } from 'lucide-react'
 import { useState } from 'react'
-import { Button } from '../components/Button'
 import { Empty, LoadFailed, Loading } from '../components/LoadState'
 import { Screen } from '../components/shell/Screen'
 import { TextField } from '../components/TextField'
-import { createSale, fetchProducts } from '../features/sales/api'
+import { LoadMoreButton } from '../features/products/LoadMoreButton'
+import { useProductPages } from '../features/products/useProductPages'
+import { createSale } from '../features/sales/api'
 import { OrderPanel } from '../features/sales/OrderPanel'
 import { ProductCard } from '../features/sales/ProductCard'
 import { SaleSavedDialog, type SavedSale } from '../features/sales/SaleSavedDialog'
@@ -71,28 +72,15 @@ export function SalePage() {
 
 function ProductList({ searchText, cart }: { searchText: string; cart: Cart }) {
   const search = useDebouncedValue(searchText.trim(), SearchDelayMs)
-  const products = useInfiniteQuery({
-    queryKey: ['sale-products', search],
-    queryFn: ({ pageParam, signal }) => fetchProducts(search, pageParam, signal),
-    initialPageParam: 1,
-    getNextPageParam: (lastPage, _pages, lastPageParam) => (lastPage.hasNextPage ? lastPageParam + 1 : undefined),
-    // Keep showing the last results while a new search loads, so the list doesn't blink on every pause.
-    placeholderData: keepPreviousData,
-  })
+  const { products, isError, retry, hasMore, isLoadingMore, loadMore } = useProductPages({ search })
 
-  if (products.isPending) {
+  if (isError) {
+    return <LoadFailed onRetry={retry} />
+  }
+  if (products === undefined) {
     return <Loading />
   }
-  if (products.isError) {
-    return <LoadFailed onRetry={() => void products.refetch()} />
-  }
-
-  const loaded = products.data.pages.flatMap((page) => page.responses)
-  if (loaded.length === 0) {
-    // An empty list left over from the previous search says nothing about the one still loading.
-    if (products.isPlaceholderData) {
-      return <Loading />
-    }
+  if (products.length === 0) {
     return (
       <Empty>
         {search === ''
@@ -105,7 +93,7 @@ function ProductList({ searchText, cart }: { searchText: string; cart: Cart }) {
   return (
     <>
       <ul className="grid grid-cols-[repeat(auto-fill,minmax(min(100%,320px),1fr))] gap-14 lg:gap-16">
-        {loaded.map((product) => (
+        {products.map((product) => (
           <ProductCard
             key={product.id}
             product={product}
@@ -116,15 +104,7 @@ function ProductList({ searchText, cart }: { searchText: string; cart: Cart }) {
           />
         ))}
       </ul>
-      {products.hasNextPage && (
-        <Button
-          kind="secondary"
-          onClick={() => void products.fetchNextPage()}
-          disabled={products.isFetchingNextPage}
-        >
-          {products.isFetchingNextPage ? 'Memuat…' : 'Tampilkan lebih banyak'}
-        </Button>
-      )}
+      {hasMore && <LoadMoreButton isLoading={isLoadingMore} onLoadMore={loadMore} />}
     </>
   )
 }

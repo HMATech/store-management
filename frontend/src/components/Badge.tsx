@@ -5,6 +5,7 @@ import type { ReactNode } from 'react'
 const badge = cva('shrink-0 rounded-full px-10 py-6 text-xs font-semibold whitespace-nowrap', {
   variants: {
     tone: {
+      neutral: 'bg-bg-canvas text-text-muted',
       warning: 'bg-warning-soft text-warning-default',
       danger: 'bg-danger-soft text-danger-default',
     },
