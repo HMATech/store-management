@@ -16,12 +16,13 @@ internal sealed class GetUserQueryHandler(IApplicationDbContext dbContext,
         try
         {
             var users = dbContext.Users.AsQueryable();
-            if (!string.IsNullOrEmpty(query.Search))
+            var search = query.Search?.ToLower().Trim();
+            if (!string.IsNullOrEmpty(search))
             {
                 users = users
                     .Where(u =>
-                        u.Name.First.Contains(query.Search)
-                            || (u.Name.Last != null && u.Name.Last.Contains(query.Search)));
+                        u.Name.First.ToLower().Contains(search)
+                            || (u.Name.Last != null && u.Name.Last.ToLower().Contains(search)));
             }
 
             var userResponses = users

@@ -106,6 +106,19 @@ public class StockHandlerTests
         Assert.Equal("Milk", Assert.Single(page.Responses).ProductName);
     }
 
+    [Theory]
+    [InlineData("mil")]
+    [InlineData("MILK")]
+    [InlineData("  mIl  ")]
+    public async Task Get_SearchIgnoresLetterCaseAndOuterSpaces(string search)
+    {
+        await SeededGraph.CreateAsync(database);
+
+        var page = ResultAssert.Succeeded(await GetAsync(new GetStockQuery(search, SortOrder.ASC)));
+
+        Assert.Equal("Milk", Assert.Single(page.Responses).ProductName);
+    }
+
     [Fact]
     public async Task Get_Pages()
     {

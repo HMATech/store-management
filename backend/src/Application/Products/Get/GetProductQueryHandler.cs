@@ -20,8 +20,9 @@ internal sealed class GetProductQueryHandler(
         {
             StockStatus? status = StockQueries.TryParseStatus(query.StockStatus, out var parsed) ? parsed : null;
 
+            var search = query.Search?.ToLower().Trim();
             var filtered = dbContext.Products
-                .Where(p => string.IsNullOrEmpty(query.Search) || p.Name.Contains(query.Search))
+                .Where(p => string.IsNullOrEmpty(search) || p.Name.ToLower().Contains(search))
                 .WhereStockStatus(dbContext, status);
 
             var totalCount = await filtered.CountAsync(cancellationToken);

@@ -17,8 +17,9 @@ internal sealed class GetProductTagQueryHandler(
     {
         try
         {
+            var search = query.Search?.ToLower().Trim();
             var result = dbContext.ProductTags
-                .Where(p => string.IsNullOrEmpty(query.Search) || p.Name.Value.Contains(query.Search))
+                .Where(p => string.IsNullOrEmpty(search) || p.Name.Normalized.Contains(search))
                 .AsQueryable();
 
             result = query.SortOrder == SortOrder.ASC

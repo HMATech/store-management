@@ -143,6 +143,44 @@ public class ProductHandlerTests
         Assert.Equal(expected, value.Responses.Select(p => p.Name));
     }
 
+    [Theory]
+    [InlineData("mil")]
+    [InlineData("MILK")]
+    [InlineData("  mIl  ")]
+    public async Task Get_SearchIgnoresLetterCaseAndOuterSpaces(string search)
+    {
+        await SeededGraph.CreateAsync(database);
+
+        var value = await GetAsync(new GetProductQuery(search, SortOrder.ASC));
+
+        Assert.Equal("Milk", Assert.Single(value.Responses).Name);
+    }
+
+    [Theory]
+    [InlineData("missing")]
+    [InlineData("milk butter")]
+    public async Task Get_WithSearchMatchingNothing_ReturnsNoProducts(string search)
+    {
+        await SeededGraph.CreateAsync(database);
+
+        var value = await GetAsync(new GetProductQuery(search, SortOrder.ASC));
+
+        Assert.Empty(value.Responses);
+        Assert.Equal(0, value.TotalCount);
+    }
+
+    [Theory]
+    [InlineData("")]
+    [InlineData("   ")]
+    public async Task Get_WithBlankSearch_ReturnsEveryProduct(string search)
+    {
+        await SeededGraph.CreateAsync(database);
+
+        var value = await GetAsync(new GetProductQuery(search, SortOrder.ASC));
+
+        Assert.Equal(2, value.TotalCount);
+    }
+
     [Fact]
     public async Task Get_PagesResults()
     {

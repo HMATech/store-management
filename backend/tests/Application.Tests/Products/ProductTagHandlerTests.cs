@@ -83,6 +83,19 @@ public class ProductTagHandlerTests
     }
 
     [Theory]
+    [InlineData("fro")]
+    [InlineData("FROZEN")]
+    [InlineData("  fRo  ")]
+    public async Task Get_SearchIgnoresLetterCaseAndOuterSpaces(string search)
+    {
+        await database.SeedAsync(ProductTag.CreateNew("Dairy"), ProductTag.CreateNew("Frozen"));
+
+        var value = await GetAsync(new GetProductTagQuery(search, SortOrder.ASC));
+
+        Assert.Equal("Frozen", Assert.Single(value).Name);
+    }
+
+    [Theory]
     [InlineData(SortOrder.ASC, new[] { "Dairy", "Frozen" })]
     [InlineData(SortOrder.DESC, new[] { "Frozen", "Dairy" })]
     public async Task Get_SortsByName(SortOrder order, string[] expected)
