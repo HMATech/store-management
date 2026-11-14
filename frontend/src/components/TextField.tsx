@@ -4,6 +4,8 @@ import { useId, type InputHTMLAttributes, type ReactNode } from 'react'
 
 export type TextFieldProps = Omit<InputHTMLAttributes<HTMLInputElement>, 'id'> & {
   label: string
+  /** Keeps the label for screen readers only, for a field whose placeholder and icon say what it is. */
+  hideLabel?: boolean
   /** Decorative icon at the start of the field. */
   icon?: LucideIcon
   /** A control at the end of the field, such as the password field's show button. */
@@ -12,15 +14,23 @@ export type TextFieldProps = Omit<InputHTMLAttributes<HTMLInputElement>, 'id'> &
   error?: string
 }
 
-/** A labelled input. Mirrors the Text field component in Loom (Type Text, and its Error state). */
-export function TextField({ label, icon: Icon, trailing, error, className, ...props }: TextFieldProps) {
+/** A labelled input. Mirrors the Text field component in Loom (Type Text or Search, and its Error state). */
+export function TextField({
+  label,
+  hideLabel = false,
+  icon: Icon,
+  trailing,
+  error,
+  className,
+  ...props
+}: TextFieldProps) {
   const id = useId()
   const errorId = `${id}-error`
   const hasError = error !== undefined
 
   return (
     <div className="flex flex-col gap-8">
-      <label htmlFor={id} className="text-sm font-semibold">
+      <label htmlFor={id} className={hideLabel ? 'sr-only' : 'text-sm font-semibold'}>
         {label}
       </label>
       <div
