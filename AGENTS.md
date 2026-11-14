@@ -282,6 +282,7 @@ A React single-page app in `frontend/`, installable as a PWA. Its users aren't t
 
 - React 19 and TypeScript on Vite, with React Router and TanStack Query for anything that calls the API
 - Tailwind CSS 4, with `cva` and `clsx` for component variants
+- Base UI (`@base-ui/react`) for dialogs and other widgets that need focus handling, styled with the design's tokens
 - Lucide icons (`lucide-react`), the icon set the design uses, and the Inter font bundled through `@fontsource-variable/inter` so it works offline
 - `vite-plugin-pwa` for the manifest and service worker
 - Vitest with Testing Library (jsdom), and oxlint
@@ -331,6 +332,13 @@ The design lives in the Loom (Penpot) file "Dashboard", and the frontend follows
 - **API calls** go through `apiRequest` in `src/lib/api.ts`. It adds the bearer token, throws `ApiError` (status 0 means no response arrived), and ends the session on a 401.
 - **The session token** is read and written only through `src/lib/session.ts`, so its storage can change in one place.
 - **Screens:** a signed-in screen is a route inside `AppShell` in `App.tsx`, wrapped in `Screen`, which gives it the top bar. `AppShell` shows the sidebar on wide screens (`lg` and up) and the bottom navigation on phones; add a main destination to `shell/navigation.ts`. Routes are in Indonesian, like the UI (`/jual`, `/produk`).
+- **Task screens:** a screen entered to do one job, such as Catat Penjualan, gives `Screen` a `backTo` and sits under `<AppShell bottomNavigation={false}>`. On phones it then has a back button and the whole screen, with its main action pinned to the bottom; wide screens keep the sidebar.
+- **Saving:** write with `useMutation`, disable the action while it runs, and on success call `queryClient.invalidateQueries()` so stock, totals and lists are read again. Keep what the user entered when saving fails, and say plainly that it wasn't saved.
+- **Confirmations** that must not be missed, such as "Penjualan tersimpan", are a Base UI `AlertDialog` that stays until one of its actions is chosen, not a toast.
+- **Product lists** load through `useProductPages` in `features/products`, a page at a time with `LoadMoreButton`. Use it wherever products are listed, as the sale and product screens do.
+- **Filters** that narrow a list live in the address (`/produk?stok=minus`), so a link can open the list already filtered and going back keeps the choice. An unknown value means no filter.
+- **An empty screen** uses `EmptyState` with the action that fills it; an empty search or filter result uses `Empty` and says what was looked for.
+- **Search boxes** wait for a pause in typing (`useDebouncedValue`) and keep the previous results on screen while the new ones load.
 - **Fetching:** read data with `useQuery`, passing the `signal` on to `apiRequest`. Each part of a screen fetches for itself and shows `Loading`, `LoadFailed` (with its retry) or `Empty` from `components/LoadState.tsx`, so one failed request doesn't blank the screen. Fetched data is cleared when the session ends.
 - **Formatting:** amounts, dates and times go through `src/lib/format.ts` (`Rp 1.245.000`, `Minggu, 8 November 2026`, `Pukul 10.42`). Days are counted in the device's time zone, which is also the `timeZone` sent to the API.
 - **Messages** tell the user what to do next in plain words, and never show an error code or the API's English text.

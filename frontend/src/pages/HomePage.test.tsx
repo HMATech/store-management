@@ -218,13 +218,13 @@ describe('app shell', () => {
     const menu = within(screen.getAllByRole('navigation', { name: 'Menu utama' })[0])
 
     expect(menu.getByRole('link', { name: 'Beranda' })).toHaveAttribute('aria-current', 'page')
-    expect(menu.getByRole('link', { name: 'Produk' })).not.toHaveAttribute('aria-current')
+    expect(menu.getByRole('link', { name: 'Riwayat' })).not.toHaveAttribute('aria-current')
 
-    await user.click(menu.getByRole('link', { name: 'Produk' }))
+    await user.click(menu.getByRole('link', { name: 'Riwayat' }))
 
-    expect(await screen.findByRole('heading', { name: 'Produk', level: 1 })).toBeInTheDocument()
+    expect(await screen.findByRole('heading', { name: 'Riwayat', level: 1 })).toBeInTheDocument()
     expect(screen.getByText('Halaman ini masih dibuat.')).toBeInTheDocument()
-    expect(menu.getByRole('link', { name: 'Produk' })).toHaveAttribute('aria-current', 'page')
+    expect(menu.getByRole('link', { name: 'Riwayat' })).toHaveAttribute('aria-current', 'page')
     expect(menu.getByRole('link', { name: 'Beranda' })).not.toHaveAttribute('aria-current')
   })
 
@@ -232,6 +232,8 @@ describe('app shell', () => {
     ['/jual', 'Catat Penjualan'],
     ['/belanja', 'Catat Belanja'],
     ['/produk', 'Produk'],
+    ['/produk/baru', 'Tambah Produk'],
+    ['/produk/p1', 'Detail Produk'],
     ['/riwayat', 'Riwayat'],
   ])('has a screen at %s', async (path, title) => {
     stubHomeApi()

@@ -17,7 +17,8 @@ export function jsonResponse(status: number, body: unknown): Response {
   return new Response(JSON.stringify(body), { status, headers: { 'Content-Type': 'application/json' } })
 }
 
-type Handler = () => Response | Promise<Response>
+/** Answers a request; it is given the request's path and query, for answers that depend on them. */
+type Handler = (path: string) => Response | Promise<Response>
 
 /**
  * Stubs `fetch` with one handler per API path. A request goes to the handler with the longest path that its
@@ -29,7 +30,7 @@ export function stubApi(handlers: Record<string, Handler>) {
     const match = Object.keys(handlers)
       .filter((prefix) => path.includes(prefix))
       .sort((a, b) => b.length - a.length)[0]
-    return Promise.resolve(match === undefined ? jsonResponse(404, {}) : handlers[match]())
+    return Promise.resolve(match === undefined ? jsonResponse(404, {}) : handlers[match](path))
   })
   vi.stubGlobal('fetch', fetchMock)
   return fetchMock
