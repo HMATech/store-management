@@ -19,6 +19,9 @@ export function LoginPage() {
   const [fieldErrors, setFieldErrors] = useState<FieldErrors>({})
   const signIn = useMutation({ mutationFn: () => login(email.trim(), password) })
 
+  // The API answers a wrong email or password with a 400. The design shows that on the password field.
+  const isRefused = signIn.error instanceof ApiError && signIn.error.status === 400
+
   if (isSignedIn) {
     return <Navigate to="/" replace />
   }
@@ -68,10 +71,10 @@ export function LoginPage() {
             enterKeyHint="done"
             value={password}
             onChange={(event) => setPassword(event.target.value)}
-            error={fieldErrors.password}
+            error={fieldErrors.password ?? (isRefused ? 'Email atau kata sandi salah. Coba lagi.' : undefined)}
           />
 
-          {signIn.isError && (
+          {signIn.isError && !isRefused && (
             <p role="alert" className="rounded-md bg-danger-soft p-16 font-medium text-danger-default">
               {describeFailure(signIn.error)}
             </p>
@@ -104,13 +107,7 @@ function validate(email: string, password: string): FieldErrors {
 }
 
 function describeFailure(error: unknown): string {
-  if (error instanceof ApiError) {
-    if (error.isNetworkError) {
-      return 'Tidak bisa terhubung. Periksa internet, lalu coba lagi.'
-    }
-    if (error.status === 400) {
-      return 'Email atau kata sandi salah. Coba lagi.'
-    }
-  }
-  return 'Ada gangguan. Coba lagi sebentar lagi.'
+  return error instanceof ApiError && error.isNetworkError
+    ? 'Tidak bisa terhubung. Periksa internet, lalu coba lagi.'
+    : 'Ada gangguan. Coba lagi sebentar lagi.'
 }

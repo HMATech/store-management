@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest'
-import { createJwt } from '../test/fixtures'
-import { clearSession, getToken, setToken, subscribe } from './session'
+import { createJwt, TestUserId } from '../test/fixtures'
+import { clearSession, getToken, getUserId, setToken, subscribe } from './session'
 
 describe('session', () => {
   it('has no token before signing in', () => {
@@ -79,5 +79,25 @@ describe('session', () => {
     expect(getToken()).toBe(token)
     clearSession()
     expect(getToken()).toBeNull()
+  })
+})
+
+describe('getUserId', () => {
+  it('reads the user id from the token', () => {
+    setToken(createJwt())
+
+    expect(getUserId()).toBe(TestUserId)
+  })
+
+  it.each([
+    ['no session', null],
+    ['an expired token', createJwt(-1)],
+    ['a token without a user id', `x.${btoa(JSON.stringify({ exp: Date.now() / 1000 + 60 }))}.y`],
+  ])('is null with %s', (_, token) => {
+    if (token !== null) {
+      setToken(token)
+    }
+
+    expect(getUserId()).toBeNull()
   })
 })

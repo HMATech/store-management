@@ -302,9 +302,9 @@ npm run build    # Type-checks, then builds dist/ with the service worker
 
 | Path               | Holds                                                                    |
 | ------------------ | ------------------------------------------------------------------------ |
-| `src/lib/`         | `api.ts` (the only place that calls `fetch`), `session.ts`, `config.ts`  |
+| `src/lib/`         | `api.ts` (the only place that calls `fetch`), `session.ts`, `format.ts`, `config.ts` |
 | `src/features/`    | One folder per feature, such as `auth/`, with its API calls and hooks    |
-| `src/components/`  | Shared UI components                                                     |
+| `src/components/`  | Shared UI components, with the app's frame in `shell/`                   |
 | `src/pages/`       | One component per screen                                                 |
 | `src/styles/`      | `tokens.css`, the design tokens                                          |
 | `src/test/`        | Test setup and fixtures                                                  |
@@ -326,6 +326,9 @@ The design lives in the Loom (Penpot) file "Dashboard", and the frontend follows
 
 - **API calls** go through `apiRequest` in `src/lib/api.ts`. It adds the bearer token, throws `ApiError` (status 0 means no response arrived), and ends the session on a 401.
 - **The session token** is read and written only through `src/lib/session.ts`, so its storage can change in one place.
+- **Screens:** a signed-in screen is a route inside `AppShell` in `App.tsx`, wrapped in `Screen`, which gives it the top bar. `AppShell` shows the sidebar on wide screens (`lg` and up) and the bottom navigation on phones; add a main destination to `shell/navigation.ts`. Routes are in Indonesian, like the UI (`/jual`, `/produk`).
+- **Fetching:** read data with `useQuery`, passing the `signal` on to `apiRequest`. Each part of a screen fetches for itself and shows `Loading`, `LoadFailed` (with its retry) or `Empty` from `components/LoadState.tsx`, so one failed request doesn't blank the screen. Fetched data is cleared when the session ends.
+- **Formatting:** amounts, dates and times go through `src/lib/format.ts` (`Rp 1.245.000`, `Minggu, 8 November 2026`, `Pukul 10.42`). Days are counted in the device's time zone, which is also the `timeZone` sent to the API.
 - **Messages** tell the user what to do next in plain words, and never show an error code or the API's English text.
 - **Mobile:** gate hover styles behind hover-capable devices (Tailwind's `hover:` does), give controls an `:active` state, keep inputs at 16px or more, use `dvh` for full-height layouts, and never disable zoom.
 - **Motion** is short and subtle, and off under `prefers-reduced-motion`.
@@ -334,5 +337,6 @@ The design lives in the Loom (Penpot) file "Dashboard", and the frontend follows
 
 - Test files sit next to the code as `*.test.ts(x)`.
 - Test through what the user sees: find elements by role and label, and assert on the Indonesian text.
-- Stub `fetch` with `vi.stubGlobal`; build tokens and responses with `src/test/fixtures.ts`.
+- Render the whole app at a route with `renderApp` from `src/test/render.tsx`, and stub the API per path with `stubApi` from `src/test/fixtures.ts`, which also builds tokens and responses.
+- `Rp` amounts contain a no-break space, which Testing Library reads as a space. Compare against `formatRupiah` with that replaced, as `HomePage.test.tsx` does.
 - Cover the failure paths: invalid input, a refused request, no connection, and a malformed response.
