@@ -20,6 +20,7 @@ internal sealed class GetProductPriceQueryHandler(
         {
             var querySearch = string.IsNullOrEmpty(query.Search) ? "" : query.Search.ToLower();
             var result = dbContext.ProductPrices
+                .Where(pp => query.ProductId == null || pp.ProductId == query.ProductId)
                 .Where(pp => pp.Product!.Name.ToLower().Contains(querySearch)
                     || pp.Product.Detail.Brand!.Name.ToLower().Contains(querySearch))
                 .Select(pp => new
