@@ -1,5 +1,5 @@
 import { AlertDialog } from '@base-ui/react/alert-dialog'
-import { Trash2, TriangleAlert } from 'lucide-react'
+import { TriangleAlert, type LucideIcon } from 'lucide-react'
 import type { ReactNode } from 'react'
 import { Button } from './Button'
 
@@ -11,8 +11,11 @@ type ConfirmDialogProps = {
   children: ReactNode
   /** The action that goes ahead: "Ya, Hapus". */
   confirmLabel: string
-  /** True while the action runs. Both buttons wait for it. */
-  isWorking: boolean
+  confirmIcon: LucideIcon
+  /** True while the action runs. Both buttons wait for it. Leave it out for an action that is done at once. */
+  isWorking?: boolean
+  /** What the confirm button says meanwhile: "Menghapus…". */
+  workingLabel?: string
   /** Why the action failed, in words for the user. The dialog stays open to show it. */
   failure?: string
   onConfirm: () => void
@@ -20,7 +23,7 @@ type ConfirmDialogProps = {
 }
 
 /**
- * Asks before something that can't be undone, such as deleting a sale. It stays until one of its two actions
+ * Asks before something that shouldn't happen by a slip of the finger, such as deleting a sale or signing out. It stays until one of its two actions
  * is chosen. Mirrors the Confirm dialog component in Loom.
  */
 export function ConfirmDialog({
@@ -28,7 +31,9 @@ export function ConfirmDialog({
   title,
   children,
   confirmLabel,
-  isWorking,
+  confirmIcon: ConfirmIcon,
+  isWorking = false,
+  workingLabel,
   failure,
   onConfirm,
   onCancel,
@@ -56,8 +61,8 @@ export function ConfirmDialog({
           )}
           <div className="flex flex-col gap-10">
             <Button kind="danger" onClick={onConfirm} disabled={isWorking}>
-              <Trash2 aria-hidden className="size-24" />
-              {isWorking ? 'Menghapus…' : confirmLabel}
+              <ConfirmIcon aria-hidden className="size-24" />
+              {isWorking && workingLabel !== undefined ? workingLabel : confirmLabel}
             </Button>
             <Button kind="secondary" onClick={onCancel} disabled={isWorking}>
               Batal

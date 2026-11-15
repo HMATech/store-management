@@ -1,4 +1,4 @@
-import { screen } from '@testing-library/react'
+import { screen, within } from '@testing-library/react'
 import type userEvent from '@testing-library/user-event'
 import { describe, expect, it, vi } from 'vitest'
 import { clearSession, setToken } from './lib/session'
@@ -68,6 +68,8 @@ describe('routing by session', () => {
     const user = renderApp('/akun')
 
     await user.click(screen.getByRole('button', { name: 'Keluar' }))
+    const dialog = within(await screen.findByRole('alertdialog', { name: 'Keluar dari aplikasi?' }))
+    await user.click(dialog.getByRole('button', { name: 'Ya, Keluar' }))
 
     expect(await loginButton()).toBeInTheDocument()
   })

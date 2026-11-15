@@ -6,6 +6,10 @@ import { BrowserRouter } from 'react-router'
 import { App } from './App'
 import './index.css'
 import { getToken, subscribe } from './lib/session'
+import { applyTheme } from './lib/theme'
+
+// The look chosen on the account screen applies before anything is drawn.
+applyTheme()
 
 const queryClient = new QueryClient({ defaultOptions: { queries: { retry: 1 } } })
 
