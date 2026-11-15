@@ -25,8 +25,11 @@ function StockBadge({ stock }: { stock: Product['stock'] }) {
   if (stock.status === 'Negative') {
     return <Badge tone="danger">Minus {Math.abs(stock.quantity)}</Badge>
   }
+  if (stock.status === 'Empty') {
+    return <Badge tone="danger">Habis</Badge>
+  }
   if (stock.status === 'Low') {
-    return <Badge tone="warning">{stock.quantity === 0 ? 'Habis' : `Sisa ${stock.quantity}`}</Badge>
+    return <Badge tone="warning">Sisa {stock.quantity}</Badge>
   }
   return <Badge tone="neutral">Stok {stock.quantity}</Badge>
 }

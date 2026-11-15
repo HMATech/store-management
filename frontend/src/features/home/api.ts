@@ -11,7 +11,7 @@ export type DailyTotals = {
 export type StockAlert = {
   id: string
   name: string
-  stock: { quantity: number; status: 'Negative' | 'Low' }
+  stock: { quantity: number; status: 'Negative' | 'Empty' | 'Low' }
 }
 
 export type RecentSale = {
@@ -33,13 +33,13 @@ export function fetchTodayTotals(today: Date, signal?: AbortSignal): Promise<Dai
   return apiRequest<DailyTotals>(`/reports/daily-totals?${query}`, { signal })
 }
 
-/** The products whose stock needs a look: those below zero first, then those running low. */
+/** The products whose stock needs a look: those below zero first, then those run out, then those running low. */
 export async function fetchStockAlerts(signal?: AbortSignal): Promise<StockAlert[]> {
   const fetchByStatus = (status: StockAlert['stock']['status']) =>
     apiRequest<Paged<StockAlert>>(`/products?stockStatus=${status}&pageSize=${ListSize}`, { signal })
 
-  const [negative, low] = await Promise.all([fetchByStatus('Negative'), fetchByStatus('Low')])
-  return [...negative.responses, ...low.responses].slice(0, ListSize)
+  const pages = await Promise.all([fetchByStatus('Negative'), fetchByStatus('Empty'), fetchByStatus('Low')])
+  return pages.flatMap((page) => page.responses).slice(0, ListSize)
 }
 
 /** The latest sales, newest first. */
