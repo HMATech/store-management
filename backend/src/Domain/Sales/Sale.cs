@@ -37,12 +37,13 @@ public sealed class Sale
         LastUpdatedTime = dateTime;
     }
 
+    /// <param name="id">The id the client chose, so a repeated request can be recognised; a new one when null.</param>
     public static Sale CreateNew(string title,
-        DateTime occurenceTime, DateTime createdTime)
+        DateTime occurenceTime, DateTime createdTime, Guid? id = null)
     {
         return new()
         {
-            Id = Guid.NewGuid(),
+            Id = id ?? Guid.NewGuid(),
             Title = title,
             OccurenceTime = occurenceTime,
             CreatedTime = createdTime,

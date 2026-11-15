@@ -10,11 +10,14 @@ internal sealed class Create : SaleEndpoint
     public sealed record ProductEntry(Guid Id, int Quantity);
 
     /// <param name="Title">Optional; a sale is usually identified by its time and items.</param>
+    /// <param name="Id">Optional. Sending the same id again returns the sale already recorded instead of adding
+    /// another, so a client can safely retry a save whose answer it never received.</param>
     public sealed record CreateSaleRequest(
         string? Title,
         string[] Tags,
         ProductEntry[] ProductEntries,
-        DateTime OccurrenceTime
+        DateTime OccurrenceTime,
+        Guid? Id = null
     );
 
     public override IEndpointRouteBuilder MapEndpoint(IEndpointRouteBuilder app)
@@ -32,7 +35,8 @@ internal sealed class Create : SaleEndpoint
                 request.ProductEntries?.Select(e => e == null ? null! : new ProductEntryCommand(
                     e.Id, e.Quantity
                 )).ToList()!,
-                request.OccurrenceTime
+                request.OccurrenceTime,
+                request.Id
             );
 
             var result = await handler.HandleAsync(command, cancellationToken);

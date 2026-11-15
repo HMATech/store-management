@@ -19,6 +19,13 @@ internal sealed class CreatePurchaseCommandHandler(
     {
         try
         {
+            // A repeated request, such as a retry after a dropped connection, gets the purchase already recorded.
+            var recorded = await FindRecordedAsync(command.Id, cancellationToken);
+            if (recorded != null)
+            {
+                return recorded;
+            }
+
             var dtNow = dtProvider.UtcNow;
 
             var inputProductIds = command.ProductEntries.Select(e => e.Id).Distinct().ToArray();
@@ -34,7 +41,7 @@ internal sealed class CreatePurchaseCommandHandler(
                 return PurchaseErrors.ContainNonExistingProducts(invalidProducts);
             }
 
-            var purchase = Purchase.CreateNew(command.Title, command.OccurrenceTime, dtNow);
+            var purchase = Purchase.CreateNew(command.Title, command.OccurrenceTime, dtNow, command.Id);
 
             if (command.Tags.Length > 0)
             {
@@ -61,6 +68,14 @@ internal sealed class CreatePurchaseCommandHandler(
         }
         catch (DbUpdateException ex)
         {
+            // The same request arrived twice at once, and the other copy saved first.
+            var sameRequest = await FindRecordedAsync(command.Id, CancellationToken.None);
+            if (sameRequest != null)
+            {
+                logger.LogInformation(ex, "Purchase '{Id}' was already recorded by a repeated request", command.Id);
+                return sameRequest;
+            }
+
             logger.LogError(ex, "DB error has occurred while adding new purchase '{command.Title}' to DB",
                 command.Title);
             return ApplicationErrors.DBOperationError(nameof(CreatePurchaseCommandHandler),
@@ -78,5 +93,15 @@ internal sealed class CreatePurchaseCommandHandler(
             return ApplicationErrors.UnexpectedError(nameof(CreatePurchaseCommandHandler),
                 $"Unexpected error has occurred while adding new purchase '{command.Title}' to DB");
         }
+    }
+
+    private async Task<CreatePurchaseResponse?> FindRecordedAsync(Guid? id, CancellationToken cancellationToken)
+    {
+        return id == null
+            ? null
+            : await dbContext.Purchases
+                .Where(x => x.Id == id)
+                .Select(x => new CreatePurchaseResponse(x.Id, x.CreatedTime))
+                .FirstOrDefaultAsync(cancellationToken);
     }
 }

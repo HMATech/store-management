@@ -49,5 +49,10 @@ internal sealed class CreateSaleCommandValidator
 
         RuleFor(c => c.OccurrenceTime)
             .NotEmpty();
+
+        RuleFor(c => c.Id)
+            .NotEqual(Guid.Empty)
+                .WithMessage("'Id' must not be empty. Leave it out to have one made.")
+            .When(c => c.Id != null);
     }
 }

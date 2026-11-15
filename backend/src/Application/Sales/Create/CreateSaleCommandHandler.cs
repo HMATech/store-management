@@ -19,6 +19,13 @@ internal sealed class CreateSaleCommandHandler(
     {
         try
         {
+            // A repeated request, such as a retry after a dropped connection, gets the sale already recorded.
+            var recorded = await FindRecordedAsync(command.Id, cancellationToken);
+            if (recorded != null)
+            {
+                return recorded;
+            }
+
             var dtNow = dtProvider.UtcNow;
 
             var inputProductIds = command.ProductEntries.Select(e => e.Id);
@@ -39,7 +46,7 @@ internal sealed class CreateSaleCommandHandler(
                 return SaleErrors.ContainNonExistingProducts(invalidProducts);
             }
 
-            var sale = Sale.CreateNew(command.Title, command.OccurrenceTime, dtNow);
+            var sale = Sale.CreateNew(command.Title, command.OccurrenceTime, dtNow, command.Id);
 
             if (command.Tags.Length > 0)
             {
@@ -65,6 +72,14 @@ internal sealed class CreateSaleCommandHandler(
         }
         catch (DbUpdateException ex)
         {
+            // The same request arrived twice at once, and the other copy saved first.
+            var sameRequest = await FindRecordedAsync(command.Id, CancellationToken.None);
+            if (sameRequest != null)
+            {
+                logger.LogInformation(ex, "Sale '{Id}' was already recorded by a repeated request", command.Id);
+                return sameRequest;
+            }
+
             logger.LogError(ex, "DB error has occurred while adding new sale '{command.Title}' to DB",
                 command.Title);
             return ApplicationErrors.DBOperationError(nameof(CreateSaleCommandHandler),
@@ -82,5 +97,15 @@ internal sealed class CreateSaleCommandHandler(
             return ApplicationErrors.UnexpectedError(nameof(CreateSaleCommandHandler),
                 $"Unexpected error has occurred while adding new sale '{command.Title}' to DB");
         }
+    }
+
+    private async Task<CreateSaleResponse?> FindRecordedAsync(Guid? id, CancellationToken cancellationToken)
+    {
+        return id == null
+            ? null
+            : await dbContext.Sales
+                .Where(x => x.Id == id)
+                .Select(x => new CreateSaleResponse(x.Id, x.CreatedTime))
+                .FirstOrDefaultAsync(cancellationToken);
     }
 }

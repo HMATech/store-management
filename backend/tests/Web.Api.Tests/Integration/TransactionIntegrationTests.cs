@@ -36,6 +36,74 @@ public class TransactionIntegrationTests(PostgresApiFixture api)
         Assert.Equal(3, entry.GetProperty("quantity").GetInt32());
     }
 
+    [Theory]
+    [MemberData(nameof(Resources))]
+    public async Task Create_SentTwiceWithTheSameId_RecordsItOnce(string path)
+    {
+        var product = await CreateProductAsync(10m);
+        var id = Guid.NewGuid();
+        var title = PostgresApiFixture.Unique("Retry");
+        var body = new
+        {
+            id,
+            title,
+            tags = Array.Empty<string>(),
+            productEntries = new[] { new { id = product, quantity = 2, unitCost = 10m } },
+            occurrenceTime = OccurredAt,
+        };
+
+        var first = await client.PostAsJsonAsync(path, body);
+        var second = await client.PostAsJsonAsync(path, body);
+
+        Assert.Equal(HttpStatusCode.Created, first.StatusCode);
+        Assert.Equal(HttpStatusCode.Created, second.StatusCode);
+        Assert.Equal(id.ToString(), first.CreatedId());
+        Assert.Equal(id.ToString(), second.CreatedId());
+        var stock = await (await client.GetAsync($"/stocks/{product}")).ReadJsonAsync();
+        Assert.Equal(path == Purchases ? 2 : -2, stock.GetProperty("quantity").GetInt64());
+    }
+
+    [Theory]
+    [MemberData(nameof(Resources))]
+    public async Task Create_SentSeveralTimesAtOnceWithTheSameId_RecordsItOnce(string path)
+    {
+        var product = await CreateProductAsync(10m);
+        var id = Guid.NewGuid();
+        var body = new
+        {
+            id,
+            title = PostgresApiFixture.Unique("Burst"),
+            tags = Array.Empty<string>(),
+            productEntries = new[] { new { id = product, quantity = 1, unitCost = 10m } },
+            occurrenceTime = OccurredAt,
+        };
+
+        var responses = await Task.WhenAll(Enumerable.Range(0, 5).Select(_ => client.PostAsJsonAsync(path, body)));
+
+        Assert.All(responses, response => Assert.Equal(HttpStatusCode.Created, response.StatusCode));
+        Assert.All(responses, response => Assert.Equal(id.ToString(), response.CreatedId()));
+        var stock = await (await client.GetAsync($"/stocks/{product}")).ReadJsonAsync();
+        Assert.Equal(path == Purchases ? 1 : -1, stock.GetProperty("quantity").GetInt64());
+    }
+
+    [Theory]
+    [MemberData(nameof(Resources))]
+    public async Task Create_WithEmptyId_ReturnsBadRequest(string path)
+    {
+        var product = await CreateProductAsync(10m);
+
+        var response = await client.PostAsJsonAsync(path, new
+        {
+            id = Guid.Empty,
+            title = "t",
+            tags = Array.Empty<string>(),
+            productEntries = new[] { new { id = product, quantity = 1, unitCost = 10m } },
+            occurrenceTime = OccurredAt,
+        });
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+    }
+
     [Fact]
     public async Task SaleEntries_KeepThePriceFromWhenTheyWereCreated()
     {
