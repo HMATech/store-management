@@ -1,4 +1,5 @@
 import { apiRequest } from '../../lib/api'
+import { formatNumber } from '../../lib/format'
 
 export type StockStatus = 'Normal' | 'Low' | 'Negative'
 
@@ -10,6 +11,12 @@ export type Product = {
   measureUnit: { name: string }
   price: number
   stock: { quantity: number; status: StockStatus }
+}
+
+/** The brand and size, as in "Indofood · 85 g". A measure of 1 is left out: "Danone · botol". */
+export function describeProduct({ brand, measure, measureUnit }: Pick<Product, 'brand' | 'measure' | 'measureUnit'>) {
+  const size = measure === 1 ? measureUnit.name : `${formatNumber(measure)} ${measureUnit.name}`
+  return `${brand} · ${size}`
 }
 
 /** What a screen that picks products needs to know about one. */

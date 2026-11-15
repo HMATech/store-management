@@ -7,6 +7,7 @@ import { ComingSoonPage } from './pages/ComingSoonPage'
 import { HistoryPage } from './pages/HistoryPage'
 import { HomePage } from './pages/HomePage'
 import { LoginPage } from './pages/LoginPage'
+import { ProductDetailPage } from './pages/ProductDetailPage'
 import { ProductsPage } from './pages/ProductsPage'
 import { PurchasePage } from './pages/PurchasePage'
 import { SalePage } from './pages/SalePage'
@@ -19,7 +20,6 @@ export function App() {
         <Route element={<AppShell />}>
           <Route path="/" element={<HomePage />} />
           <Route path="/produk" element={<ProductsPage />} />
-          <Route path="/produk/:id" element={<ComingSoonPage title="Detail Produk" />} />
           <Route path="/riwayat" element={<HistoryPage />} />
           <Route path="/akun" element={<AccountPage />} />
         </Route>
@@ -27,6 +27,8 @@ export function App() {
           <Route path="/jual" element={<SalePage />} />
           <Route path="/belanja" element={<PurchasePage />} />
           <Route path="/produk/baru" element={<AddProductPage />} />
+          <Route path="/produk/:id" element={<ProductDetailPage />} />
+          <Route path="/produk/:id/stok" element={<ComingSoonPage title="Sesuaikan Stok" />} />
         </Route>
       </Route>
       <Route path="*" element={<Navigate to="/" replace />} />

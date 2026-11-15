@@ -6,6 +6,7 @@ const badge = cva('shrink-0 rounded-full px-10 py-6 text-xs font-semibold whites
   variants: {
     tone: {
       neutral: 'bg-bg-canvas text-text-muted',
+      primary: 'bg-primary-soft text-primary-default',
       warning: 'bg-warning-soft text-warning-default',
       danger: 'bg-danger-soft text-danger-default',
     },
