@@ -10,6 +10,7 @@ import { LoginPage } from './pages/LoginPage'
 import { ProductDetailPage } from './pages/ProductDetailPage'
 import { ProductsPage } from './pages/ProductsPage'
 import { PurchasePage } from './pages/PurchasePage'
+import { SaleDetailPage } from './pages/SaleDetailPage'
 import { SalePage } from './pages/SalePage'
 
 export function App() {
@@ -29,6 +30,7 @@ export function App() {
           <Route path="/produk/baru" element={<AddProductPage />} />
           <Route path="/produk/:id" element={<ProductDetailPage />} />
           <Route path="/produk/:id/stok" element={<AdjustStockPage />} />
+          <Route path="/riwayat/penjualan/:id" element={<SaleDetailPage />} />
         </Route>
       </Route>
       <Route path="*" element={<Navigate to="/" replace />} />

@@ -5,6 +5,7 @@ import { CardList } from '../components/Card'
 import { EmptyState } from '../components/EmptyState'
 import { LoadMoreButton } from '../components/LoadMoreButton'
 import { Empty, LoadFailed, Loading } from '../components/LoadState'
+import { Notice } from '../components/Notice'
 import { SegmentedControl } from '../components/SegmentedControl'
 import { Screen, ScreenBody } from '../components/shell/Screen'
 import { fetchTransactions, type TransactionKind } from '../features/transactions/api'
@@ -40,6 +41,7 @@ export function HistoryPage() {
     <Screen title="Riwayat" subtitle="Semua penjualan dan belanja">
       <ScreenBody>
         <div className="flex flex-col gap-14 lg:gap-24">
+          <Notice />
           <SegmentedControl
             label="Pilih jenis transaksi"
             options={kindOptions}

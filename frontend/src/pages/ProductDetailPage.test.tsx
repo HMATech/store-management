@@ -69,7 +69,8 @@ describe('product detail screen', () => {
     expect(screen.getByText('Gulaku · kg · Sembako')).toBeInTheDocument()
     expect(screen.getByText('Harga jual').parentElement).toHaveTextContent(rupiah(17500))
     expect(screen.getByRole('link', { name: 'Kembali' })).toHaveAttribute('href', '/produk')
-    expect(screen.getAllByRole('navigation', { name: 'Menu utama' })).toHaveLength(1)
+    const menu = within(screen.getByRole('navigation', { name: 'Menu utama' }))
+    expect(menu.getByRole('link', { name: 'Produk' })).toHaveAttribute('aria-current', 'page')
   })
 
   it('shows the stock, where it comes from, and the way to adjust it', async () => {

@@ -9,6 +9,7 @@ import { Card } from '../components/Card'
 import { EmptyState } from '../components/EmptyState'
 import { LoadMoreButton } from '../components/LoadMoreButton'
 import { Empty, LoadFailed, Loading } from '../components/LoadState'
+import { Notice } from '../components/Notice'
 import { Screen, ScreenBody } from '../components/shell/Screen'
 import { describeProduct, type StockStatus } from '../features/products/api'
 import { ChangePriceDialog } from '../features/products/ChangePriceDialog'
@@ -27,7 +28,7 @@ import { usePagedList } from '../lib/usePagedList'
 export function ProductDetailPage() {
   const { id = '' } = useParams()
   // Set by a screen that changed this product and came back, such as Sesuaikan Stok.
-  const notice: unknown = useLocation().state?.notice
+  const hasNotice = typeof useLocation().state?.notice === 'string'
   const product = useQuery({ queryKey: ['products', id], queryFn: ({ signal }) => fetchProduct(id, signal) })
 
   return (
@@ -49,14 +50,10 @@ export function ProductDetailPage() {
           )
         ) : (
           <div className="grid gap-14 lg:grid-cols-2 lg:items-start lg:gap-24">
-            {typeof notice === 'string' && (
-              <p role="status" className="rounded-md bg-primary-soft p-12 font-medium text-primary-default lg:col-span-2">
-                {notice}
-              </p>
-            )}
+            <Notice className="lg:col-span-2" />
             <ProductCard product={product.data} />
             {/* Beside the product on wide screens, between it and the prices on phones. */}
-            <div className={clsx('lg:col-start-2 lg:row-span-2', typeof notice === 'string' ? 'lg:row-start-2' : 'lg:row-start-1')}>
+            <div className={clsx('lg:col-start-2 lg:row-span-2', hasNotice ? 'lg:row-start-2' : 'lg:row-start-1')}>
               <StockCard productId={id} />
             </div>
             <PriceHistory productId={id} />
