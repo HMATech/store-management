@@ -21,6 +21,7 @@ function stubHomeApi(overrides: Parameters<typeof stubApi>[0] = {}) {
   return stubApi({
     '/reports/daily-totals': () => jsonResponse(200, totals),
     '/products?stockStatus=Negative': paged([product('p1', 'Minyak Goreng 2L', -2, 'Negative')]),
+    '/products?stockStatus=Empty': paged([]),
     '/products?stockStatus=Low': paged([product('p2', 'Gula Pasir 1 kg', 3, 'Low')]),
     '/transactions': paged([{ id: 's1', occurrenceTime: new Date().toISOString(), quantity: 3, total: 27500 }]),
     [`/users/${TestUserId}`]: () => jsonResponse(200, { userId: TestUserId, email: 'ibu@warung.id', firstName: 'Ibu' }),
@@ -95,17 +96,17 @@ describe('home screen', () => {
     expect(rows[1]).toHaveTextContent('Sisa 3')
   })
 
-  it('says a product with nothing left is out of stock', async () => {
-    stubHomeApi({
-      '/products?stockStatus=Negative': paged([]),
-      '/products?stockStatus=Low': paged([product('p3', 'Telur', 0, 'Low')]),
-    })
+  it('says a product with nothing left is out of stock, between stock below zero and stock running low', async () => {
+    stubHomeApi({ '/products?stockStatus=Empty': paged([product('p3', 'Telur', 0, 'Empty')]) })
 
     renderApp('/')
 
-    const row = await section('Stok perlu dicek').findByRole('listitem')
-    expect(row).toHaveTextContent('Habis')
-    expect(row).toHaveTextContent('Sisa 0')
+    const rows = await section('Stok perlu dicek').findAllByRole('listitem')
+    expect(rows.map((row) => row.textContent)).toEqual([
+      expect.stringContaining('Minyak Goreng 2L'),
+      'TelurStok habis, perlu dibeliHabis',
+      expect.stringContaining('Gula Pasir 1 kg'),
+    ])
   })
 
   it('shows at most three stock alerts', async () => {
@@ -114,6 +115,7 @@ describe('home screen', () => {
         product('n1', 'Minyak', -1, 'Negative'),
         product('n2', 'Beras', -4, 'Negative'),
       ]),
+      '/products?stockStatus=Empty': paged([product('e1', 'Kopi', 0, 'Empty')]),
       '/products?stockStatus=Low': paged([product('l1', 'Gula', 1, 'Low'), product('l2', 'Telur', 2, 'Low')]),
     })
 
@@ -123,12 +125,16 @@ describe('home screen', () => {
     expect(rows.map((row) => row.textContent)).toEqual([
       expect.stringContaining('Minyak'),
       expect.stringContaining('Beras'),
-      expect.stringContaining('Gula'),
+      expect.stringContaining('Kopi'),
     ])
   })
 
   it('says so when no stock needs checking', async () => {
-    stubHomeApi({ '/products?stockStatus=Negative': paged([]), '/products?stockStatus=Low': paged([]) })
+    stubHomeApi({
+      '/products?stockStatus=Negative': paged([]),
+      '/products?stockStatus=Empty': paged([]),
+      '/products?stockStatus=Low': paged([]),
+    })
 
     renderApp('/')
 

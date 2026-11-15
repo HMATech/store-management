@@ -97,6 +97,7 @@ function ProductCard({ product }: { product: ProductDetail }) {
 const stockBadges: Record<StockStatus, { tone: 'warning' | 'danger'; label: string } | undefined> = {
   Normal: undefined,
   Low: { tone: 'warning', label: 'Hampir habis' },
+  Empty: { tone: 'danger', label: 'Habis' },
   Negative: { tone: 'danger', label: 'Minus' },
 }
 

@@ -27,6 +27,7 @@ const stockFilters = {
     dot: 'warning',
     whenEmpty: 'Tidak ada barang yang hampir habis.',
   },
+  habis: { label: 'Habis', status: 'Empty', dot: 'danger', whenEmpty: 'Tidak ada barang yang habis.' },
   minus: { label: 'Minus', status: 'Negative', dot: 'danger', whenEmpty: 'Tidak ada barang yang stoknya minus.' },
 } as const satisfies Record<string, { label: string; status: StockStatus; dot: string; whenEmpty: string }>
 
@@ -92,7 +93,7 @@ export function ProductsPage() {
                 onChange={(event) => setSearchText(event.target.value)}
               />
             </div>
-            <div role="group" aria-label="Saring menurut stok" className="flex gap-8 overflow-x-auto">
+            <div role="group" aria-label="Saring menurut stok" className="flex flex-wrap gap-8">
               <FilterChip isSelected={stockFilter === null} onSelect={() => selectStockFilter(null)}>
                 Semua
               </FilterChip>

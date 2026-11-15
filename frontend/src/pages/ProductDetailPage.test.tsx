@@ -88,6 +88,7 @@ describe('product detail screen', () => {
 
   it.each([
     ['Normal', 40, null],
+    ['Empty', 0, 'Habis'],
     ['Negative', -2, 'Minus'],
   ])('marks a stock that is %s', async (status, quantity, label) => {
     stubDetailApi({ '/stocks/p-gula': () => jsonResponse(200, { ...stock, quantity, status, adjusted: -5 }) })

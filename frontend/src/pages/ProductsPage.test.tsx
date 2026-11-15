@@ -30,7 +30,7 @@ const catalogue = [
   product('Gula Pasir 1 kg', 17500, 3, 'Low', 'Gulaku', 1, 'bungkus'),
   product('Indomie Goreng', 3500, 24, 'Normal', 'Indofood', 85, 'g'),
   product('Minyak Goreng 2L', 38000, -2, 'Negative', 'Bimoli', 1.5, 'liter'),
-  product('Telur Ayam 1 kg', 28000, 0, 'Low'),
+  product('Telur Ayam 1 kg', 28000, 0, 'Empty'),
 ]
 
 const page = (responses: unknown[], hasNextPage = false, totalCount = responses.length) =>
@@ -109,7 +109,8 @@ describe('product list screen', () => {
   })
 
   it.each([
-    ['Hampir habis', 'Low', ['Gula Pasir 1 kg', 'Telur Ayam 1 kg'], '/produk?stok=hampir-habis'],
+    ['Hampir habis', 'Low', ['Gula Pasir 1 kg'], '/produk?stok=hampir-habis'],
+    ['Habis', 'Empty', ['Telur Ayam 1 kg'], '/produk?stok=habis'],
     ['Minus', 'Negative', ['Minyak Goreng 2L'], '/produk?stok=minus'],
   ])('filters to "%s"', async (label, status, expected) => {
     const api = stubProductApi()
@@ -136,6 +137,7 @@ describe('product list screen', () => {
 
   it.each([
     ['/produk?stok=hampir-habis', 'Hampir habis'],
+    ['/produk?stok=habis', 'Habis'],
     ['/produk?stok=minus', 'Minus'],
   ])('opens with the filter in the address %s', async (path, label) => {
     stubProductApi()
@@ -156,13 +158,14 @@ describe('product list screen', () => {
 
   it('searches by name once typing pauses, within the chosen filter', async () => {
     const api = stubProductApi()
-    const user = await renderProducts('/produk?stok=hampir-habis')
+    const user = await renderProducts('/produk?stok=habis')
 
     await user.type(screen.getByRole('searchbox', { name: 'Cari nama barang' }), ' telur ')
 
-    await waitFor(() => expect(names()).toEqual(['Telur Ayam 1 kg']))
-    const searches = requestedPaths(api).filter((path) => path.includes('search='))
-    expect(searches).toEqual([expect.stringMatching(/search=telur.*stockStatus=Low/)])
+    // Telur is the only product without stock, so the list looks the same before and after; wait for the request.
+    const searches = () => requestedPaths(api).filter((path) => path.includes('search='))
+    await waitFor(() => expect(searches()).toEqual([expect.stringMatching(/search=telur.*stockStatus=Empty/)]))
+    expect(names()).toEqual(['Telur Ayam 1 kg'])
   })
 
   it.each([
@@ -179,6 +182,7 @@ describe('product list screen', () => {
 
   it.each([
     ['Hampir habis', 'Tidak ada barang yang hampir habis.'],
+    ['Habis', 'Tidak ada barang yang habis.'],
     ['Minus', 'Tidak ada barang yang stoknya minus.'],
   ])('says so when no product is "%s"', async (label, message) => {
     stubProductApi([catalogue[0]])

@@ -1,7 +1,8 @@
 import { apiRequest } from '../../lib/api'
 import { formatNumber } from '../../lib/format'
 
-export type StockStatus = 'Normal' | 'Low' | 'Negative'
+/** As the API judges a stock: `Low` is 1 up to the product's minimum, `Empty` exactly 0, `Negative` below 0. */
+export type StockStatus = 'Normal' | 'Low' | 'Empty' | 'Negative'
 
 export type Product = {
   id: string
