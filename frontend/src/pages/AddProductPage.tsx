@@ -41,7 +41,7 @@ export function AddProductPage() {
     onSuccess: (_result, product) => {
       // The product list, its count and the suggestions all changed.
       void queryClient.invalidateQueries()
-      void navigate('/produk', { state: { addedProduct: product.name } })
+      void navigate('/produk', { state: { notice: `${product.name} sudah ditambahkan.` } })
     },
   })
 

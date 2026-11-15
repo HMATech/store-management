@@ -25,7 +25,7 @@ export function Sidebar() {
           <NavLink
             key={to}
             to={to}
-            end
+            end={to === '/'}
             className={({ isActive }) =>
               clsx(
                 'flex min-h-control-md items-center gap-12 rounded-md px-14 py-12',

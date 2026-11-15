@@ -16,7 +16,7 @@ export function BottomNavigation() {
         <NavLink
           key={to}
           to={to}
-          end
+          end={to === '/'}
           className={({ isActive }) =>
             clsx(
               'group flex min-h-touch-min flex-1 flex-col items-center gap-4 rounded-md text-xs',

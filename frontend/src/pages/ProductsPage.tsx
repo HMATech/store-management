@@ -1,12 +1,13 @@
 import { useQuery } from '@tanstack/react-query'
 import { Package, Plus, Search } from 'lucide-react'
 import { useState } from 'react'
-import { useLocation, useSearchParams } from 'react-router'
+import { useSearchParams } from 'react-router'
 import { ButtonLink } from '../components/Button'
 import { CardList } from '../components/Card'
 import { EmptyState } from '../components/EmptyState'
 import { FilterChip } from '../components/FilterChip'
 import { Empty, LoadFailed, Loading } from '../components/LoadState'
+import { Notice } from '../components/Notice'
 import { Screen, ScreenBody } from '../components/shell/Screen'
 import { TextField } from '../components/TextField'
 import { fetchProductCount, type StockStatus } from '../features/products/api'
@@ -39,8 +40,6 @@ export function ProductsPage() {
   const [params, setParams] = useSearchParams()
   const stockParam = params.get('stok')
   const stockFilter = isStockFilterKey(stockParam) ? stockParam : null
-  // Set by Tambah Produk when it comes back here after saving.
-  const addedProduct: unknown = useLocation().state?.addedProduct
   const count = useQuery({ queryKey: ['products', 'count'], queryFn: ({ signal }) => fetchProductCount(signal) })
 
   function selectStockFilter(key: StockFilterKey | null) {
@@ -78,11 +77,7 @@ export function ProductsPage() {
     >
       <ScreenBody>
         <div className="flex flex-col gap-14 lg:gap-24">
-          {typeof addedProduct === 'string' && (
-            <p role="status" className="rounded-md bg-primary-soft p-12 font-medium text-primary-default">
-              {addedProduct} sudah ditambahkan.
-            </p>
-          )}
+          <Notice />
           <div className="flex flex-col gap-14 lg:flex-row lg:items-center lg:gap-12">
             <div className="lg:w-400">
               <TextField

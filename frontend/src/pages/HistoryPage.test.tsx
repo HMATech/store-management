@@ -87,6 +87,16 @@ describe('history screen', () => {
     expect(within(purchase).getByText(`− ${rupiah(860000)}`)).toBeInTheDocument()
   })
 
+  it('opens a sale from its row, and leaves a purchase as it is', async () => {
+    stubHistoryApi()
+
+    await renderHistory()
+
+    const [sale, , purchase] = day(0).getAllByRole('listitem')
+    expect(within(sale).getByRole('link')).toHaveAttribute('href', '/riwayat/penjualan/t1')
+    expect(within(purchase).queryByRole('link')).not.toBeInTheDocument()
+  })
+
   it("shows each day's money in, counting sales only", async () => {
     stubHistoryApi()
 

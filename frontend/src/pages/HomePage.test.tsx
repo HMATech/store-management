@@ -144,6 +144,7 @@ describe('home screen', () => {
     expect(row).toHaveTextContent('3 barang')
     expect(row).toHaveTextContent(/Pukul \d\d\.\d\d/)
     expect(row).toHaveTextContent(rupiah(27500))
+    expect(within(row).getByRole('link')).toHaveAttribute('href', '/riwayat/penjualan/s1')
   })
 
   it('says so when there are no sales yet', async () => {
