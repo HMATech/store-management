@@ -1,10 +1,10 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { Check, Info, Package } from 'lucide-react'
+import { Info, Package } from 'lucide-react'
 import { useState, type FormEvent } from 'react'
 import { useNavigate } from 'react-router'
-import { Button, ButtonLink } from '../components/Button'
 import { InfoNote } from '../components/InfoNote'
 import { MoneyField } from '../components/MoneyField'
+import { SaveBar } from '../components/SaveBar'
 import { Screen } from '../components/shell/Screen'
 import { SuggestField } from '../components/SuggestField'
 import { TextField } from '../components/TextField'
@@ -128,44 +128,10 @@ export function AddProductPage() {
             </div>
             <InfoNote icon={Info}>Harga bisa diubah kapan saja. Stok awal dicatat lewat Catat Belanja.</InfoNote>
           </div>
-          <SaveBar isSaving={save.isPending} failure={failure} />
+          <SaveBar label="Simpan Produk" cancelTo="/produk" isSaving={save.isPending} failure={failure} />
         </div>
       </form>
     </Screen>
-  )
-}
-
-type SaveBarProps = { isSaving: boolean; failure: string | undefined }
-
-/** The save button with why the last save failed: pinned to the bottom on phones, inside the card on wide screens. */
-function SaveBar({ isSaving, failure }: SaveBarProps) {
-  return (
-    <div
-      className={
-        'sticky bottom-0 flex flex-col gap-12 bg-bg-surface px-16 pt-14'
-        + ' pb-[calc(20px+env(safe-area-inset-bottom,0px))]'
-        + ' shadow-[0_-4px_16px_color-mix(in_srgb,var(--color-shadow)_8%,transparent)]'
-        + ' lg:static lg:p-0 lg:shadow-none'
-      }
-    >
-      {failure !== undefined && (
-        <p role="alert" className="rounded-md bg-danger-soft p-12 text-sm font-medium text-danger-default">
-          {failure}
-        </p>
-      )}
-      <div className="flex flex-col gap-12 lg:flex-row lg:justify-end">
-        {/* On phones "Kembali" at the top does this. */}
-        <div className="hidden lg:block">
-          <ButtonLink kind="secondary" to="/produk">
-            Batal
-          </ButtonLink>
-        </div>
-        <Button type="submit" disabled={isSaving}>
-          <Check aria-hidden className="size-24" />
-          {isSaving ? 'Menyimpan…' : 'Simpan Produk'}
-        </Button>
-      </div>
-    </div>
   )
 }
 
