@@ -223,7 +223,6 @@ describe('app shell', () => {
     await user.click(menu.getByRole('link', { name: 'Riwayat' }))
 
     expect(await screen.findByRole('heading', { name: 'Riwayat', level: 1 })).toBeInTheDocument()
-    expect(screen.getByText('Halaman ini masih dibuat.')).toBeInTheDocument()
     expect(menu.getByRole('link', { name: 'Riwayat' })).toHaveAttribute('aria-current', 'page')
     expect(menu.getByRole('link', { name: 'Beranda' })).not.toHaveAttribute('aria-current')
   })

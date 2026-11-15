@@ -3,6 +3,7 @@ import { AppShell } from './components/shell/AppShell'
 import { RequireSignedIn } from './features/auth/RequireSignedIn'
 import { AccountPage } from './pages/AccountPage'
 import { ComingSoonPage } from './pages/ComingSoonPage'
+import { HistoryPage } from './pages/HistoryPage'
 import { HomePage } from './pages/HomePage'
 import { LoginPage } from './pages/LoginPage'
 import { ProductsPage } from './pages/ProductsPage'
@@ -19,7 +20,7 @@ export function App() {
           <Route path="/produk" element={<ProductsPage />} />
           <Route path="/produk/baru" element={<ComingSoonPage title="Tambah Produk" />} />
           <Route path="/produk/:id" element={<ComingSoonPage title="Detail Produk" />} />
-          <Route path="/riwayat" element={<ComingSoonPage title="Riwayat" />} />
+          <Route path="/riwayat" element={<HistoryPage />} />
           <Route path="/akun" element={<AccountPage />} />
         </Route>
         <Route element={<AppShell bottomNavigation={false} />}>

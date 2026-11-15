@@ -8,6 +8,7 @@ const chip = cva('flex size-40 shrink-0 items-center justify-center rounded-full
       primary: 'bg-primary-soft text-primary-default',
       warning: 'bg-warning-soft text-warning-default',
       danger: 'bg-danger-soft text-danger-default',
+      info: 'bg-info-soft text-info-default',
     },
   },
   defaultVariants: { tone: 'primary' },

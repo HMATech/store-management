@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { formatLongDate, formatOccurrence, formatRupiah, toIsoDay } from './format'
+import { formatDayHeading, formatLongDate, formatOccurrence, formatRupiah, formatTime, toIsoDay } from './format'
 
 /** Intl puts a no-break space after "Rp". */
 const plain = (text: string) => text.replace(/ /g, ' ')
@@ -46,5 +46,29 @@ describe('toIsoDay', () => {
     [new Date(2026, 11, 31, 12, 0), '2026-12-31'],
   ])('writes the local day of %s as %s', (date, expected) => {
     expect(toIsoDay(date)).toBe(expected)
+  })
+})
+
+describe('formatTime', () => {
+  it('writes the hour and minute with two digits each', () => {
+    expect(formatTime(new Date(2026, 10, 8, 8, 5))).toBe('08.05')
+  })
+})
+
+describe('formatDayHeading', () => {
+  const today = new Date(2026, 10, 8, 12, 0)
+
+  it.each([
+    [new Date(2026, 10, 8, 0, 0), 'Hari ini'],
+    [new Date(2026, 10, 7, 23, 59), 'Kemarin, 7 Nov'],
+    [new Date(2026, 10, 6, 9, 0), 'Jumat, 6 Nov'],
+    [new Date(2026, 0, 1, 9, 0), 'Kamis, 1 Jan'],
+    [new Date(2025, 11, 31, 9, 0), '31 Des 2025'],
+  ])('writes %s as "%s"', (day, expected) => {
+    expect(formatDayHeading(day, today)).toBe(expected)
+  })
+
+  it('calls the last day of the previous month "Kemarin" on the first of a month', () => {
+    expect(formatDayHeading(new Date(2026, 9, 31, 20, 0), new Date(2026, 10, 1, 7, 0))).toBe('Kemarin, 31 Okt')
   })
 })
