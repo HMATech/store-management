@@ -312,7 +312,7 @@ npm run build    # Type-checks, then builds dist/ with the service worker
 
 | Path               | Holds                                                                    |
 | ------------------ | ------------------------------------------------------------------------ |
-| `src/lib/`         | `api.ts` (the only place that calls `fetch`), `session.ts`, `format.ts`, `config.ts` |
+| `src/lib/`         | `api.ts` (the only place that calls `fetch`), `session.ts`, `format.ts`, `config.ts`, `theme.ts` |
 | `src/features/`    | One folder per feature, such as `auth/`, with its API calls and hooks    |
 | `src/components/`  | Shared UI components, with the app's frame in `shell/`                   |
 | `src/pages/`       | One component per screen                                                 |
@@ -343,7 +343,10 @@ The design lives in the Loom (Penpot) file "Dashboard", and the frontend follows
 - **Forms:** point out a missing field only after saving was tried, under the field and again next to the save button, and send nothing until it is filled in. Amounts are typed into `MoneyField`, which shows "Rp" and separates thousands. A quantity that is often large can be typed as well as stepped (`QuantityStepper` with `onChange`).
 - **Brands, units and labels** are typed into a `SuggestField`, which offers the ones already in use and takes a new one. Saving matches the name against the known ones whatever its letter case and adds it only when it is new (`createProduct` in `features/products/catalog.ts`). A product without a brand goes under "Umum".
 - **After saving or deleting from its own screen**, go back to where it was opened from and say so there: navigate with `state: { notice }`, and the screen that shows it renders `<Notice />`. Tambah Produk returns to Produk ("… sudah ditambahkan."), Sesuaikan Stok to the product, and a deleted sale to Riwayat.
-- **Deleting** asks first with `ConfirmDialog`, which says what will happen and stays open with a message when it fails.
+- **Deleting and signing out** ask first with `ConfirmDialog`, which says what will happen and stays open with a message when it fails.
+- **Menus** such as Akun's are `MenuRow`s inside a `CardList`: a row with `to` opens a screen and shows a chevron, a row with `onSelect` acts on the spot.
+- **The look** (Ikuti perangkat, Terang, Gelap) is chosen on Akun and kept per device by `src/lib/theme.ts`, which sets `data-theme` on `<html>` when the app starts.
+- **New users** are checked against the API's rules before sending (`isStrongPassword` in `features/users/api.ts`). Keep the two in step if the API's password rules change.
 - **Form screens** end with `SaveBar` inside their `<form>`: the save button pinned to the bottom on phones, and beside "Batal" on wide screens.
 - **Stock adjustments** are entered as what was counted on the shelf. The screen works out the difference from what the app had on record when it opened, and sends that with the chosen reason.
 - **A purchase's cost** is typed per product ("Harga beli per barang"). It is never taken from the selling price, which the purchase screen shows only as a note.
