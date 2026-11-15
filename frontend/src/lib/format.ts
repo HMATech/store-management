@@ -17,6 +17,11 @@ export function formatRupiah(amount: number): string {
   return rupiah.format(amount)
 }
 
+/** A whole number with thousands separated, as in `17.500`. */
+export function formatNumber(value: number): string {
+  return value.toLocaleString(Locale)
+}
+
 /** A date as `Minggu, 8 November 2026`. */
 export function formatLongDate(date: Date): string {
   return longDate.format(date)

@@ -2,12 +2,14 @@ import clsx from 'clsx'
 import type { LucideIcon } from 'lucide-react'
 import { useId, type InputHTMLAttributes, type ReactNode } from 'react'
 
-export type TextFieldProps = Omit<InputHTMLAttributes<HTMLInputElement>, 'id'> & {
+export type TextFieldProps = Omit<InputHTMLAttributes<HTMLInputElement>, 'id' | 'prefix'> & {
   label: string
   /** Keeps the label for screen readers only, for a field whose placeholder and icon say what it is. */
   hideLabel?: boolean
   /** Decorative icon at the start of the field. */
   icon?: LucideIcon
+  /** Text before the value that is part of how it reads, such as "Rp". */
+  prefix?: string
   /** A control at the end of the field, such as the password field's show button. */
   trailing?: ReactNode
   /** Shown under the field, which is then marked invalid. */
@@ -19,6 +21,7 @@ export function TextField({
   label,
   hideLabel = false,
   icon: Icon,
+  prefix,
   trailing,
   error,
   className,
@@ -41,6 +44,11 @@ export function TextField({
         )}
       >
         {Icon !== undefined && <Icon aria-hidden className="size-22 shrink-0 text-text-subtle" />}
+        {prefix !== undefined && (
+          <span aria-hidden className="shrink-0 text-lg font-semibold text-text-muted">
+            {prefix}
+          </span>
+        )}
         <input
           id={id}
           aria-invalid={hasError}

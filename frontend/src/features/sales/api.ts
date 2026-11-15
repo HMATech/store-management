@@ -1,8 +1,8 @@
 import { apiRequest } from '../../lib/api'
-import type { Product } from '../products/api'
+import type { ProductSummary } from '../products/api'
 
 /** What a sale needs to know about a product. */
-export type SaleProduct = Pick<Product, 'id' | 'name' | 'price' | 'stock'>
+export type SaleProduct = ProductSummary
 
 export type SaleLine = { product: SaleProduct; quantity: number }
 
