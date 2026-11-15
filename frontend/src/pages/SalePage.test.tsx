@@ -35,6 +35,12 @@ function stubSaleApi(overrides: Parameters<typeof stubApi>[0] = {}) {
   })
 }
 
+/** The ids the sales were sent with, in order. */
+const saleIds = (api: ReturnType<typeof stubApi>) =>
+  api.mock.calls
+    .filter(([input, init]) => String(input).endsWith('/sales') && init?.method === 'POST')
+    .map(([, init]) => JSON.parse(String(init?.body)).id as string)
+
 const card = (name: string) => within(screen.getByText(name).closest('li')!)
 const order = () => within(screen.getByRole('region', { name: 'Pesanan' }))
 const saveButton = () => screen.getByRole('button', { name: 'Simpan Penjualan' })
@@ -177,7 +183,7 @@ describe('sale screen', () => {
     [
       'no connection',
       () => Promise.reject<Response>(new TypeError('Failed to fetch')),
-      'Tidak bisa terhubung, penjualan belum tersimpan. Periksa internet, lalu coba lagi.',
+      'Tidak bisa terhubung. Periksa internet, lalu simpan lagi. Penjualan tidak akan tercatat dua kali.',
     ],
     [
       'a product that was deleted',
@@ -215,6 +221,60 @@ describe('sale screen', () => {
     expect(await screen.findByRole('alertdialog', { name: 'Penjualan tersimpan' })).toBeInTheDocument()
     // The dialog hides the page behind it from assistive technology, so look past that.
     expect(screen.queryByRole('alert', { hidden: true })).not.toBeInTheDocument()
+  })
+
+  it('sends the same id when saving the same order again, so a sale is never recorded twice', async () => {
+    let isDown = true
+    const api = stubSaleApi({
+      '/sales': () => (isDown ? Promise.reject(new TypeError('Failed to fetch')) : new Response(null, { status: 201 })),
+    })
+    const user = await renderSalePage()
+    await user.click(screen.getByRole('button', { name: 'Tambah Indomie Goreng' }))
+    await user.click(saveButton())
+    await order().findByRole('alert')
+
+    isDown = false
+    await user.click(saveButton())
+    await screen.findByRole('alertdialog', { name: 'Penjualan tersimpan' })
+
+    const [first, second] = saleIds(api)
+    expect(first).toMatch(/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/)
+    expect(second).toBe(first)
+  })
+
+  it('sends a new id once the order is changed after a failed save', async () => {
+    let isDown = true
+    const api = stubSaleApi({
+      '/sales': () => (isDown ? jsonResponse(500, {}) : new Response(null, { status: 201 })),
+    })
+    const user = await renderSalePage()
+    await user.click(screen.getByRole('button', { name: 'Tambah Indomie Goreng' }))
+    await user.click(saveButton())
+    await order().findByRole('alert')
+
+    isDown = false
+    await user.click(screen.getByRole('button', { name: 'Tambah Aqua 600 ml' }))
+    await user.click(saveButton())
+    await screen.findByRole('alertdialog', { name: 'Penjualan tersimpan' })
+
+    const [first, second] = saleIds(api)
+    expect(second).not.toBe(first)
+  })
+
+  it('gives the next sale its own id after "Catat Penjualan Lagi"', async () => {
+    const api = stubSaleApi()
+    const user = await renderSalePage()
+    await user.click(screen.getByRole('button', { name: 'Tambah Indomie Goreng' }))
+    await user.click(saveButton())
+    await user.click(await screen.findByRole('button', { name: 'Catat Penjualan Lagi' }))
+    await waitFor(() => expect(screen.queryByRole('alertdialog')).not.toBeInTheDocument())
+
+    await user.click(await screen.findByRole('button', { name: 'Tambah Indomie Goreng' }))
+    await user.click(saveButton())
+    await screen.findByRole('alertdialog', { name: 'Penjualan tersimpan' })
+
+    const [first, second] = saleIds(api)
+    expect(second).not.toBe(first)
   })
 
   it('blocks a second save while the first is still going', async () => {

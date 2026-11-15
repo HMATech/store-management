@@ -272,7 +272,7 @@ describe('purchase screen', () => {
     [
       'there is no connection',
       () => Promise.reject(new TypeError('Failed to fetch')),
-      'Tidak bisa terhubung, belanja belum tersimpan. Periksa internet, lalu coba lagi.',
+      'Tidak bisa terhubung. Periksa internet, lalu simpan lagi. Belanja tidak akan tercatat dua kali.',
     ],
   ])('keeps what was entered and says so when %s', async (_case, respond, message) => {
     stubPurchaseApi({ '/purchases': respond })
@@ -305,6 +305,29 @@ describe('purchase screen', () => {
     await user.click(saveButton())
 
     expect(await screen.findByRole('alertdialog', { name: 'Belanja tersimpan' })).toBeInTheDocument()
+  })
+
+  it('sends the same id when saving the same purchase again, and a new one once it is changed', async () => {
+    let failures = 2
+    const api = stubPurchaseApi({
+      '/purchases': () => (failures-- > 0 ? jsonResponse(500, {}) : new Response(null, { status: 201 })),
+    })
+    const user = await renderPurchasePage()
+    await user.type(supplierField(), 'Pasar Induk')
+    await pick(user, 'Indomie Goreng', 5, 3000)
+    await user.click(saveButton())
+    await basket().findByRole('alert')
+    await user.click(saveButton())
+    await waitFor(() => expect(sentPurchases(api)).toHaveLength(2))
+
+    await user.clear(costField('Indomie Goreng'))
+    await user.type(costField('Indomie Goreng'), '2900')
+    await user.click(saveButton())
+    await screen.findByRole('alertdialog', { name: 'Belanja tersimpan' })
+
+    const [first, retry, changed] = sentPurchases(api).map(([, init]) => JSON.parse(String(init?.body)).id)
+    expect(retry).toBe(first)
+    expect(changed).not.toBe(first)
   })
 
   it('blocks a second save while the first is still going', async () => {

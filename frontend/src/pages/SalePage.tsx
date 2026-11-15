@@ -13,6 +13,7 @@ import { createSale } from '../features/sales/api'
 import { MaxQuantity, useCart, type Cart } from '../features/sales/useCart'
 import { ApiError } from '../lib/api'
 import { formatRupiah } from '../lib/format'
+import { useRetrySafeId } from '../lib/requestId'
 import { useDebouncedValue } from '../lib/useDebouncedValue'
 
 /** How long typing must pause before the product list is searched. */
@@ -24,9 +25,11 @@ export function SalePage() {
   const cart = useCart()
   const [searchText, setSearchText] = useState('')
   const [savedSale, setSavedSale] = useState<SavedSummary | null>(null)
+  const saleIdFor = useRetrySafeId()
 
   const save = useMutation({
-    mutationFn: () => createSale(cart.lines),
+    // Tapping save again after a failure sends the same id, so a sale that did reach the API isn't recorded twice.
+    mutationFn: () => createSale(cart.lines, saleIdFor([cart.lines])),
     onSuccess: () => {
       setSavedSale({ totalQuantity: cart.totalQuantity, total: cart.totalPrice })
       cart.clear()
@@ -131,7 +134,7 @@ function ProductList({ searchText, cart }: { searchText: string; cart: Cart }) {
 function describeSaveFailure(error: unknown): string {
   if (error instanceof ApiError) {
     if (error.isNetworkError) {
-      return 'Tidak bisa terhubung, penjualan belum tersimpan. Periksa internet, lalu coba lagi.'
+      return 'Tidak bisa terhubung. Periksa internet, lalu simpan lagi. Penjualan tidak akan tercatat dua kali.'
     }
     if (error.status === 404) {
       return 'Ada barang yang sudah dihapus dari daftar. Muat ulang halaman ini, lalu catat lagi.'
