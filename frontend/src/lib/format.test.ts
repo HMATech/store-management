@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { formatDayHeading, formatLongDate, formatOccurrence, formatRupiah, formatTime, toIsoDay } from './format'
+import { formatDayHeading, formatLongDate, formatNumber, formatOccurrence, formatRupiah, formatTime, toIsoDay } from './format'
 
 /** Intl puts a no-break space after "Rp". */
 const plain = (text: string) => text.replace(/ /g, ' ')
@@ -70,5 +70,16 @@ describe('formatDayHeading', () => {
 
   it('calls the last day of the previous month "Kemarin" on the first of a month', () => {
     expect(formatDayHeading(new Date(2026, 9, 31, 20, 0), new Date(2026, 10, 1, 7, 0))).toBe('Kemarin, 31 Okt')
+  })
+})
+
+describe('formatNumber', () => {
+  it.each([
+    [0, '0'],
+    [999, '999'],
+    [17500, '17.500'],
+    [999999999, '999.999.999'],
+  ])('writes %d as %s', (value, expected) => {
+    expect(formatNumber(value)).toBe(expected)
   })
 })

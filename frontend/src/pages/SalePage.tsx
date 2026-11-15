@@ -1,17 +1,18 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { Search } from 'lucide-react'
 import { useState } from 'react'
+import { CheckoutPanel } from '../components/CheckoutPanel'
+import { LoadMoreButton } from '../components/LoadMoreButton'
 import { Empty, LoadFailed, Loading } from '../components/LoadState'
+import { SavedDialog, type SavedSummary } from '../components/SavedDialog'
 import { Screen } from '../components/shell/Screen'
 import { TextField } from '../components/TextField'
-import { LoadMoreButton } from '../components/LoadMoreButton'
+import { ProductCard } from '../features/products/ProductCard'
 import { useProductPages } from '../features/products/useProductPages'
 import { createSale } from '../features/sales/api'
-import { OrderPanel } from '../features/sales/OrderPanel'
-import { ProductCard } from '../features/sales/ProductCard'
-import { SaleSavedDialog, type SavedSale } from '../features/sales/SaleSavedDialog'
-import { useCart, type Cart } from '../features/sales/useCart'
+import { MaxQuantity, useCart, type Cart } from '../features/sales/useCart'
 import { ApiError } from '../lib/api'
+import { formatRupiah } from '../lib/format'
 import { useDebouncedValue } from '../lib/useDebouncedValue'
 
 /** How long typing must pause before the product list is searched. */
@@ -22,12 +23,12 @@ export function SalePage() {
   const queryClient = useQueryClient()
   const cart = useCart()
   const [searchText, setSearchText] = useState('')
-  const [savedSale, setSavedSale] = useState<SavedSale | null>(null)
+  const [savedSale, setSavedSale] = useState<SavedSummary | null>(null)
 
   const save = useMutation({
     mutationFn: () => createSale(cart.lines),
     onSuccess: () => {
-      setSavedSale({ totalQuantity: cart.totalQuantity, totalPrice: cart.totalPrice })
+      setSavedSale({ totalQuantity: cart.totalQuantity, total: cart.totalPrice })
       cart.clear()
       // The sale changed stock, today's totals and the history.
       void queryClient.invalidateQueries()
@@ -58,14 +59,31 @@ export function SalePage() {
           <p className="text-sm text-text-muted">Ketuk "Tambah" untuk memasukkan barang</p>
           <ProductList searchText={searchText} cart={cart} />
         </div>
-        <OrderPanel
-          cart={cart}
-          isSaving={save.isPending}
+        <CheckoutPanel
+          title="Pesanan"
+          description="Barang yang dibeli pembeli ini"
+          emptyText="Belum ada barang dipilih."
+          lines={cart.lines.map(({ product, quantity }) => ({
+            id: product.id,
+            name: product.name,
+            detail: `${quantity} × ${formatRupiah(product.price)}`,
+            amount: formatRupiah(quantity * product.price),
+          }))}
+          totalLabel="Total belanja pembeli"
+          totalQuantity={cart.totalQuantity}
+          total={cart.totalPrice}
           error={save.isError ? describeSaveFailure(save.error) : undefined}
+          saveLabel="Simpan Penjualan"
+          isSaving={save.isPending}
           onSave={() => save.mutate()}
         />
       </div>
-      <SaleSavedDialog sale={savedSale} onRecordAnother={recordAnother} />
+      <SavedDialog
+        title="Penjualan tersimpan"
+        saved={savedSale}
+        againLabel="Catat Penjualan Lagi"
+        onAgain={recordAnother}
+      />
     </Screen>
   )
 }
@@ -98,6 +116,7 @@ function ProductList({ searchText, cart }: { searchText: string; cart: Cart }) {
             key={product.id}
             product={product}
             quantity={cart.quantityOf(product.id)}
+            max={MaxQuantity}
             onAdd={() => cart.add(product)}
             onIncrease={() => cart.increase(product.id)}
             onDecrease={() => cart.decrease(product.id)}

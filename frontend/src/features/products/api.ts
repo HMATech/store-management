@@ -12,6 +12,9 @@ export type Product = {
   stock: { quantity: number; status: StockStatus }
 }
 
+/** What a screen that picks products needs to know about one. */
+export type ProductSummary = Pick<Product, 'id' | 'name' | 'price' | 'stock'>
+
 export type ProductPage = { responses: Product[]; hasNextPage: boolean; totalCount: number }
 
 /** Which products to list: those whose name contains `search`, and optionally only one stock status. */

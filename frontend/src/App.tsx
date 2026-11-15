@@ -7,6 +7,7 @@ import { HistoryPage } from './pages/HistoryPage'
 import { HomePage } from './pages/HomePage'
 import { LoginPage } from './pages/LoginPage'
 import { ProductsPage } from './pages/ProductsPage'
+import { PurchasePage } from './pages/PurchasePage'
 import { SalePage } from './pages/SalePage'
 
 export function App() {
@@ -16,7 +17,6 @@ export function App() {
       <Route element={<RequireSignedIn />}>
         <Route element={<AppShell />}>
           <Route path="/" element={<HomePage />} />
-          <Route path="/belanja" element={<ComingSoonPage title="Catat Belanja" />} />
           <Route path="/produk" element={<ProductsPage />} />
           <Route path="/produk/baru" element={<ComingSoonPage title="Tambah Produk" />} />
           <Route path="/produk/:id" element={<ComingSoonPage title="Detail Produk" />} />
@@ -25,6 +25,7 @@ export function App() {
         </Route>
         <Route element={<AppShell bottomNavigation={false} />}>
           <Route path="/jual" element={<SalePage />} />
+          <Route path="/belanja" element={<PurchasePage />} />
         </Route>
       </Route>
       <Route path="*" element={<Navigate to="/" replace />} />
