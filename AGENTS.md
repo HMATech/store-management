@@ -342,7 +342,9 @@ The design lives in the Loom (Penpot) file "Dashboard", and the frontend follows
 - **Recording screens** (Catat Penjualan, Catat Belanja) share their parts: `ProductCard` in `features/products` for picking products, and `CheckoutPanel` and `SavedDialog` in `components` for the total, the save button and the confirmation. Each keeps its own cart hook, because what a line holds differs.
 - **Forms:** point out a missing field only after saving was tried, under the field and again next to the save button, and send nothing until it is filled in. Amounts are typed into `MoneyField`, which shows "Rp" and separates thousands. A quantity that is often large can be typed as well as stepped (`QuantityStepper` with `onChange`).
 - **Brands, units and labels** are typed into a `SuggestField`, which offers the ones already in use and takes a new one. Saving matches the name against the known ones whatever its letter case and adds it only when it is new (`createProduct` in `features/products/catalog.ts`). A product without a brand goes under "Umum".
-- **After adding something from its own screen**, go back to the list it belongs to and say so there: Tambah Produk returns to Produk, which shows "… sudah ditambahkan."
+- **After saving from a form screen**, go back to where it was opened from and say so there, through the navigation's `state`: Tambah Produk returns to Produk ("… sudah ditambahkan."), and Sesuaikan Stok to the product ("Stok sudah disesuaikan.").
+- **Form screens** end with `SaveBar` inside their `<form>`: the save button pinned to the bottom on phones, and beside "Batal" on wide screens.
+- **Stock adjustments** are entered as what was counted on the shelf. The screen works out the difference from what the app had on record when it opened, and sends that with the chosen reason.
 - **A purchase's cost** is typed per product ("Harga beli per barang"). It is never taken from the selling price, which the purchase screen shows only as a note.
 - **A small edit from a screen**, such as Ubah Harga, is a Base UI `Dialog` with its own form, "Simpan …" and "Batal". The form is mounted only while the dialog is open, so it starts empty each time, and the dialog stays open with a message when saving fails.
 - **Stock counts** are written as "N barang". A product's unit ("kg", "gram") is the size of one of it, not what stock is counted in.
@@ -355,7 +357,7 @@ The design lives in the Loom (Penpot) file "Dashboard", and the frontend follows
 - **Fetching:** read data with `useQuery`, passing the `signal` on to `apiRequest`. Each part of a screen fetches for itself and shows `Loading`, `LoadFailed` (with its retry) or `Empty` from `components/LoadState.tsx`, so one failed request doesn't blank the screen. Fetched data is cleared when the session ends.
 - **Formatting:** amounts, dates and times go through `src/lib/format.ts` (`Rp 1.245.000`, `Minggu, 8 November 2026`, `Pukul 10.42`, `Kemarin, 7 Nov`). Days are counted in the device's time zone, which is also the `timeZone` sent to the API.
 - **Messages** tell the user what to do next in plain words, and never show an error code or the API's English text.
-- **Mobile:** gate hover styles behind hover-capable devices (Tailwind's `hover:` does), give controls an `:active` state, keep inputs at 16px or more, use `dvh` for full-height layouts, and never disable zoom.
+- **Mobile:** gate hover styles behind hover-capable devices (Tailwind's `hover:` does), give controls an `:active` state, keep inputs at 16px or more (the default in `index.css`; a field with its own text size must not go under `text-base`), use `dvh` for full-height layouts, and never disable zoom.
 - **Motion** is short and subtle, and off under `prefers-reduced-motion`.
 
 ### Testing

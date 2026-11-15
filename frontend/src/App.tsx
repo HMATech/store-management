@@ -2,8 +2,8 @@ import { Navigate, Route, Routes } from 'react-router'
 import { AppShell } from './components/shell/AppShell'
 import { RequireSignedIn } from './features/auth/RequireSignedIn'
 import { AddProductPage } from './pages/AddProductPage'
+import { AdjustStockPage } from './pages/AdjustStockPage'
 import { AccountPage } from './pages/AccountPage'
-import { ComingSoonPage } from './pages/ComingSoonPage'
 import { HistoryPage } from './pages/HistoryPage'
 import { HomePage } from './pages/HomePage'
 import { LoginPage } from './pages/LoginPage'
@@ -28,7 +28,7 @@ export function App() {
           <Route path="/belanja" element={<PurchasePage />} />
           <Route path="/produk/baru" element={<AddProductPage />} />
           <Route path="/produk/:id" element={<ProductDetailPage />} />
-          <Route path="/produk/:id/stok" element={<ComingSoonPage title="Sesuaikan Stok" />} />
+          <Route path="/produk/:id/stok" element={<AdjustStockPage />} />
         </Route>
       </Route>
       <Route path="*" element={<Navigate to="/" replace />} />

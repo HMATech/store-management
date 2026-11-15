@@ -50,11 +50,17 @@ body {
   line-height: 1.3;
 }
 
-/* Below 16px, iOS zooms into a focused field and stays zoomed. */
-input,
-textarea,
-select {
-  font-size: max(16px, 1em);
+/*
+ * Below 16px, iOS zooms into a focused field and stays zoomed. This is the default for a field without a size
+ * of its own; it sits in the base layer so a text-size utility on the field still applies. Never give a field
+ * a size under `text-base`.
+ */
+@layer base {
+  input,
+  textarea,
+  select {
+    font-size: max(16px, 1em);
+  }
 }
 
 /* Controls answer a tap at once, and a long press doesn't select their label. */

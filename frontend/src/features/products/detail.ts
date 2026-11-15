@@ -7,6 +7,7 @@ export type ProductDetail = Product & { tags: string[] }
 
 /** Where a product's stock comes from: what was bought, what was sold, and what was corrected by hand. */
 export type StockBreakdown = {
+  productName: string
   purchased: number
   sold: number
   /** The sum of the corrections; negative when more was taken off than added. */
@@ -44,6 +45,17 @@ export function fetchPriceHistory(productId: string, page: number, signal?: Abor
     pageSize: String(PricePageSize),
   })
   return apiRequest<Page<PriceLine>>(`/products/prices?${query}`, { signal })
+}
+
+/**
+ * Records that the stock differs from what was counted: `quantity` is added to it, or taken off when negative,
+ * for `reason`.
+ */
+export function adjustStock(productId: string, quantity: number, reason: string): Promise<void> {
+  return apiRequest<void>('/stocks/adjustments', {
+    method: 'POST',
+    body: { productId, quantity, reason, occurrenceTime: new Date().toISOString() },
+  })
 }
 
 /** Gives the product a new selling price from now on. Sales already recorded keep the price they were made at. */

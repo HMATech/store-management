@@ -1,7 +1,8 @@
 import { useQuery } from '@tanstack/react-query'
+import clsx from 'clsx'
 import { ClipboardList, PackageX, ReceiptText } from 'lucide-react'
 import { useState } from 'react'
-import { useParams } from 'react-router'
+import { useLocation, useParams } from 'react-router'
 import { Badge } from '../components/Badge'
 import { Button, ButtonLink } from '../components/Button'
 import { Card } from '../components/Card'
@@ -25,6 +26,8 @@ import { usePagedList } from '../lib/usePagedList'
 /** Detail Produk: one product's price, stock and past prices, with the ways to change them. */
 export function ProductDetailPage() {
   const { id = '' } = useParams()
+  // Set by a screen that changed this product and came back, such as Sesuaikan Stok.
+  const notice: unknown = useLocation().state?.notice
   const product = useQuery({ queryKey: ['products', id], queryFn: ({ signal }) => fetchProduct(id, signal) })
 
   return (
@@ -46,9 +49,14 @@ export function ProductDetailPage() {
           )
         ) : (
           <div className="grid gap-14 lg:grid-cols-2 lg:items-start lg:gap-24">
+            {typeof notice === 'string' && (
+              <p role="status" className="rounded-md bg-primary-soft p-12 font-medium text-primary-default lg:col-span-2">
+                {notice}
+              </p>
+            )}
             <ProductCard product={product.data} />
             {/* Beside the product on wide screens, between it and the prices on phones. */}
-            <div className="lg:col-start-2 lg:row-span-2 lg:row-start-1">
+            <div className={clsx('lg:col-start-2 lg:row-span-2', typeof notice === 'string' ? 'lg:row-start-2' : 'lg:row-start-1')}>
               <StockCard productId={id} />
             </div>
             <PriceHistory productId={id} />
