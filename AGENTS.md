@@ -8,7 +8,7 @@ A store management app: an ASP.NET Core Minimal API backend and a React frontend
 | -------------------- | ---------------------------------------------------------------------- |
 | `backend/`           | The API: `src/`, `tests/`, `Backend.sln`, `Directory.*.props`, `Dockerfile` |
 | `frontend/`          | The React app: a Vite single-page PWA                                  |
-| `docker-compose.yml` | Runs the deployed app, with its `.env.example`                         |
+| `docker-compose.yml` | Runs the deployed app (database, API and frontend), with its `.env.example` |
 
 The sections from [Stack](#stack) to [Known misnamed files](#known-misnamed-files) are about the backend, and their paths are relative to `backend/` unless they say otherwise. [Frontend](#frontend) covers `frontend/`.
 
@@ -74,15 +74,17 @@ dotnet ef migrations add <Name> --project src/Infrastructure --startup-project s
 
 ### Docker
 
-Run these from the repo root. The compose file builds the API image from `backend/`.
+Run these from the repo root. The compose file builds the API image from `backend/` and the frontend image from `frontend/`.
 
 ```sh
 cp .env.example .env            # Then fill in the secrets
-docker compose up -d --build    # API on http://localhost:8080, with PostgreSQL in a volume
+docker compose up -d --build    # The app on http://localhost:8081, the API on :8080, PostgreSQL in a volume
 ```
 
 - `docker-compose.yml` runs the API in Production with startup migrations on, and maps the `.env` values to configuration keys such as `Jwt__Secret` and `InitialUser__Email`. A new configuration value the deployment needs goes in both files.
-- The container serves plain HTTP on port 8080, with TLS expected at a reverse proxy. `ASPNETCORE_FORWARDEDHEADERS_ENABLED` makes the API trust the proxy's `X-Forwarded-Proto`, so `Location` URLs use `https`.
+- The `web` container is nginx serving the built frontend. It passes `/api/` on to the API container, so the app and the API share one origin and need no CORS. Phones on the same network open `http://<computer's address>:8081`.
+- The containers serve plain HTTP, with TLS expected at a reverse proxy in front of `web`. A phone can install the app as a PWA only over HTTPS (or on `localhost`).
+- The API container serves plain HTTP on port 8080. `ASPNETCORE_FORWARDEDHEADERS_ENABLED` makes the API trust the proxy's `X-Forwarded-Proto`, so `Location` URLs use `https`.
 
 ## Testing
 
@@ -306,7 +308,7 @@ npm run build    # Type-checks, then builds dist/ with the service worker
 
 - The API's base URL comes from `VITE_API_URL`. Never hard-code it, because a packaged app calls the API from another origin.
 - In development it is `/api`, which the dev server passes on to `https://localhost:7001` (the proxy in `vite.config.ts`). The browser then needn't trust the API's development certificate, and the calls are same-origin.
-- A built app calls the API directly, so its origin must be in the backend's `Cors:AllowedOrigins`. The dev server stays on port 3000, the origin allowed in development.
+- The `web` container builds the app with `VITE_API_URL=/api` and passes `/api/` on to the API (`frontend/nginx.conf`), so no CORS is needed. An app hosted anywhere else calls the API directly, so its origin must be in the backend's `Cors:AllowedOrigins`. The dev server stays on port 3000, the origin allowed in development.
 
 ### Structure
 
