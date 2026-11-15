@@ -1,8 +1,7 @@
 import { useQuery } from '@tanstack/react-query'
 import { apiRequest } from '../../lib/api'
 import { getUserId } from '../../lib/session'
-
-type User = { userId: string; email: string; firstName: string; lastName: string | null }
+import type { User } from '../users/api'
 
 /** The signed-in user, from `GET /users/{id}`. */
 export function useCurrentUser() {

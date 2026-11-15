@@ -2,6 +2,7 @@ import { Navigate, Route, Routes } from 'react-router'
 import { AppShell } from './components/shell/AppShell'
 import { RequireSignedIn } from './features/auth/RequireSignedIn'
 import { AddProductPage } from './pages/AddProductPage'
+import { AddUserPage } from './pages/AddUserPage'
 import { AdjustStockPage } from './pages/AdjustStockPage'
 import { AccountPage } from './pages/AccountPage'
 import { HistoryPage } from './pages/HistoryPage'
@@ -10,6 +11,7 @@ import { LoginPage } from './pages/LoginPage'
 import { ProductDetailPage } from './pages/ProductDetailPage'
 import { ProductsPage } from './pages/ProductsPage'
 import { PurchasePage } from './pages/PurchasePage'
+import { UsersPage } from './pages/UsersPage'
 import { SaleDetailPage } from './pages/SaleDetailPage'
 import { SalePage } from './pages/SalePage'
 
@@ -31,6 +33,8 @@ export function App() {
           <Route path="/produk/:id" element={<ProductDetailPage />} />
           <Route path="/produk/:id/stok" element={<AdjustStockPage />} />
           <Route path="/riwayat/penjualan/:id" element={<SaleDetailPage />} />
+          <Route path="/akun/pengguna" element={<UsersPage />} />
+          <Route path="/akun/pengguna/baru" element={<AddUserPage />} />
         </Route>
       </Route>
       <Route path="*" element={<Navigate to="/" replace />} />

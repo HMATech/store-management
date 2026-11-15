@@ -120,7 +120,9 @@ function DeleteSale({ sale }: { sale: SaleDetail }) {
         isOpen={isAsking}
         title="Hapus penjualan ini?"
         confirmLabel="Ya, Hapus"
+        confirmIcon={Trash2}
         isWorking={remove.isPending}
+        workingLabel="Menghapus…"
         failure={remove.isError ? describeDeleteFailure(remove.error) : undefined}
         onConfirm={() => remove.mutate()}
         onCancel={stopAsking}
