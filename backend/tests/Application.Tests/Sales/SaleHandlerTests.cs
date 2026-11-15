@@ -23,6 +23,52 @@ public class SaleHandlerTests
     private readonly TestDatabase database = new();
 
     [Fact]
+    public async Task Create_WithId_RecordsTheSaleUnderThatId()
+    {
+        var graph = await SeededGraph.CreateAsync(database);
+        var id = Guid.NewGuid();
+
+        var response = ResultAssert.Succeeded(await CreateAsync(new CreateSaleCommand("", [],
+            [new CreateEntry(graph.Product.Id, 2)], OccurredAt, id)));
+
+        Assert.Equal(id, response.Id);
+        Assert.True(await database.ReadAsync(c => c.Sales.AnyAsync(s => s.Id == id)));
+    }
+
+    [Fact]
+    public async Task Create_WithIdAlreadyRecorded_ReturnsThatSaleWithoutAddingOrChangingAnything()
+    {
+        var graph = await SeededGraph.CreateAsync(database);
+        var id = Guid.NewGuid();
+        var first = ResultAssert.Succeeded(await CreateAsync(new CreateSaleCommand("", [],
+            [new CreateEntry(graph.Product.Id, 2)], OccurredAt, id)));
+        var salesBefore = await database.ReadAsync(c => c.Sales.CountAsync());
+
+        // The retry differs, which a real one wouldn't; it must still not change what was recorded.
+        var repeat = ResultAssert.Succeeded(await CreateAsync(new CreateSaleCommand("Other", [],
+            [new CreateEntry(graph.OtherProduct.Id, 5)], OccurredAt, id)));
+
+        Assert.Equal(first, repeat);
+        Assert.Equal(salesBefore, await database.ReadAsync(c => c.Sales.CountAsync()));
+        var sale = await database.ReadAsync(c => c.Sales.Include(s => s.Products).SingleAsync(s => s.Id == id));
+        Assert.Equal("", sale.Title);
+        var entry = Assert.Single(sale.Products);
+        Assert.Equal((graph.Product.Id, 2), (entry.ProductId, entry.Quantity));
+    }
+
+    [Fact]
+    public async Task Create_WithoutId_AddsANewSaleEachTime()
+    {
+        var graph = await SeededGraph.CreateAsync(database);
+        var command = new CreateSaleCommand("", [], [new CreateEntry(graph.Product.Id, 1)], OccurredAt);
+
+        var first = ResultAssert.Succeeded(await CreateAsync(command));
+        var second = ResultAssert.Succeeded(await CreateAsync(command));
+
+        Assert.NotEqual(first.Id, second.Id);
+    }
+
+    [Fact]
     public async Task Create_WithValidInput_UsesCurrentPriceOfEachProduct()
     {
         var graph = await SeededGraph.CreateAsync(database);

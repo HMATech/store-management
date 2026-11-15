@@ -159,6 +159,7 @@ public class ValidatorTests
         { ValidCreatePurchase() with { Title = "" }, "Title" },
         { ValidCreatePurchase() with { Tags = [""] }, "Tags" },
         { ValidCreatePurchase() with { OccurrenceTime = default }, "OccurrenceTime" },
+        { ValidCreatePurchase() with { Id = Guid.Empty }, "Id" },
         { ValidCreatePurchase() with { ProductEntries = [null!] }, "ProductEntries" },
         { ValidCreatePurchase() with { ProductEntries = [new PurchaseCreateEntry(SomeId, 0, 1m)] }, "ProductEntries" },
         { ValidCreatePurchase() with { ProductEntries = [new PurchaseCreateEntry(SomeId, -1, 1m)] }, "ProductEntries" },
@@ -220,11 +221,19 @@ public class ValidatorTests
         Assert.True(new CreateSaleCommandValidator().Validate(ValidCreateSale()).IsValid);
     }
 
+    [Fact]
+    public void CreateSaleAndPurchase_WithAnId_Pass()
+    {
+        Assert.True(new CreateSaleCommandValidator().Validate(ValidCreateSale() with { Id = SomeId }).IsValid);
+        Assert.True(new CreatePurchaseCommandValidator().Validate(ValidCreatePurchase() with { Id = SomeId }).IsValid);
+    }
+
     public static TheoryData<CreateSaleCommand, string> InvalidCreateSales => new()
     {
         { ValidCreateSale() with { Title = null! }, "Title" },
         { ValidCreateSale() with { Tags = [""] }, "Tags" },
         { ValidCreateSale() with { OccurrenceTime = default }, "OccurrenceTime" },
+        { ValidCreateSale() with { Id = Guid.Empty }, "Id" },
         { ValidCreateSale() with { ProductEntries = [null!] }, "ProductEntries" },
         { ValidCreateSale() with { ProductEntries = [new SaleCreateEntry(SomeId, 0)] }, "ProductEntries" },
         { ValidCreateSale() with { ProductEntries = [new SaleCreateEntry(SomeId, -1)] }, "ProductEntries" },

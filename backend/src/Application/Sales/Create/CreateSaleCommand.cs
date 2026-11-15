@@ -6,7 +6,8 @@ public sealed record CreateSaleCommand(
     string Title,
     string[] Tags,
     List<ProductEntryCommand> ProductEntries,
-    DateTime OccurrenceTime
+    DateTime OccurrenceTime,
+    Guid? Id = null
 ) : ICommand<CreateSaleResponse>;
 
 public sealed record ProductEntryCommand(Guid Id, int Quantity);

@@ -9,11 +9,14 @@ internal sealed class Create : PurchaseEndpoint
 {
     public sealed record ProductEntry(Guid Id, int Quantity, decimal UnitCost);
 
+    /// <param name="Id">Optional. Sending the same id again returns the purchase already recorded instead of adding
+    /// another, so a client can safely retry a save whose answer it never received.</param>
     public sealed record CreatePurchaseRequest(
         string Title,
         string[] Tags,
         ProductEntry[] ProductEntries,
-        DateTime OccurrenceTime
+        DateTime OccurrenceTime,
+        Guid? Id = null
     );
 
     public override IEndpointRouteBuilder MapEndpoint(IEndpointRouteBuilder app)
@@ -31,7 +34,8 @@ internal sealed class Create : PurchaseEndpoint
                 request.ProductEntries?.Select(e => e == null ? null! : new ProductEntryCommand(
                     e.Id, e.Quantity, e.UnitCost
                 )).ToList()!,
-                request.OccurrenceTime
+                request.OccurrenceTime,
+                request.Id
             );
 
             var result = await handler.HandleAsync(command, cancellationToken);

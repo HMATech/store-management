@@ -14,6 +14,7 @@ import { createPurchase, type CostedPurchaseLine } from '../features/purchases/a
 import { MaxQuantity, usePurchaseCart, type PurchaseCart } from '../features/purchases/usePurchaseCart'
 import { ApiError } from '../lib/api'
 import { formatRupiah } from '../lib/format'
+import { useRetrySafeId } from '../lib/requestId'
 import { useDebouncedValue } from '../lib/useDebouncedValue'
 
 /** How long typing must pause before the product list is searched. */
@@ -31,13 +32,16 @@ export function PurchasePage() {
   // Missing fields are pointed out only once saving was tried, not while the form is still being filled in.
   const [wasSaveTried, setWasSaveTried] = useState(false)
   const [saved, setSaved] = useState<SavedSummary | null>(null)
+  const purchaseIdFor = useRetrySafeId()
 
   const supplierName = supplier.trim()
   const isSupplierMissing = supplierName === ''
   const isCostMissing = cart.costedLines === null
 
   const save = useMutation({
-    mutationFn: (lines: CostedPurchaseLine[]) => createPurchase(supplierName, lines),
+    // Saving again after a failure sends the same id, so a purchase that did reach the API isn't recorded twice.
+    mutationFn: (lines: CostedPurchaseLine[]) =>
+      createPurchase(supplierName, lines, purchaseIdFor([supplierName, lines])),
     onSuccess: () => {
       setSaved({ totalQuantity: cart.totalQuantity, total: cart.totalCost })
       cart.clear()
@@ -190,7 +194,7 @@ function describeProblem(
   }
   if (saveError instanceof ApiError) {
     if (saveError.isNetworkError) {
-      return 'Tidak bisa terhubung, belanja belum tersimpan. Periksa internet, lalu coba lagi.'
+      return 'Tidak bisa terhubung. Periksa internet, lalu simpan lagi. Belanja tidak akan tercatat dua kali.'
     }
     if (saveError.status === 404) {
       return 'Ada barang yang sudah dihapus dari daftar. Muat ulang halaman ini, lalu catat lagi.'
