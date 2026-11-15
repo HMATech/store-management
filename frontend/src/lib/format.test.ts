@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { formatDayHeading, formatLongDate, formatNumber, formatOccurrence, formatRupiah, formatTime, toIsoDay } from './format'
+import { formatDay, formatDayRange, formatDayHeading, formatLongDate, formatNumber, formatOccurrence, formatRupiah, formatTime, toIsoDay } from './format'
 
 /** Intl puts a no-break space after "Rp". */
 const plain = (text: string) => text.replace(/ /g, ' ')
@@ -81,5 +81,25 @@ describe('formatNumber', () => {
     [999999999, '999.999.999'],
   ])('writes %d as %s', (value, expected) => {
     expect(formatNumber(value)).toBe(expected)
+  })
+})
+
+describe('formatDay', () => {
+  it('writes the day, short month and year', () => {
+    expect(formatDay(new Date(2026, 10, 1))).toBe('1 Nov 2026')
+  })
+})
+
+describe('formatDayRange', () => {
+  it('writes the year once for a span within one year', () => {
+    expect(formatDayRange(new Date(2026, 7, 15), new Date(2026, 9, 31))).toBe('15 Agu – 31 Okt 2026')
+  })
+
+  it('writes both years for a span across years', () => {
+    expect(formatDayRange(new Date(2025, 11, 20), new Date(2026, 0, 5))).toBe('20 Des 2025 – 5 Jan 2026')
+  })
+
+  it('writes a span of one day with both ends', () => {
+    expect(formatDayRange(new Date(2026, 4, 1), new Date(2026, 4, 1))).toBe('1 Mei – 1 Mei 2026')
   })
 })

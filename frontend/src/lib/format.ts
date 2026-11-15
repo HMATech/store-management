@@ -34,6 +34,17 @@ export function formatOccurrence(occurredAt: Date, now: Date = new Date()): stri
     : `${shortDate.format(occurredAt)}, ${time.format(occurredAt)}`
 }
 
+/** A day with its year, as `1 Nov 2026`. */
+export function formatDay(date: Date): string {
+  return datedYear.format(date)
+}
+
+/** A span of days as `15 Agu – 31 Okt 2026`, with the first year written only when it differs. */
+export function formatDayRange(from: Date, to: Date): string {
+  const start = from.getFullYear() === to.getFullYear() ? shortDate.format(from) : datedYear.format(from)
+  return `${start} – ${datedYear.format(to)}`
+}
+
 /** A time of day as `10.42`. */
 export function formatTime(date: Date): string {
   return time.format(date)
