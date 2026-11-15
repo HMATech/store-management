@@ -200,10 +200,12 @@ public class RequestValidationTests(NoDatabaseApiFixture api) : IClassFixture<No
         Assert.Equal(HttpStatusCode.UnsupportedMediaType, response.StatusCode);
     }
 
-    [Fact]
-    public async Task InvalidQueryValue_ReturnsBadRequest()
+    [Theory]
+    [InlineData("/brands?page=abc")]
+    [InlineData("/products/prices?productId=not-an-id")]
+    public async Task InvalidQueryValue_ReturnsBadRequest(string path)
     {
-        var response = await api.CreateClient().GetAsync("/brands?page=abc");
+        var response = await api.CreateClient().GetAsync(path);
 
         Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
     }

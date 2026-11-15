@@ -69,6 +69,40 @@ public class ProductPriceHandlerTests
     }
 
     [Fact]
+    public async Task Get_WithProductId_ReturnsOnlyThatProductsPrices()
+    {
+        var graph = await SeededGraph.CreateAsync(database);
+
+        var value = await GetAsync(new GetProductPriceQuery(null, SortOrder.DESC, ProductId: graph.Product.Id));
+
+        Assert.Equal([graph.CurrentPrice.Id, graph.OldPrice.Id], value.Responses.Select(p => p.Id));
+        Assert.All(value.Responses, price => Assert.Equal(graph.Product.Id, price.ProductId));
+    }
+
+    [Fact]
+    public async Task Get_WithProductIdAndSearch_AppliesBoth()
+    {
+        var graph = await SeededGraph.CreateAsync(database);
+
+        var matching = await GetAsync(new GetProductPriceQuery("milk", SortOrder.ASC, ProductId: graph.Product.Id));
+        var other = await GetAsync(new GetProductPriceQuery("milk", SortOrder.ASC, ProductId: graph.OtherProduct.Id));
+
+        Assert.Equal(2, matching.TotalCount);
+        Assert.Equal(0, other.TotalCount);
+    }
+
+    [Fact]
+    public async Task Get_WithUnknownProductId_ReturnsNothing()
+    {
+        await SeededGraph.CreateAsync(database);
+
+        var value = await GetAsync(new GetProductPriceQuery(null, SortOrder.ASC, ProductId: Guid.NewGuid()));
+
+        Assert.Equal(0, value.TotalCount);
+        Assert.Empty(value.Responses);
+    }
+
+    [Fact]
     public async Task Get_SortsByValidFromTime()
     {
         var graph = await SeededGraph.CreateAsync(database);

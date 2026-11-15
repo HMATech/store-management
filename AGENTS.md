@@ -164,6 +164,11 @@ Use `TagsHelper.CreateSynchronizedTagsAsync` to sync tags on an entity (see the 
 - Purchase responses report `unitCost` and `totalCost`; sale responses report `priceValue` and `totalPrice`.
 - A sale's `title` is optional: the endpoints store a missing title as an empty string, and the validators only reject `null`. A purchase's title is required, because it records where the goods came from.
 
+### Price history
+
+- A product's selling price is a line with `validFromTime` and `validToTime`; the current one has no `validToTime`. `POST /products/{id}/prices` closes the current line and opens a new one, so sales already recorded keep the price they were made at.
+- `GET /products/prices?productId=` lists one product's lines, and `sortOrder=DESC` puts the current one first. `search` matches the product or brand name and can be combined with it.
+
 ### Stock
 
 - Stock isn't stored. It's worked out on each read as purchased minus sold plus adjusted, by `StockQueries.SelectStock`. Use that helper for anything that shows stock, rather than summing entries again.
