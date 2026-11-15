@@ -352,6 +352,8 @@ The design lives in the Loom (Penpot) file "Dashboard", and the frontend follows
 - **Confirmations** that must not be missed, such as "Penjualan tersimpan", are a Base UI `AlertDialog` that stays until one of its actions is chosen, not a toast.
 - **Long lists** load a page at a time through `usePagedList` in `src/lib`, with `LoadMoreButton` to fetch the next page. Product lists use `useProductPages` in `features/products`, which wraps it; use that wherever products are listed, as the sale and product screens do.
 - **Totals worked out from a paged list** count only what is fully loaded. The history leaves out the total of its oldest day on screen while more pages remain, because that day may continue on the next page.
+- **Stock is shown by its status**, never by comparing quantities again: `Low` is "Hampir habis" / "Sisa N", `Empty` is "Habis", `Negative` is "Minus N". Each has its own filter on Produk.
+- **Rows of filter chips wrap** onto a second line rather than scroll sideways, so no choice is hidden off the edge of a phone.
 - **Filters** that narrow a list live in the address (`/produk?stok=minus`, `/riwayat?jenis=belanja`), so a link can open the list already filtered and going back keeps the choice. An unknown value means no filter.
 - **An empty screen** uses `EmptyState` with the action that fills it; an empty search or filter result uses `Empty` and says what was looked for.
 - **Search boxes** wait for a pause in typing (`useDebouncedValue`) and keep the previous results on screen while the new ones load.
