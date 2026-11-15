@@ -9,8 +9,11 @@ public enum StockStatus
     /// <summary>Above the minimum quantity.</summary>
     Normal,
 
-    /// <summary>At or below the minimum quantity, but not negative.</summary>
+    /// <summary>Above zero, up to and including the minimum quantity: running out.</summary>
     Low,
+
+    /// <summary>Exactly zero: nothing left to sell.</summary>
+    Empty,
 
     /// <summary>Below zero, which means the records need checking.</summary>
     Negative,

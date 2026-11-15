@@ -139,7 +139,7 @@ public class StockIntegrationTests(PostgresApiFixture api)
         var stock = await GetStockAsync(product.Id);
 
         Assert.Equal(5, stock.GetProperty("minimumQuantity").GetInt32());
-        Assert.Equal("Low", stock.GetProperty("status").GetString());
+        Assert.Equal("Empty", stock.GetProperty("status").GetString());
     }
 
     [Fact]
@@ -153,8 +153,13 @@ public class StockIntegrationTests(PostgresApiFixture api)
 
         await CreateTransactionAsync("/sales", product, 9);
         Assert.Equal(1, await CountAsync($"search={product.Name}&status=low"));
+        Assert.Equal(0, await CountAsync($"search={product.Name}&status=empty"));
 
-        await CreateTransactionAsync("/sales", product, 2);
+        await CreateTransactionAsync("/sales", product, 1);
+        Assert.Equal(1, await CountAsync($"search={product.Name}&status=empty"));
+        Assert.Equal(0, await CountAsync($"search={product.Name}&status=low"));
+
+        await CreateTransactionAsync("/sales", product, 1);
         Assert.Equal(1, await CountAsync($"search={product.Name}&status=negative"));
         Assert.Equal("Negative", (await GetStockAsync(product.Id)).GetProperty("status").GetString());
     }

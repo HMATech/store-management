@@ -383,14 +383,14 @@ public class ProductHandlerTests
 
         var page = await GetAsync(new GetProductQuery(null, SortOrder.ASC));
 
-        // Butter has nothing (0, at or below the minimum); Milk was bought 3, sold 3 and adjusted by -1.
-        Assert.Equal([new ProductStockSummaryResponse(0, StockStatus.Low),
+        // Butter has nothing; Milk was bought 3, sold 3 and adjusted by -1.
+        Assert.Equal([new ProductStockSummaryResponse(0, StockStatus.Empty),
             new ProductStockSummaryResponse(-1, StockStatus.Negative)], page.Responses.Select(p => p.Stock));
     }
 
     [Theory]
     [InlineData("negative", "Milk")]
-    [InlineData("Low", "Butter")]
+    [InlineData("Empty", "Butter")]
     public async Task Get_FiltersByStockStatusAndCountsOnlyMatches(string status, string expected)
     {
         await SeededGraph.CreateAsync(database);

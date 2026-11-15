@@ -43,7 +43,8 @@ public class StockDefinitionValidationTests
     [InlineData("low", true)]
     [InlineData("Negative", true)]
     [InlineData("1", false)]
-    [InlineData("empty", false)]
+    [InlineData("EMPTY", true)]
+    [InlineData("habis", false)]
     public void GetStock_AcceptsOnlyStatusNames(string? status, bool expected)
     {
         var result = new GetStockQueryValidator().Validate(new GetStockQuery(null, SortOrder.ASC, Status: status));

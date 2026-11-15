@@ -274,7 +274,7 @@ public class RequestValidationTests(NoDatabaseApiFixture api) : IClassFixture<No
 
     [Theory]
     [InlineData("/stocks?status=1", "status")]
-    [InlineData("/stocks?status=empty", "status")]
+    [InlineData("/stocks?status=habis", "status")]
     [InlineData("/products?stockStatus=1", "stockStatus")]
     [InlineData("/products?stockStatus=sold-out", "stockStatus")]
     public async Task UnknownStockStatus_ReturnsBadRequest(string path, string field)
