@@ -137,18 +137,20 @@ public class StockHandlerTests
 
         var page = ResultAssert.Succeeded(await GetAsync(new GetStockQuery(null, SortOrder.ASC)));
 
-        // Milk is at -1 and Butter at 0, which is at or below the default minimum.
-        Assert.Equal([StockStatus.Low, StockStatus.Negative], page.Responses.Select(s => s.Status));
+        // Milk is at -1 and Butter at 0.
+        Assert.Equal([StockStatus.Empty, StockStatus.Negative], page.Responses.Select(s => s.Status));
     }
 
     [Theory]
     [InlineData("negative", "Milk")]
-    [InlineData("LOW", "Butter")]
+    [InlineData("EMPTY", "Butter")]
+    [InlineData("LOW", "Bread")]
     [InlineData("Normal", "Cheese")]
     public async Task Get_FiltersByStatusIgnoringCase(string status, string expected)
     {
         var graph = await SeededGraph.CreateAsync(database);
         await AddProductWithStockAsync(graph, "Cheese", stock: 10, minimum: 2);
+        await AddProductWithStockAsync(graph, "Bread", stock: 2, minimum: 5);
 
         var page = ResultAssert.Succeeded(await GetAsync(new GetStockQuery(null, SortOrder.ASC, Status: status)));
 
@@ -157,9 +159,11 @@ public class StockHandlerTests
     }
 
     [Theory]
+    [InlineData(1, 3, StockStatus.Low)]
     [InlineData(3, 3, StockStatus.Low)]
     [InlineData(4, 3, StockStatus.Normal)]
-    [InlineData(0, 0, StockStatus.Low)]
+    [InlineData(0, 3, StockStatus.Empty)]
+    [InlineData(0, 0, StockStatus.Empty)]
     [InlineData(1, 0, StockStatus.Normal)]
     public async Task Get_JudgesStatusAgainstTheProductsOwnMinimum(int stock, int minimum, StockStatus expected)
     {
@@ -175,10 +179,12 @@ public class StockHandlerTests
 
     [Theory]
     [InlineData(-1, 5, StockStatus.Negative)]
-    [InlineData(0, 5, StockStatus.Low)]
+    [InlineData(0, 5, StockStatus.Empty)]
+    [InlineData(1, 5, StockStatus.Low)]
     [InlineData(5, 5, StockStatus.Low)]
     [InlineData(6, 5, StockStatus.Normal)]
-    [InlineData(0, 0, StockStatus.Low)]
+    [InlineData(0, 0, StockStatus.Empty)]
+    [InlineData(1, 0, StockStatus.Normal)]
     public void StatusOf_ComparesQuantityWithMinimum(long quantity, int minimum, StockStatus expected)
     {
         Assert.Equal(expected, StockQueries.StatusOf(quantity, minimum));
@@ -187,10 +193,11 @@ public class StockHandlerTests
     [Theory]
     [InlineData("low", true, StockStatus.Low)]
     [InlineData("NEGATIVE", true, StockStatus.Negative)]
+    [InlineData("Empty", true, StockStatus.Empty)]
     [InlineData("1", false, StockStatus.Normal)]
     [InlineData("", false, StockStatus.Normal)]
     [InlineData(null, false, StockStatus.Normal)]
-    [InlineData("empty", false, StockStatus.Normal)]
+    [InlineData("habis", false, StockStatus.Normal)]
     public void TryParseStatus_AcceptsOnlyNames(string? value, bool expected, StockStatus status)
     {
         Assert.Equal(expected, StockQueries.TryParseStatus(value, out var parsed));

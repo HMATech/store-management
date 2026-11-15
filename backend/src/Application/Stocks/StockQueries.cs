@@ -46,7 +46,8 @@ internal static class StockQueries
         var matchingIds = status switch
         {
             StockStatus.Negative => stocks.Where(s => s.Quantity < 0),
-            StockStatus.Low => stocks.Where(s => s.Quantity >= 0 && s.Quantity <= s.MinimumQuantity),
+            StockStatus.Empty => stocks.Where(s => s.Quantity == 0),
+            StockStatus.Low => stocks.Where(s => s.Quantity > 0 && s.Quantity <= s.MinimumQuantity),
             _ => stocks.Where(s => s.Quantity > s.MinimumQuantity),
         };
 
@@ -72,6 +73,11 @@ internal static class StockQueries
         if (quantity < 0)
         {
             return StockStatus.Negative;
+        }
+
+        if (quantity == 0)
+        {
+            return StockStatus.Empty;
         }
 
         return quantity <= minimumQuantity ? StockStatus.Low : StockStatus.Normal;
