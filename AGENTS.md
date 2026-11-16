@@ -382,7 +382,7 @@ The design lives in the Loom (Penpot) file "Dashboard", and the frontend follows
 
 ### Localization
 
-- There is no localization system yet: the Bahasa Indonesia UI text is still written as string literals in the components. Moving it into message files is planned, and this section will describe that setup once it exists.
+- There is no localization system yet: the Bahasa Indonesia UI text is still written as string literals in the components. A localization system isn't needed yet; if one is added later, this section describes it.
 - Until then, other-language text may appear only in those user-facing string literals. Everything around them (names, keys, routes, comments) follows [Language](#language).
 - Dates, times and amounts go through `src/lib/format.ts`, which formats with the `id-ID` `Intl` locale.
 
