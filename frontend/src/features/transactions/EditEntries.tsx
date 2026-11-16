@@ -16,7 +16,7 @@ import type { RecordedTransaction } from './TransactionDetail'
 
 /** What differs between changing a sale's items and a purchase's: their words, and how they reach the API. */
 export type EditKindText = {
-  /** "Penjualan" or "Belanja". */
+  /** The kind's name as the user reads it, for a sale or a purchase. */
   noun: string
   /** The query key of the detail screen, whose data the change makes stale. */
   queryKey: string
@@ -25,8 +25,8 @@ export type EditKindText = {
 }
 
 /**
- * Ubah Barang: loads the sale or purchase fresh, then lets `children` change its items. Mirrors the
- * "13 · Ubah Barang Penjualan" and "14 · Ubah Barang Belanja" boards in Loom.
+ * Edit Items: loads the sale or purchase fresh, then lets `children` change its items. Mirrors the
+ * 13 and 14 boards in Loom.
  */
 export function EditEntriesScreen({
   kind,
@@ -54,7 +54,7 @@ export function EditEntriesScreen({
             <EmptyState
               icon={ReceiptText}
               title={`${kind.noun} tidak ditemukan`}
-              action={<ButtonLink to="/riwayat">Kembali ke Riwayat</ButtonLink>}
+              action={<ButtonLink to="/history">Kembali ke Riwayat</ButtonLink>}
             >
               {kind.noun} ini mungkin sudah dihapus.
             </EmptyState>
@@ -93,7 +93,7 @@ type EditEntriesLayoutProps = {
   onSave: () => void
 }
 
-/** The parts every Ubah Barang screen has: the recorded lines, products to add, and the new total. */
+/** The parts every Edit Items screen has: the recorded lines, products to add, and the new total. */
 export function EditEntriesLayout({
   kind,
   recorded,

@@ -11,7 +11,7 @@ type ProductCardProps = {
   quantity: number
   /** The most of it that can be picked. */
   max: number
-  /** Shows the price as a small labelled note ("Harga jual Rp 3.500") where another price is the main one. */
+  /** Shows the price as a small labelled note, such as the selling price, where another price is the main one. */
   priceLabel?: string
   onAdd: () => void
   onIncrease: () => void
@@ -19,7 +19,7 @@ type ProductCardProps = {
   /** Lets the quantity be typed, for screens where it is often large. */
   onQuantityChange?: (quantity: number) => void
   /**
-   * Puts the quantity on its own row under the product, named by this label ("Jumlah dibeli"). For cards that
+   * Puts the quantity on its own row under the product, named by this label, such as how many were bought. For cards that
    * hold more than the quantity, where the row beside the name is too narrow on a phone.
    */
   quantityLabel?: string

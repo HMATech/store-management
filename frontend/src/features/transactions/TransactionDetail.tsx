@@ -37,7 +37,7 @@ export type RecordedEntry = {
 
 /** What differs between the sale and purchase detail screens: their words, and how they reach the API. */
 export type TransactionKindText = {
-  /** "Penjualan" or "Belanja". */
+  /** The kind's name as the user reads it, for a sale or a purchase. */
   noun: string
   /** The query key and request that load one. */
   queryKey: string
@@ -45,15 +45,15 @@ export type TransactionKindText = {
   remove: (id: string) => Promise<void>
   /** Where its items are changed. */
   editPath: (id: string) => string
-  /** What deleting does to stock: "Stok barangnya akan dikembalikan." */
+  /** What deleting does to stock, said in the delete confirmation. */
   stockOnDelete: string
   /** Whether the total is money in, shown in the primary colour, or money out. */
   isIncome: boolean
 }
 
 /**
- * Detail Penjualan and Detail Belanja: what one sale or purchase held, and the ways to correct its items or
- * remove it when it was recorded by mistake. Mirrors the "10 · Detail Penjualan" and "10b · Detail Belanja"
+ * Sale Detail and Purchase Detail: what one sale or purchase held, and the ways to correct its items or
+ * remove it when it was recorded by mistake. Mirrors the 10 and 10b
  * boards in Loom.
  */
 export function TransactionDetail({ kind }: { kind: TransactionKindText }) {
@@ -62,7 +62,7 @@ export function TransactionDetail({ kind }: { kind: TransactionKindText }) {
   const lower = kind.noun.toLowerCase()
 
   return (
-    <Screen title={`Detail ${kind.noun}`} backTo="/riwayat">
+    <Screen title={`Detail ${kind.noun}`} backTo="/history">
       <ScreenBody>
         {transaction.isPending ? (
           <Loading />
@@ -72,7 +72,7 @@ export function TransactionDetail({ kind }: { kind: TransactionKindText }) {
             <EmptyState
               icon={ReceiptText}
               title={`${kind.noun} tidak ditemukan`}
-              action={<ButtonLink to="/riwayat">Kembali ke Riwayat</ButtonLink>}
+              action={<ButtonLink to="/history">Kembali ke Riwayat</ButtonLink>}
             >
               {kind.noun} ini mungkin sudah dihapus.
             </EmptyState>
@@ -81,7 +81,7 @@ export function TransactionDetail({ kind }: { kind: TransactionKindText }) {
           )
         ) : (
           <div className="flex flex-col gap-16 lg:gap-24">
-            {/* Set by Ubah Barang after saving. */}
+            {/* Set by Edit Items after saving. */}
             <Notice />
             <div className="grid gap-16 lg:grid-cols-[minmax(0,1fr)_380px] lg:items-start lg:gap-24">
               <Summary transaction={transaction.data} isIncome={kind.isIncome} />
@@ -163,7 +163,7 @@ function DeleteTransaction({ transaction, kind, lower }: DeleteTransactionProps)
     onSuccess: () => {
       // The history, today's totals and the stock of what it held all changed.
       void queryClient.invalidateQueries()
-      void navigate('/riwayat', { state: { notice: `${kind.noun} sudah dihapus.` } })
+      void navigate('/history', { state: { notice: `${kind.noun} sudah dihapus.` } })
     },
   })
 

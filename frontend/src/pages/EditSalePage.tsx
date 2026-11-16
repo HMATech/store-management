@@ -13,7 +13,7 @@ const sale: EditKindText = { noun: 'Penjualan', queryKey: 'sales', fetch: fetchS
 /** A sale's line can change only its quantity: it keeps the price it was sold at. */
 const nothingElse = () => ({})
 
-/** Ubah Barang for a sale: correct how many of each were sold, remove a line, or add what was missed. */
+/** Edit Items for a sale: correct how many of each were sold, remove a line, or add what was missed. */
 export function EditSalePage() {
   return <EditEntriesScreen kind={sale}>{(recorded) => <SaleEditor recorded={recorded} />}</EditEntriesScreen>
 }

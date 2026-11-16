@@ -20,7 +20,7 @@ type SaleResponse = {
 }
 
 /** Where a sale's detail screen lives. */
-export const saleDetailPath = (id: string) => `/riwayat/penjualan/${id}`
+export const saleDetailPath = (id: string) => `/history/sales/${id}`
 
 export async function fetchSale(id: string, signal?: AbortSignal): Promise<RecordedTransaction> {
   const sale = await apiRequest<SaleResponse>(`/sales/${id}`, { signal })
@@ -46,7 +46,7 @@ export function deleteSale(id: string): Promise<void> {
 }
 
 /** Where a sale's items are changed. */
-export const editSalePath = (id: string) => `${saleDetailPath(id)}/ubah`
+export const editSalePath = (id: string) => `${saleDetailPath(id)}/edit`
 
 /** A line of a sale being changed. A line already recorded keeps its `id` and price; a new one has none. */
 export type SaleEntryChange = { id: string | null; productId: string; quantity: number }

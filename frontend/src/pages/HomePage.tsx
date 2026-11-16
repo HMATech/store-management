@@ -9,7 +9,7 @@ import { TodaySummary } from '../features/home/TodaySummary'
 import { formatLongDate } from '../lib/format'
 import { useToday } from '../lib/useToday'
 
-/** Beranda: today at a glance, and the way into the daily tasks. One column on phones, two on wide screens. */
+/** Home: today at a glance, and the way into the daily tasks. One column on phones, two on wide screens. */
 export function HomePage() {
   const today = useToday()
 
@@ -21,21 +21,21 @@ export function HomePage() {
             <RecordSaleCard />
             <TodaySummary />
             <div className="flex gap-12">
-              <ButtonLink kind="secondary" to="/belanja" className="min-w-0 flex-1 gap-8 px-6 whitespace-nowrap">
+              <ButtonLink kind="secondary" to="/purchases/new" className="min-w-0 flex-1 gap-8 px-6 whitespace-nowrap">
                 <Truck aria-hidden className="size-24 shrink-0" />
                 Catat Belanja
               </ButtonLink>
-              <ButtonLink kind="secondary" to="/produk" className="min-w-0 flex-1 gap-8 px-6 whitespace-nowrap">
+              <ButtonLink kind="secondary" to="/products" className="min-w-0 flex-1 gap-8 px-6 whitespace-nowrap">
                 <ClipboardList aria-hidden className="size-24 shrink-0" />
                 Cek Stok
               </ButtonLink>
             </div>
           </div>
           <div className="flex flex-col gap-16 lg:flex-1 lg:gap-24">
-            <Section title="Stok perlu dicek" link={{ label: 'Lihat semua', to: '/produk' }}>
+            <Section title="Stok perlu dicek" link={{ label: 'Lihat semua', to: '/products' }}>
               <StockAlerts />
             </Section>
-            <Section title="Penjualan terakhir" link={{ label: 'Riwayat', to: '/riwayat' }}>
+            <Section title="Penjualan terakhir" link={{ label: 'Riwayat', to: '/history' }}>
               <RecentSales />
             </Section>
           </div>

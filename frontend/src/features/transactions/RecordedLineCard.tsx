@@ -12,7 +12,7 @@ type RecordedLineCardProps = {
   /** The most it can be changed to. */
   max: number
   /**
-   * Puts the quantity on its own row, named by this label ("Jumlah dibeli"), for cards that also hold a field.
+   * Puts the quantity on its own row, named by this label, such as how many were bought, for cards that also hold a field.
    * Without it the quantity sits beside the name.
    */
   quantityLabel?: string
@@ -34,7 +34,7 @@ const restoreButton =
 
 /**
  * A line already recorded in the sale or purchase being changed: its quantity can be corrected, or it can be
- * removed and brought back. Mirrors the line cards on the "13 · Ubah Barang Penjualan" board in Loom.
+ * removed and brought back. Mirrors the line cards on the 13 board in Loom.
  */
 export function RecordedLineCard({
   line,

@@ -15,7 +15,7 @@ import { useRetrySafeId } from '../lib/requestId'
 /** The longest supplier name the field takes. */
 const MaxSupplierLength = 100
 
-/** Catat Belanja: say where the goods came from, how many of each and what each cost, and save the purchase. */
+/** Record Purchase: say where the goods came from, how many of each and what each cost, and save the purchase. */
 export function PurchasePage() {
   const queryClient = useQueryClient()
   const cart = usePurchaseCart()

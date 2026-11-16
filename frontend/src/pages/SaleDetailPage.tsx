@@ -11,7 +11,7 @@ const sale: TransactionKindText = {
   isIncome: true,
 }
 
-/** Detail Penjualan: what one sale held, and the ways to correct it or remove it when it was recorded by mistake. */
+/** Sale Detail: what one sale held, and the ways to correct it or remove it when it was recorded by mistake. */
 export function SaleDetailPage() {
   return <TransactionDetail kind={sale} />
 }

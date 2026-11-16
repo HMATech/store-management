@@ -11,7 +11,7 @@ import { nextTheme, setTheme, useTheme, type Theme } from '../lib/theme'
 
 const themeNames: Record<Theme, string> = { system: 'Ikuti perangkat', light: 'Terang', dark: 'Gelap' }
 
-/** Akun: who is signed in, the people who can sign in, how the app looks, and signing out. */
+/** Account: who is signed in, the people who can sign in, how the app looks, and signing out. */
 export function AccountPage() {
   const { data: user } = useCurrentUser()
   const theme = useTheme()
@@ -33,10 +33,10 @@ export function AccountPage() {
             </Card>
           )}
           <CardList>
-            <MenuRow icon={Users} to="/akun/pengguna">
+            <MenuRow icon={Users} to="/account/users">
               Daftar pengguna
             </MenuRow>
-            <MenuRow icon={UserPlus} to="/akun/pengguna/baru">
+            <MenuRow icon={UserPlus} to="/account/users/new">
               Tambah pengguna
             </MenuRow>
             {/* Each tap moves to the next look; the row says which one is on. */}

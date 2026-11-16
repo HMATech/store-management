@@ -24,15 +24,15 @@ import { ApiError } from '../lib/api'
 import { formatDay, formatDayRange, formatNumber, formatRupiah } from '../lib/format'
 import { usePagedList } from '../lib/usePagedList'
 
-/** Detail Produk: one product's price, stock and past prices, with the ways to change them. */
+/** Product Detail: one product's price, stock and past prices, with the ways to change them. */
 export function ProductDetailPage() {
   const { id = '' } = useParams()
-  // Set by a screen that changed this product and came back, such as Sesuaikan Stok.
+  // Set by a screen that changed this product and came back, such as Adjust Stock.
   const hasNotice = typeof useLocation().state?.notice === 'string'
   const product = useQuery({ queryKey: ['products', id], queryFn: ({ signal }) => fetchProduct(id, signal) })
 
   return (
-    <Screen title="Detail Produk" backTo="/produk">
+    <Screen title="Detail Produk" backTo="/products">
       <ScreenBody>
         {product.isPending ? (
           <Loading />
@@ -41,7 +41,7 @@ export function ProductDetailPage() {
             <EmptyState
               icon={PackageX}
               title="Barang tidak ditemukan"
-              action={<ButtonLink to="/produk">Kembali ke Produk</ButtonLink>}
+              action={<ButtonLink to="/products">Kembali ke Produk</ButtonLink>}
             >
               Barang ini mungkin sudah dihapus.
             </EmptyState>
@@ -132,7 +132,7 @@ function StockCard({ productId }: { productId: string }) {
         <Count label="Terjual" value={sold} />
         <Count label="Disesuaikan" value={adjusted} />
       </dl>
-      <ButtonLink to={`/produk/${productId}/stok`}>
+      <ButtonLink to={`/products/${productId}/stock`}>
         <ClipboardList aria-hidden className="size-24" />
         Sesuaikan Stok
       </ButtonLink>

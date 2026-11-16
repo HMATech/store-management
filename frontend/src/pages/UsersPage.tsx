@@ -11,7 +11,7 @@ import { fetchUsers, fullName } from '../features/users/api'
 import { getUserId } from '../lib/session'
 import { usePagedList } from '../lib/usePagedList'
 
-/** Daftar Pengguna: everyone who can sign in to the app. */
+/** Users: everyone who can sign in to the app. */
 export function UsersPage() {
   const currentUserId = getUserId()
   const { items, isError, retry, hasMore, isLoadingMore, loadMore } = usePagedList(['users', 'list'], (page, signal) =>
@@ -19,7 +19,7 @@ export function UsersPage() {
   )
 
   return (
-    <Screen title="Daftar Pengguna" backTo="/akun">
+    <Screen title="Daftar Pengguna" backTo="/account">
       <ScreenBody>
         <div className="flex w-full max-w-560 flex-col gap-14">
           <Notice />
@@ -46,7 +46,7 @@ export function UsersPage() {
               {hasMore && <LoadMoreButton isLoading={isLoadingMore} onLoadMore={loadMore} />}
             </>
           )}
-          <ButtonLink kind="secondary" to="/akun/pengguna/baru">
+          <ButtonLink kind="secondary" to="/account/users/new">
             <Plus aria-hidden className="size-22" />
             Tambah Pengguna
           </ButtonLink>

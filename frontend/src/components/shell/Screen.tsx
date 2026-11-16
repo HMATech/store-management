@@ -8,7 +8,7 @@ type ScreenProps = {
   /** A line under the title, such as today's date. */
   subtitle?: string
   /**
-   * Where "Kembali" leads. Give it to a task screen, one entered to do a single job: on phones it then shows
+   * Where the back button leads. Give it to a task screen, one entered to do a single job: on phones it then shows
    * the back button instead of the account button. Pair it with `<AppShell bottomNavigation={false}>`.
    */
   backTo?: string

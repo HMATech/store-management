@@ -12,7 +12,7 @@ import { ApiError } from '../lib/api'
 import { formatRupiah } from '../lib/format'
 import { useRetrySafeId } from '../lib/requestId'
 
-/** Catat Penjualan: pick what the customer buys, see the total, and save the sale. */
+/** Record Sale: pick what the customer buys, see the total, and save the sale. */
 export function SalePage() {
   const queryClient = useQueryClient()
   const cart = useCart()

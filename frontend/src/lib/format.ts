@@ -22,12 +22,12 @@ export function formatNumber(value: number): string {
   return value.toLocaleString(Locale)
 }
 
-/** A date as `Minggu, 8 November 2026`. */
+/** A date as the weekday and the full date. */
 export function formatLongDate(date: Date): string {
   return longDate.format(date)
 }
 
-/** When something happened: `Pukul 10.42` for today, and `8 Nov, 10.42` for another day. */
+/** When something happened: the time alone for today, and the day and time for another day. */
 export function formatOccurrence(occurredAt: Date, now: Date = new Date()): string {
   return toIsoDay(occurredAt) === toIsoDay(now)
     ? `Pukul ${time.format(occurredAt)}`
@@ -51,8 +51,8 @@ export function formatTime(date: Date): string {
 }
 
 /**
- * The heading of a day in a list: `Hari ini`, `Kemarin, 7 Nov`, `Jumat, 6 Nov`, and `6 Nov 2025` for a day
- * in another year.
+ * The heading of a day in a list: today and yesterday by name, the weekday with the date within the year, and
+ * the full date for a day in another year.
  */
 export function formatDayHeading(day: Date, today: Date = new Date()): string {
   if (toIsoDay(day) === toIsoDay(today)) {

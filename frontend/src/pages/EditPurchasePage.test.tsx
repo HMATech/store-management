@@ -62,7 +62,7 @@ const total = () =>
 const saveButton = () => screen.getByRole('button', { name: 'Simpan Perubahan' })
 
 async function renderEdit() {
-  const user = renderApp('/riwayat/belanja/b1/ubah')
+  const user = renderApp('/history/purchases/b1/edit')
   await screen.findByRole('region', { name: 'Barang di belanja ini' })
   await toAdd().findByText('Aqua 600 ml')
   return user

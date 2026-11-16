@@ -25,7 +25,7 @@ const purchase: EditKindText = {
 /** A purchase's line can also correct its cost, which is empty while it is being retyped. */
 const costOf = (entry: RecordedEntry): { unitCost: number | null } => ({ unitCost: entry.unitPrice })
 
-/** Ubah Barang for a purchase: correct how many were bought and what each cost, remove a line, or add one. */
+/** Edit Items for a purchase: correct how many were bought and what each cost, remove a line, or add one. */
 export function EditPurchasePage() {
   return <EditEntriesScreen kind={purchase}>{(recorded) => <PurchaseEditor recorded={recorded} />}</EditEntriesScreen>
 }

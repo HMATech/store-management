@@ -11,7 +11,7 @@ export type RecordedLine<Extra extends object = object> = Extra & {
 /**
  * The recorded lines of a sale or purchase being changed, starting from `entries`. `extraOf` adds what a line
  * of that kind can also change, such as a purchase's cost. A quantity stays between 1 and `max`; taking a line
- * out is done with `remove`, which puts it back as it was recorded, so "Batal" restores the recorded line.
+ * out is done with `remove`, which puts it back as it was recorded, so undoing a removal restores the recorded line.
  */
 export function useRecordedLines<Extra extends object>(
   entries: RecordedEntry[],

@@ -65,7 +65,7 @@ describe('routing by session', () => {
   it('returns to the login screen after signing out from the account screen', async () => {
     stubApi({})
     setToken(createJwt())
-    const user = renderApp('/akun')
+    const user = renderApp('/account')
 
     await user.click(screen.getByRole('button', { name: 'Keluar' }))
     const dialog = within(await screen.findByRole('alertdialog', { name: 'Keluar dari aplikasi?' }))

@@ -51,7 +51,7 @@ const day = (daysAgo: number) => within(screen.getByRole('region', { name: forma
 const rows = () => screen.getAllByRole('listitem')
 const choice = (name: string) => screen.getByRole('button', { name })
 
-async function renderHistory(path = '/riwayat') {
+async function renderHistory(path = '/history') {
   const user = renderApp(path)
   await screen.findAllByRole('listitem')
   return user
@@ -93,8 +93,8 @@ describe('history screen', () => {
     await renderHistory()
 
     const [sale, , purchase] = day(0).getAllByRole('listitem')
-    expect(within(sale).getByRole('link')).toHaveAttribute('href', '/riwayat/penjualan/t1')
-    expect(within(purchase).getByRole('link')).toHaveAttribute('href', '/riwayat/belanja/t3')
+    expect(within(sale).getByRole('link')).toHaveAttribute('href', '/history/sales/t1')
+    expect(within(purchase).getByRole('link')).toHaveAttribute('href', '/history/purchases/t3')
   })
 
   it("shows each day's money in, counting sales only", async () => {
@@ -125,7 +125,7 @@ describe('history screen', () => {
   it("shows each day's money out when only purchases are listed", async () => {
     stubHistoryApi()
 
-    await renderHistory('/riwayat?jenis=belanja')
+    await renderHistory('/history?kind=purchase')
 
     expect(choice('Belanja')).toHaveAttribute('aria-pressed', 'true')
     expect(day(0).getByText(`Keluar ${rupiah(860000)}`)).toBeInTheDocument()
@@ -134,7 +134,7 @@ describe('history screen', () => {
 
   it('shows everything again with "Semua"', async () => {
     stubHistoryApi()
-    const user = await renderHistory('/riwayat?jenis=penjualan')
+    const user = await renderHistory('/history?kind=sale')
     expect(rows()).toHaveLength(3)
 
     await user.click(choice('Semua'))
@@ -146,7 +146,7 @@ describe('history screen', () => {
   it('ignores an unknown kind in the address', async () => {
     const api = stubHistoryApi()
 
-    await renderHistory('/riwayat?jenis=utang')
+    await renderHistory('/history?kind=debt')
 
     expect(choice('Semua')).toHaveAttribute('aria-pressed', 'true')
     expect(rows()).toHaveLength(5)
@@ -156,11 +156,11 @@ describe('history screen', () => {
   it('invites recording a sale when nothing has been recorded', async () => {
     stubHistoryApi([])
 
-    renderApp('/riwayat')
+    renderApp('/history')
 
     expect(await screen.findByRole('heading', { name: 'Belum ada transaksi' })).toBeInTheDocument()
     expect(screen.getByText('Penjualan dan belanja yang dicatat akan muncul di sini.')).toBeInTheDocument()
-    expect(screen.getByRole('link', { name: 'Catat Penjualan' })).toHaveAttribute('href', '/jual')
+    expect(screen.getByRole('link', { name: 'Catat Penjualan' })).toHaveAttribute('href', '/sales/new')
     expect(choice('Semua')).toBeInTheDocument()
   })
 
@@ -180,7 +180,7 @@ describe('history screen', () => {
   it('offers a retry when the history cannot be loaded, and loads it on retry', async () => {
     let isDown = true
     stubHistoryApi(history, { '/transactions': () => (isDown ? jsonResponse(500, {}) : page(history)) })
-    const user = renderApp('/riwayat')
+    const user = renderApp('/history')
 
     expect(await screen.findByRole('alert')).toHaveTextContent('Tidak bisa memuat.')
 

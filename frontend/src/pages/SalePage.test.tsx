@@ -47,7 +47,7 @@ const saveButton = () => screen.getByRole('button', { name: 'Simpan Penjualan' }
 const total = () => order().getByRole('status', { name: 'Total' })
 
 async function renderSalePage() {
-  const user = renderApp('/jual')
+  const user = renderApp('/sales/new')
   await screen.findByText('Indomie Goreng')
   return user
 }
@@ -318,7 +318,7 @@ describe('sale screen', () => {
   it('points to the products menu when there are no products at all', async () => {
     stubSaleApi({ '/products': () => page([]) })
 
-    renderApp('/jual')
+    renderApp('/sales/new')
 
     expect(await screen.findByText('Belum ada barang. Tambahkan dulu di menu Produk.')).toBeInTheDocument()
     expect(saveButton()).toBeDisabled()
@@ -327,7 +327,7 @@ describe('sale screen', () => {
   it('offers a retry when the products cannot be loaded, and loads them on retry', async () => {
     let isDown = true
     stubSaleApi({ '/products': () => (isDown ? jsonResponse(500, {}) : page(catalogue)) })
-    const user = renderApp('/jual')
+    const user = renderApp('/sales/new')
 
     expect(await screen.findByRole('alert')).toHaveTextContent('Tidak bisa memuat.')
 
@@ -341,7 +341,7 @@ describe('sale screen', () => {
     const api = stubSaleApi({
       '/products': (path) => (path.includes('page=2') ? page([gula]) : page([indomie, aqua], true)),
     })
-    const user = renderApp('/jual')
+    const user = renderApp('/sales/new')
     await screen.findByText('Indomie Goreng')
 
     expect(screen.queryByText('Gula Pasir 1 kg')).not.toBeInTheDocument()

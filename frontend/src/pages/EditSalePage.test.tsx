@@ -77,7 +77,7 @@ const total = () =>
 const saveButton = () => screen.getByRole('button', { name: 'Simpan Perubahan' })
 
 async function renderEdit() {
-  const user = renderApp('/riwayat/penjualan/s1/ubah')
+  const user = renderApp('/history/sales/s1/edit')
   await screen.findByRole('region', { name: 'Barang di penjualan ini' })
   await toAdd().findByText('Aqua 600 ml')
   return user
@@ -96,7 +96,7 @@ describe('edit sale screen', () => {
     expect(line('Indomie Goreng').getByText(rupiah(3000))).toBeInTheDocument()
     expect(line('Indomie Goreng').getByRole('status')).toHaveTextContent('2')
     expect(total()).toHaveTextContent(rupiah(23500))
-    expect(screen.getByRole('link', { name: 'Kembali' })).toHaveAttribute('href', '/riwayat/penjualan/s1')
+    expect(screen.getByRole('link', { name: 'Kembali' })).toHaveAttribute('href', '/history/sales/s1')
   })
 
   it('saves a corrected quantity, a removed line and an added product, then says so on the detail', async () => {
@@ -239,10 +239,10 @@ describe('edit sale screen', () => {
   it('says when the sale no longer exists', async () => {
     stubApi({ '/sales/s1': () => jsonResponse(404, {}) })
 
-    renderApp('/riwayat/penjualan/s1/ubah')
+    renderApp('/history/sales/s1/edit')
 
     expect(await screen.findByText('Penjualan tidak ditemukan')).toBeInTheDocument()
-    expect(screen.getByRole('link', { name: 'Kembali ke Riwayat' })).toHaveAttribute('href', '/riwayat')
+    expect(screen.getByRole('link', { name: 'Kembali ke Riwayat' })).toHaveAttribute('href', '/history')
   })
 
   it('offers to try again when the sale cannot be loaded', async () => {
@@ -251,7 +251,7 @@ describe('edit sale screen', () => {
       '/sales/s1': () => (fails ? jsonResponse(500, {}) : jsonResponse(200, saleUpdatedAt(recordedAt))),
       '/products': () => jsonResponse(200, { responses: catalogue, hasNextPage: false }),
     })
-    const user = renderApp('/riwayat/penjualan/s1/ubah')
+    const user = renderApp('/history/sales/s1/edit')
 
     const retry = await screen.findByRole('button', { name: 'Coba lagi' })
     fails = false
@@ -263,7 +263,7 @@ describe('edit sale screen', () => {
   it('treats a malformed sale as one that cannot be loaded', async () => {
     stubApi({ '/sales/s1': () => new Response('not json', { status: 200 }) })
 
-    renderApp('/riwayat/penjualan/s1/ubah')
+    renderApp('/history/sales/s1/edit')
 
     expect(await screen.findByRole('button', { name: 'Coba lagi' })).toBeInTheDocument()
   })

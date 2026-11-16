@@ -4,7 +4,7 @@ import { Link } from 'react-router'
 
 type SectionProps = {
   title: string
-  /** A link at the end of the header, such as "Lihat semua". */
+  /** A link at the end of the header, such as one that shows everything. */
   link?: { label: string; to: string }
   children: ReactNode
 }

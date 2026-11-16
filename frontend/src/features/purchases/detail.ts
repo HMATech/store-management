@@ -21,7 +21,7 @@ type PurchaseResponse = {
 }
 
 /** Where a purchase's detail screen lives. */
-export const purchaseDetailPath = (id: string) => `/riwayat/belanja/${id}`
+export const purchaseDetailPath = (id: string) => `/history/purchases/${id}`
 
 export async function fetchPurchase(id: string, signal?: AbortSignal): Promise<RecordedTransaction> {
   const purchase = await apiRequest<PurchaseResponse>(`/purchases/${id}`, { signal })
@@ -48,7 +48,7 @@ export function deletePurchase(id: string): Promise<void> {
 }
 
 /** Where a purchase's items are changed. */
-export const editPurchasePath = (id: string) => `${purchaseDetailPath(id)}/ubah`
+export const editPurchasePath = (id: string) => `${purchaseDetailPath(id)}/edit`
 
 /** A line of a purchase being changed. A line already recorded keeps its `id`; a new one has none. */
 export type PurchaseEntryChange = { id: string | null; productId: string; quantity: number; unitCost: number }

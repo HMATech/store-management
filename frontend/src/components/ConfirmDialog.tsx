@@ -5,11 +5,11 @@ import { Button } from './Button'
 
 type ConfirmDialogProps = {
   isOpen: boolean
-  /** The question: "Hapus penjualan ini?" */
+  /** The question, such as whether to delete this sale. */
   title: string
   /** What will happen, in a sentence or two. */
   children: ReactNode
-  /** The action that goes ahead: "Ya, Hapus". */
+  /** The label of the action that goes ahead, such as confirming the delete. */
   confirmLabel: string
   confirmIcon: LucideIcon
   /** True while the action runs. Both buttons wait for it. Leave it out for an action that is done at once. */

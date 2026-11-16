@@ -36,7 +36,7 @@ function stubPurchaseApi(onDelete: () => Response | Promise<Response> = () => ne
 const deletions = (api: Api) => api.mock.calls.filter(([, request]) => request?.method === 'DELETE')
 
 async function renderPurchase() {
-  const user = renderApp('/riwayat/belanja/b1')
+  const user = renderApp('/history/purchases/b1')
   await screen.findByText('Barang yang dibeli')
   return user
 }
@@ -58,7 +58,7 @@ describe('purchase detail screen', () => {
     expect(screen.getByText('Dari Toko Sumber Rejeki')).toBeInTheDocument()
     expect(screen.getByText(`${formatLongDate(boughtAt)} · pukul 08.30`)).toBeInTheDocument()
     expect(screen.getByText('2 jenis barang · 50 item')).toBeInTheDocument()
-    expect(screen.getByRole('link', { name: 'Kembali' })).toHaveAttribute('href', '/riwayat')
+    expect(screen.getByRole('link', { name: 'Kembali' })).toHaveAttribute('href', '/history')
   })
 
   it('lists what was bought at the cost paid', async () => {
@@ -78,7 +78,7 @@ describe('purchase detail screen', () => {
 
     await renderPurchase()
 
-    expect(screen.getByRole('link', { name: 'Ubah Barang' })).toHaveAttribute('href', '/riwayat/belanja/b1/ubah')
+    expect(screen.getByRole('link', { name: 'Ubah Barang' })).toHaveAttribute('href', '/history/purchases/b1/edit')
   })
 
   it('asks before deleting, then deletes and says so in the history', async () => {
@@ -128,7 +128,7 @@ describe('purchase detail screen', () => {
   it('says the purchase is not there on a 404', async () => {
     stubApi({ '/purchases/b1': () => jsonResponse(404, {}) })
 
-    renderApp('/riwayat/belanja/b1')
+    renderApp('/history/purchases/b1')
 
     expect(await screen.findByRole('heading', { name: 'Belanja tidak ditemukan' })).toBeInTheDocument()
   })

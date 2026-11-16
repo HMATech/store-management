@@ -47,7 +47,7 @@ const deletions = (api: Api) =>
   api.mock.calls.filter(([, request]) => request?.method === 'DELETE').map(([input]) => String(input))
 
 async function renderSale() {
-  const user = renderApp('/riwayat/penjualan/s1')
+  const user = renderApp('/history/sales/s1')
   await screen.findByText('Barang yang dibeli')
   return user
 }
@@ -68,7 +68,7 @@ describe('sale detail screen', () => {
     expect(screen.getByText(`${formatLongDate(soldAt)} · pukul 10.42`)).toBeInTheDocument()
     expect(screen.getByText('3 jenis barang · 5 item')).toBeInTheDocument()
     expect(screen.getAllByText(rupiah(27500))).toHaveLength(2)
-    expect(screen.getByRole('link', { name: 'Kembali' })).toHaveAttribute('href', '/riwayat')
+    expect(screen.getByRole('link', { name: 'Kembali' })).toHaveAttribute('href', '/history')
     const menu = within(screen.getByRole('navigation', { name: 'Menu utama' }))
     expect(menu.getByRole('link', { name: 'Riwayat' })).toHaveAttribute('aria-current', 'page')
     expect(menu.getByRole('link', { name: 'Beranda' })).not.toHaveAttribute('aria-current')
@@ -93,7 +93,7 @@ describe('sale detail screen', () => {
 
     await renderSale()
 
-    expect(screen.getByRole('link', { name: 'Ubah Barang' })).toHaveAttribute('href', '/riwayat/penjualan/s1/ubah')
+    expect(screen.getByRole('link', { name: 'Ubah Barang' })).toHaveAttribute('href', '/history/sales/s1/edit')
   })
 
   it('asks before deleting, saying what will happen', async () => {
@@ -204,17 +204,17 @@ describe('sale detail screen', () => {
   it.each([404, 400])('says the sale is not there on a %d', async (status) => {
     stubSaleApi({ '/sales/s1': () => jsonResponse(status, {}) })
 
-    renderApp('/riwayat/penjualan/s1')
+    renderApp('/history/sales/s1')
 
     expect(await screen.findByRole('heading', { name: 'Penjualan tidak ditemukan' })).toBeInTheDocument()
-    expect(screen.getByRole('link', { name: 'Kembali ke Riwayat' })).toHaveAttribute('href', '/riwayat')
+    expect(screen.getByRole('link', { name: 'Kembali ke Riwayat' })).toHaveAttribute('href', '/history')
     expect(screen.queryByRole('button', { name: 'Hapus Penjualan' })).not.toBeInTheDocument()
   })
 
   it('offers a retry when the sale cannot be loaded, and loads it on retry', async () => {
     let isDown = true
     stubSaleApi({ '/sales/s1': () => (isDown ? jsonResponse(500, {}) : jsonResponse(200, sale)) })
-    const user = renderApp('/riwayat/penjualan/s1')
+    const user = renderApp('/history/sales/s1')
 
     expect(await screen.findByRole('alert')).toHaveTextContent('Tidak bisa memuat.')
 

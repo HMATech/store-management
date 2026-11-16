@@ -48,7 +48,7 @@ const saveButton = () => screen.getByRole('button', { name: 'Simpan Penyesuaian'
 const reason = (name: string) => screen.getByRole('button', { name })
 
 async function renderAdjustStock() {
-  const user = renderApp('/produk/p-gula/stok')
+  const user = renderApp('/products/p-gula/stock')
   await screen.findByRole('heading', { name: 'Gula Pasir 1 kg' })
   return user
 }
@@ -71,8 +71,8 @@ describe('adjust stock screen', () => {
     expect(countField()).toHaveValue('3')
     expect(difference()).toHaveTextContent('Sama dengan yang tercatat')
     expect(screen.queryByText('Kenapa berbeda?')).not.toBeInTheDocument()
-    expect(screen.getByRole('link', { name: 'Kembali' })).toHaveAttribute('href', '/produk/p-gula')
-    expect(screen.getByRole('link', { name: 'Batal' })).toHaveAttribute('href', '/produk/p-gula')
+    expect(screen.getByRole('link', { name: 'Kembali' })).toHaveAttribute('href', '/products/p-gula')
+    expect(screen.getByRole('link', { name: 'Batal' })).toHaveAttribute('href', '/products/p-gula')
   })
 
   it('shows how much less is on the shelf, and asks why', async () => {
@@ -244,7 +244,7 @@ describe('adjust stock screen', () => {
   it.each([404, 400])('says the product is not there on a %d', async (status) => {
     stubStockApi(3, { '/stocks/p-gula': () => jsonResponse(status, {}) })
 
-    renderApp('/produk/p-gula/stok')
+    renderApp('/products/p-gula/stock')
 
     expect(await screen.findByRole('heading', { name: 'Barang tidak ditemukan' })).toBeInTheDocument()
     expect(screen.queryByRole('button', { name: 'Simpan Penyesuaian' })).not.toBeInTheDocument()
@@ -253,7 +253,7 @@ describe('adjust stock screen', () => {
   it('offers a retry when the stock cannot be loaded, and loads it on retry', async () => {
     let isDown = true
     stubStockApi(3, { '/stocks/p-gula': () => (isDown ? jsonResponse(500, {}) : jsonResponse(200, stockOf(3))) })
-    const user = renderApp('/produk/p-gula/stok')
+    const user = renderApp('/products/p-gula/stock')
 
     expect(await screen.findByRole('alert')).toHaveTextContent('Tidak bisa memuat.')
 

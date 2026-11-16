@@ -3,7 +3,7 @@ import { useSyncExternalStore } from 'react'
 /** How the app looks: as the device says, or always light or dark. */
 export type Theme = 'system' | 'light' | 'dark'
 
-const StorageKey = 'warung.theme'
+const StorageKey = 'store.theme'
 const themes: Theme[] = ['system', 'light', 'dark']
 const listeners = new Set<() => void>()
 

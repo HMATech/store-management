@@ -11,7 +11,7 @@ const purchase: TransactionKindText = {
   isIncome: false,
 }
 
-/** Detail Belanja: what one purchase held and where it came from, and the ways to correct or remove it. */
+/** Purchase Detail: what one purchase held and where it came from, and the ways to correct or remove it. */
 export function PurchaseDetailPage() {
   return <TransactionDetail kind={purchase} />
 }

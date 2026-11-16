@@ -22,10 +22,10 @@ const MaxQuantity = 99999
 const reasonsWhenLess = ['Rusak / kedaluwarsa', 'Hilang', 'Salah hitung', 'Lainnya']
 const reasonsWhenMore = ['Salah hitung', 'Belum dicatat', 'Lainnya']
 
-/** Sesuaikan Stok: count what is really on the shelf, and record the difference with its reason. */
+/** Adjust Stock: count what is really on the shelf, and record the difference with its reason. */
 export function AdjustStockPage() {
   const { id = '' } = useParams()
-  const productPath = `/produk/${id}`
+  const productPath = `/products/${id}`
   const stock = useQuery({
     queryKey: ['products', id, 'stock'],
     queryFn: ({ signal }) => fetchStockBreakdown(id, signal),
@@ -43,7 +43,7 @@ export function AdjustStockPage() {
             <EmptyState
               icon={PackageX}
               title="Barang tidak ditemukan"
-              action={<ButtonLink to="/produk">Kembali ke Produk</ButtonLink>}
+              action={<ButtonLink to="/products">Kembali ke Produk</ButtonLink>}
             >
               Barang ini mungkin sudah dihapus.
             </EmptyState>
