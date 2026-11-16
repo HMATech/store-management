@@ -1,0 +1,36 @@
+name: Backend
+
+on:
+  push:
+    branches: [main]
+    paths: ['backend/**', '.github/workflows/backend.yml']
+  pull_request:
+    paths: ['backend/**', '.github/workflows/backend.yml']
+
+concurrency:
+  group: backend-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    defaults:
+      run:
+        working-directory: backend
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 8.0.x
+
+      - name: Restore
+        run: dotnet restore Backend.sln
+
+      - name: Build
+        run: dotnet build Backend.sln --configuration Release --no-restore
+
+      # The runner has Docker, so the integration tests get a real PostgreSQL through Testcontainers.
+      - name: Test
+        run: dotnet test Backend.sln --configuration Release --no-build --logger "console;verbosity=normal"
