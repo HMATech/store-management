@@ -3,7 +3,7 @@
  * through this module, so the storage can later move to secure native storage without touching callers.
  */
 
-const StorageKey = 'warung.session.token'
+const StorageKey = 'store.session.token'
 
 type Listener = () => void
 

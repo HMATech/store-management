@@ -48,7 +48,7 @@ const priceChanges = (api: Api) =>
     .map(([input, request]) => [String(input).replace(/^.*\/api/, ''), JSON.parse(String(request?.body))])
 
 async function renderDetail() {
-  const user = renderApp('/produk/p-gula')
+  const user = renderApp('/products/p-gula')
   await screen.findByRole('heading', { name: 'Gula Pasir 1 kg' })
   return user
 }
@@ -68,7 +68,7 @@ describe('product detail screen', () => {
 
     expect(screen.getByText('Gulaku · kg · Sembako')).toBeInTheDocument()
     expect(screen.getByText('Harga jual').parentElement).toHaveTextContent(rupiah(17500))
-    expect(screen.getByRole('link', { name: 'Kembali' })).toHaveAttribute('href', '/produk')
+    expect(screen.getByRole('link', { name: 'Kembali' })).toHaveAttribute('href', '/products')
     const menu = within(screen.getByRole('navigation', { name: 'Menu utama' }))
     expect(menu.getByRole('link', { name: 'Produk' })).toHaveAttribute('aria-current', 'page')
   })
@@ -83,7 +83,7 @@ describe('product detail screen', () => {
     expect(screen.getByText('Dibeli').parentElement).toHaveTextContent('12')
     expect(screen.getByText('Terjual').parentElement).toHaveTextContent('9')
     expect(screen.getByText('Disesuaikan').parentElement).toHaveTextContent('0')
-    expect(screen.getByRole('link', { name: 'Sesuaikan Stok' })).toHaveAttribute('href', '/produk/p-gula/stok')
+    expect(screen.getByRole('link', { name: 'Sesuaikan Stok' })).toHaveAttribute('href', '/products/p-gula/stock')
   })
 
   it.each([
@@ -155,17 +155,17 @@ describe('product detail screen', () => {
   it.each([404, 400])('says the product is not there on a %d', async (status) => {
     stubDetailApi({ '/products/p-gula': () => jsonResponse(status, {}) })
 
-    renderApp('/produk/p-gula')
+    renderApp('/products/p-gula')
 
     expect(await screen.findByRole('heading', { name: 'Barang tidak ditemukan' })).toBeInTheDocument()
-    expect(screen.getByRole('link', { name: 'Kembali ke Produk' })).toHaveAttribute('href', '/produk')
+    expect(screen.getByRole('link', { name: 'Kembali ke Produk' })).toHaveAttribute('href', '/products')
     expect(screen.queryByText('Stok sekarang')).not.toBeInTheDocument()
   })
 
   it('offers a retry when the product cannot be loaded, and loads it on retry', async () => {
     let isDown = true
     stubDetailApi({ '/products/p-gula': () => (isDown ? jsonResponse(500, {}) : jsonResponse(200, gula)) })
-    const user = renderApp('/produk/p-gula')
+    const user = renderApp('/products/p-gula')
 
     expect(await screen.findByRole('alert')).toHaveTextContent('Tidak bisa memuat.')
 

@@ -33,11 +33,11 @@ describe('account screen', () => {
   it('shows who is signed in and the account menu', async () => {
     stubAccountApi()
 
-    renderApp('/akun')
+    renderApp('/account')
 
     expect(await screen.findByText('ibu@warungortu.id')).toBeInTheDocument()
-    expect(screen.getByRole('link', { name: 'Daftar pengguna' })).toHaveAttribute('href', '/akun/pengguna')
-    expect(screen.getByRole('link', { name: 'Tambah pengguna' })).toHaveAttribute('href', '/akun/pengguna/baru')
+    expect(screen.getByRole('link', { name: 'Daftar pengguna' })).toHaveAttribute('href', '/account/users')
+    expect(screen.getByRole('link', { name: 'Tambah pengguna' })).toHaveAttribute('href', '/account/users/new')
     expect(screen.getByRole('button', { name: 'Tampilan: Ikuti perangkat' })).toBeInTheDocument()
     // The top bar has no account button, which would only lead back here. The sidebar keeps its own.
     expect(screen.getAllByRole('link', { name: /^Akun/ })).toHaveLength(1)
@@ -45,32 +45,32 @@ describe('account screen', () => {
 
   it('steps through the looks, applies each at once and remembers it', async () => {
     stubAccountApi()
-    const user = renderApp('/akun')
+    const user = renderApp('/account')
 
     await user.click(await screen.findByRole('button', { name: 'Tampilan: Ikuti perangkat' }))
     expect(document.documentElement.dataset.theme).toBe('light')
-    expect(localStorage.getItem('warung.theme')).toBe('light')
+    expect(localStorage.getItem('store.theme')).toBe('light')
 
     await user.click(screen.getByRole('button', { name: 'Tampilan: Terang' }))
     expect(document.documentElement.dataset.theme).toBe('dark')
 
     await user.click(screen.getByRole('button', { name: 'Tampilan: Gelap' }))
     expect(document.documentElement.dataset.theme).toBeUndefined()
-    expect(localStorage.getItem('warung.theme')).toBeNull()
+    expect(localStorage.getItem('store.theme')).toBeNull()
   })
 
   it('treats an unknown stored look as following the device', async () => {
-    localStorage.setItem('warung.theme', 'ungu')
+    localStorage.setItem('store.theme', 'ungu')
     stubAccountApi()
 
-    renderApp('/akun')
+    renderApp('/account')
 
     expect(await screen.findByRole('button', { name: 'Tampilan: Ikuti perangkat' })).toBeInTheDocument()
   })
 
   it('asks before signing out, and stays signed in on "Batal"', async () => {
     stubAccountApi()
-    const user = renderApp('/akun')
+    const user = renderApp('/account')
 
     await user.click(await screen.findByRole('button', { name: 'Keluar' }))
     const dialog = within(await screen.findByRole('alertdialog', { name: 'Keluar dari aplikasi?' }))
@@ -90,15 +90,15 @@ describe('user list screen', () => {
   it('lists everyone who can sign in, marking the signed-in user', async () => {
     stubAccountApi()
 
-    renderApp('/akun/pengguna')
+    renderApp('/account/users')
 
     const rows = await screen.findAllByRole('listitem')
     expect(rows.map((row) => row.textContent)).toEqual([
       'Ibuibu@warungortu.idKamu',
       'Bapak Rahmanbapak@warungortu.id',
     ])
-    expect(screen.getByRole('link', { name: 'Kembali' })).toHaveAttribute('href', '/akun')
-    expect(screen.getByRole('link', { name: 'Tambah Pengguna' })).toHaveAttribute('href', '/akun/pengguna/baru')
+    expect(screen.getByRole('link', { name: 'Kembali' })).toHaveAttribute('href', '/account')
+    expect(screen.getByRole('link', { name: 'Tambah Pengguna' })).toHaveAttribute('href', '/account/users/new')
   })
 
   it('offers a retry when the list cannot be loaded', async () => {
@@ -107,7 +107,7 @@ describe('user list screen', () => {
       '/users?': () =>
         isDown ? jsonResponse(500, {}) : jsonResponse(200, { responses: [me], hasNextPage: false, totalCount: 1 }),
     })
-    const user = renderApp('/akun/pengguna')
+    const user = renderApp('/account/users')
 
     expect(await screen.findByRole('alert')).toHaveTextContent('Tidak bisa memuat.')
     isDown = false
@@ -132,7 +132,7 @@ describe('add user screen', () => {
 
   it('adds the user and shows them in the list with what to do next', async () => {
     const api = stubAccountApi()
-    const user = renderApp('/akun/pengguna/baru')
+    const user = renderApp('/account/users/new')
 
     await fill(user, valid)
     await user.click(screen.getByRole('button', { name: 'Simpan Pengguna' }))
@@ -146,7 +146,7 @@ describe('add user screen', () => {
 
   it('sends the last name when one is given', async () => {
     const api = stubAccountApi()
-    const user = renderApp('/akun/pengguna/baru')
+    const user = renderApp('/account/users/new')
 
     await fill(user, { ...valid, 'Nama belakang (boleh dikosongkan)': 'Rahman' })
     await user.click(screen.getByRole('button', { name: 'Simpan Pengguna' }))
@@ -157,7 +157,7 @@ describe('add user screen', () => {
 
   it('points out what is missing only after saving is tried, and sends nothing', async () => {
     const api = stubAccountApi()
-    const user = renderApp('/akun/pengguna/baru')
+    const user = renderApp('/account/users/new')
     expect(screen.queryByText('Nama depan wajib diisi')).not.toBeInTheDocument()
 
     await user.click(screen.getByRole('button', { name: 'Simpan Pengguna' }))
@@ -176,7 +176,7 @@ describe('add user screen', () => {
     ['Kata sandi', 'Rh1!', passwordRule],
   ])('rejects "%s" of "%s"', async (label, value, message) => {
     const api = stubAccountApi()
-    const user = renderApp('/akun/pengguna/baru')
+    const user = renderApp('/account/users/new')
 
     await fill(user, { ...valid, [label]: undefined })
     await user.type(screen.getByLabelText(label), value)
@@ -188,7 +188,7 @@ describe('add user screen', () => {
 
   it('says on the email field when the email is already in use', async () => {
     stubAccountApi({ '/users/register': () => jsonResponse(409, { title: 'Users.EmailAlreadyRegistered' }) })
-    const user = renderApp('/akun/pengguna/baru')
+    const user = renderApp('/account/users/new')
 
     await fill(user, valid)
     await user.click(screen.getByRole('button', { name: 'Simpan Pengguna' }))
@@ -214,7 +214,7 @@ describe('add user screen', () => {
     ],
   ])('keeps the form and says so when %s', async (_case, respond, message) => {
     stubAccountApi({ '/users/register': respond })
-    const user = renderApp('/akun/pengguna/baru')
+    const user = renderApp('/account/users/new')
 
     await fill(user, valid)
     await user.click(screen.getByRole('button', { name: 'Simpan Pengguna' }))

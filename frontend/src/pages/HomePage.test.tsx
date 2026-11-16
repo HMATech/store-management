@@ -40,9 +40,9 @@ describe('home screen', () => {
     renderApp('/')
 
     expect(screen.getByText(formatLongDate(new Date()))).toBeInTheDocument()
-    expect(screen.getByRole('link', { name: /Catat Penjualan/ })).toHaveAttribute('href', '/jual')
-    expect(screen.getByRole('link', { name: 'Catat Belanja' })).toHaveAttribute('href', '/belanja')
-    expect(screen.getByRole('link', { name: 'Cek Stok' })).toHaveAttribute('href', '/produk')
+    expect(screen.getByRole('link', { name: /Catat Penjualan/ })).toHaveAttribute('href', '/sales/new')
+    expect(screen.getByRole('link', { name: 'Catat Belanja' })).toHaveAttribute('href', '/purchases/new')
+    expect(screen.getByRole('link', { name: 'Cek Stok' })).toHaveAttribute('href', '/products')
     expect(await screen.findByText('Hari ini')).toBeInTheDocument()
   })
 
@@ -150,7 +150,7 @@ describe('home screen', () => {
     expect(row).toHaveTextContent('3 barang')
     expect(row).toHaveTextContent(/Pukul \d\d\.\d\d/)
     expect(row).toHaveTextContent(rupiah(27500))
-    expect(within(row).getByRole('link')).toHaveAttribute('href', '/riwayat/penjualan/s1')
+    expect(within(row).getByRole('link')).toHaveAttribute('href', '/history/sales/s1')
   })
 
   it('says so when there are no sales yet', async () => {
@@ -207,7 +207,7 @@ describe('app shell', () => {
     renderApp('/')
 
     const links = await screen.findAllByRole('link', { name: 'Akun Ibu' })
-    expect(links[0]).toHaveAttribute('href', '/akun')
+    expect(links[0]).toHaveAttribute('href', '/account')
   })
 
   it('labels the account button "Akun" when the user cannot be loaded', async () => {
@@ -235,12 +235,12 @@ describe('app shell', () => {
   })
 
   it.each([
-    ['/jual', 'Catat Penjualan'],
-    ['/belanja', 'Catat Belanja'],
-    ['/produk', 'Produk'],
-    ['/produk/baru', 'Tambah Produk'],
-    ['/produk/p1', 'Detail Produk'],
-    ['/riwayat', 'Riwayat'],
+    ['/sales/new', 'Catat Penjualan'],
+    ['/purchases/new', 'Catat Belanja'],
+    ['/products', 'Produk'],
+    ['/products/new', 'Tambah Produk'],
+    ['/products/p1', 'Detail Produk'],
+    ['/history', 'Riwayat'],
   ])('has a screen at %s', async (path, title) => {
     stubHomeApi()
 
@@ -255,7 +255,7 @@ describe('app shell', () => {
         jsonResponse(200, { userId: TestUserId, email: 'ibu@warung.id', firstName: 'Siti', lastName: 'Aminah' }),
     })
 
-    renderApp('/akun')
+    renderApp('/account')
 
     expect(await screen.findByText('Siti Aminah')).toBeInTheDocument()
     expect(screen.getByText('ibu@warung.id')).toBeInTheDocument()

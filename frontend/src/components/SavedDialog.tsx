@@ -7,18 +7,18 @@ import { Button, ButtonLink } from './Button'
 export type SavedSummary = { totalQuantity: number; total: number }
 
 type SavedDialogProps = {
-  /** What it confirms: "Penjualan tersimpan". */
+  /** What it confirms, such as that the sale was saved. */
   title: string
   /** What was saved, or null while there is nothing to confirm. */
   saved: SavedSummary | null
-  /** The action that starts the same job again: "Catat Penjualan Lagi". */
+  /** The action that starts the same job again, such as recording another sale. */
   againLabel: string
   onAgain: () => void
 }
 
 /**
  * Confirms that a sale or purchase was saved and asks what to do next. It stays until one of its two actions
- * is chosen, so the confirmation can't be missed. Mirrors the "Penjualan tersimpan" overlay in Loom.
+ * is chosen, so the confirmation can't be missed. Mirrors the 03a overlay in Loom.
  */
 export function SavedDialog({ title, saved, againLabel, onAgain }: SavedDialogProps) {
   return (

@@ -51,7 +51,7 @@ const catalogLoaded = (api: Api) =>
   )
 
 async function renderAddProduct() {
-  const user = renderApp('/produk/baru')
+  const user = renderApp('/products/new')
   await screen.findByRole('heading', { name: 'Tambah Produk', level: 1 })
   return user
 }
@@ -82,8 +82,8 @@ describe('add product screen', () => {
 
     await renderAddProduct()
 
-    expect(screen.getByRole('link', { name: 'Kembali' })).toHaveAttribute('href', '/produk')
-    expect(screen.getByRole('link', { name: 'Batal' })).toHaveAttribute('href', '/produk')
+    expect(screen.getByRole('link', { name: 'Kembali' })).toHaveAttribute('href', '/products')
+    expect(screen.getByRole('link', { name: 'Batal' })).toHaveAttribute('href', '/products')
     expect(screen.getAllByRole('navigation', { name: 'Menu utama' })).toHaveLength(1)
     expect(
       screen.getByText('Harga bisa diubah kapan saja. Stok awal dicatat lewat Catat Belanja.'),

@@ -5,6 +5,8 @@ import { AddProductPage } from './pages/AddProductPage'
 import { AddUserPage } from './pages/AddUserPage'
 import { AdjustStockPage } from './pages/AdjustStockPage'
 import { AccountPage } from './pages/AccountPage'
+import { EditPurchasePage } from './pages/EditPurchasePage'
+import { EditSalePage } from './pages/EditSalePage'
 import { HistoryPage } from './pages/HistoryPage'
 import { HomePage } from './pages/HomePage'
 import { LoginPage } from './pages/LoginPage'
@@ -23,20 +25,22 @@ export function App() {
       <Route element={<RequireSignedIn />}>
         <Route element={<AppShell />}>
           <Route path="/" element={<HomePage />} />
-          <Route path="/produk" element={<ProductsPage />} />
-          <Route path="/riwayat" element={<HistoryPage />} />
-          <Route path="/akun" element={<AccountPage />} />
+          <Route path="/products" element={<ProductsPage />} />
+          <Route path="/history" element={<HistoryPage />} />
+          <Route path="/account" element={<AccountPage />} />
         </Route>
         <Route element={<AppShell bottomNavigation={false} />}>
-          <Route path="/jual" element={<SalePage />} />
-          <Route path="/belanja" element={<PurchasePage />} />
-          <Route path="/produk/baru" element={<AddProductPage />} />
-          <Route path="/produk/:id" element={<ProductDetailPage />} />
-          <Route path="/produk/:id/stok" element={<AdjustStockPage />} />
-          <Route path="/riwayat/penjualan/:id" element={<SaleDetailPage />} />
-          <Route path="/riwayat/belanja/:id" element={<PurchaseDetailPage />} />
-          <Route path="/akun/pengguna" element={<UsersPage />} />
-          <Route path="/akun/pengguna/baru" element={<AddUserPage />} />
+          <Route path="/sales/new" element={<SalePage />} />
+          <Route path="/purchases/new" element={<PurchasePage />} />
+          <Route path="/products/new" element={<AddProductPage />} />
+          <Route path="/products/:id" element={<ProductDetailPage />} />
+          <Route path="/products/:id/stock" element={<AdjustStockPage />} />
+          <Route path="/history/sales/:id" element={<SaleDetailPage />} />
+          <Route path="/history/sales/:id/edit" element={<EditSalePage />} />
+          <Route path="/history/purchases/:id" element={<PurchaseDetailPage />} />
+          <Route path="/history/purchases/:id/edit" element={<EditPurchasePage />} />
+          <Route path="/account/users" element={<UsersPage />} />
+          <Route path="/account/users/new" element={<AddUserPage />} />
         </Route>
       </Route>
       <Route path="*" element={<Navigate to="/" replace />} />

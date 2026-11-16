@@ -2,28 +2,20 @@ import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { Search, Truck } from 'lucide-react'
 import { useState } from 'react'
 import { CheckoutPanel } from '../components/CheckoutPanel'
-import { LoadMoreButton } from '../components/LoadMoreButton'
-import { Empty, LoadFailed, Loading } from '../components/LoadState'
-import { MoneyField } from '../components/MoneyField'
 import { SavedDialog, type SavedSummary } from '../components/SavedDialog'
 import { Screen } from '../components/shell/Screen'
 import { TextField } from '../components/TextField'
-import { ProductCard } from '../features/products/ProductCard'
-import { useProductPages } from '../features/products/useProductPages'
 import { createPurchase, type CostedPurchaseLine } from '../features/purchases/api'
-import { MaxQuantity, usePurchaseCart, type PurchaseCart } from '../features/purchases/usePurchaseCart'
+import { PurchaseProductList } from '../features/purchases/PurchaseProductList'
+import { usePurchaseCart } from '../features/purchases/usePurchaseCart'
 import { ApiError } from '../lib/api'
 import { formatRupiah } from '../lib/format'
 import { useRetrySafeId } from '../lib/requestId'
-import { useDebouncedValue } from '../lib/useDebouncedValue'
-
-/** How long typing must pause before the product list is searched. */
-const SearchDelayMs = 300
 
 /** The longest supplier name the field takes. */
 const MaxSupplierLength = 100
 
-/** Catat Belanja: say where the goods came from, how many of each and what each cost, and save the purchase. */
+/** Record Purchase: say where the goods came from, how many of each and what each cost, and save the purchase. */
 export function PurchasePage() {
   const queryClient = useQueryClient()
   const cart = usePurchaseCart()
@@ -93,7 +85,7 @@ export function PurchasePage() {
             />
           </div>
           <p className="text-sm text-text-muted">Masukkan jumlah barang yang dibeli dan harga belinya</p>
-          <ProductList searchText={searchText} cart={cart} showMissingCosts={wasSaveTried} />
+          <PurchaseProductList searchText={searchText} cart={cart} showMissingCosts={wasSaveTried} />
         </div>
         <CheckoutPanel
           title="Belanjaan"
@@ -116,66 +108,6 @@ export function PurchasePage() {
       </div>
       <SavedDialog title="Belanja tersimpan" saved={saved} againLabel="Catat Belanja Lagi" onAgain={recordAnother} />
     </Screen>
-  )
-}
-
-type ProductListProps = { searchText: string; cart: PurchaseCart; showMissingCosts: boolean }
-
-function ProductList({ searchText, cart, showMissingCosts }: ProductListProps) {
-  const search = useDebouncedValue(searchText.trim(), SearchDelayMs)
-  const { products, isError, retry, hasMore, isLoadingMore, loadMore } = useProductPages({ search })
-
-  if (isError) {
-    return <LoadFailed onRetry={retry} />
-  }
-  if (products === undefined) {
-    return <Loading />
-  }
-  if (products.length === 0) {
-    return (
-      <Empty>
-        {search === ''
-          ? 'Belum ada barang. Tambahkan dulu di menu Produk.'
-          : `Tidak ada barang dengan nama "${search}".`}
-      </Empty>
-    )
-  }
-
-  return (
-    <>
-      <ul
-        aria-label="Daftar barang"
-        className="grid grid-cols-[repeat(auto-fill,minmax(min(100%,320px),1fr))] items-start gap-14 lg:gap-16"
-      >
-        {products.map((product) => {
-          const line = cart.lineOf(product.id)
-          return (
-            <ProductCard
-              key={product.id}
-              product={product}
-              quantity={line?.quantity ?? 0}
-              max={MaxQuantity}
-              priceLabel="Harga jual"
-              quantityLabel="Jumlah dibeli"
-              onAdd={() => cart.add(product)}
-              onIncrease={() => cart.increase(product.id)}
-              onDecrease={() => cart.decrease(product.id)}
-              onQuantityChange={(quantity) => cart.setQuantity(product.id, quantity)}
-            >
-              <MoneyField
-                label="Harga beli per barang"
-                aria-label={`Harga beli ${product.name}, per barang`}
-                placeholder="0"
-                value={line?.unitCost ?? null}
-                onChange={(unitCost) => cart.setUnitCost(product.id, unitCost)}
-                error={showMissingCosts && line?.unitCost === null ? 'Isi harga belinya dulu.' : undefined}
-              />
-            </ProductCard>
-          )
-        })}
-      </ul>
-      {hasMore && <LoadMoreButton isLoading={isLoadingMore} onLoadMore={loadMore} />}
-    </>
   )
 }
 

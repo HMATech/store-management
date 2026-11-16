@@ -6,7 +6,7 @@ export type Named = { id: number; name: string }
 /** The brands, units and labels already in use, to suggest while a product is typed in. */
 export type Catalog = { brands: Named[]; units: Named[]; labels: Named[] }
 
-/** How many brands one request asks for. A warung has far fewer. */
+/** How many brands one request asks for. A small shop has far fewer. */
 const BrandPageSize = 200
 
 /** The brand a product gets when none is typed, for goods sold without one such as eggs or loose rice. */

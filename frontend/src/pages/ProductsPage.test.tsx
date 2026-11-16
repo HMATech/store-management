@@ -56,7 +56,7 @@ const row = (name: string) => within(screen.getByRole('link', { name: new RegExp
 const names = () => screen.getAllByRole('listitem').map((item) => item.querySelector('span')?.textContent)
 const filter = (name: string) => screen.getByRole('button', { name })
 
-async function renderProducts(path = '/produk') {
+async function renderProducts(path = '/products') {
   const user = renderApp(path)
   await screen.findAllByRole('listitem')
   return user
@@ -87,7 +87,7 @@ describe('product list screen', () => {
     await renderProducts()
 
     expect(await screen.findByText('5 barang di toko')).toBeInTheDocument()
-    expect(screen.getByRole('link', { name: 'Tambah Produk' })).toHaveAttribute('href', '/produk/baru')
+    expect(screen.getByRole('link', { name: 'Tambah Produk' })).toHaveAttribute('href', '/products/new')
   })
 
   it('keeps counting every product while a search or filter narrows the list', async () => {
@@ -105,13 +105,13 @@ describe('product list screen', () => {
 
     await renderProducts()
 
-    expect(screen.getByRole('link', { name: /Indomie Goreng/ })).toHaveAttribute('href', '/produk/p-indomie-goreng')
+    expect(screen.getByRole('link', { name: /Indomie Goreng/ })).toHaveAttribute('href', '/products/p-indomie-goreng')
   })
 
   it.each([
-    ['Hampir habis', 'Low', ['Gula Pasir 1 kg'], '/produk?stok=hampir-habis'],
-    ['Habis', 'Empty', ['Telur Ayam 1 kg'], '/produk?stok=habis'],
-    ['Minus', 'Negative', ['Minyak Goreng 2L'], '/produk?stok=minus'],
+    ['Hampir habis', 'Low', ['Gula Pasir 1 kg'], '/products?stock=low'],
+    ['Habis', 'Empty', ['Telur Ayam 1 kg'], '/products?stock=empty'],
+    ['Minus', 'Negative', ['Minyak Goreng 2L'], '/products?stock=negative'],
   ])('filters to "%s"', async (label, status, expected) => {
     const api = stubProductApi()
     const user = await renderProducts()
@@ -126,7 +126,7 @@ describe('product list screen', () => {
 
   it('shows everything again with "Semua"', async () => {
     stubProductApi()
-    const user = await renderProducts('/produk?stok=minus')
+    const user = await renderProducts('/products?stock=negative')
     expect(names()).toEqual(['Minyak Goreng 2L'])
 
     await user.click(filter('Semua'))
@@ -136,9 +136,9 @@ describe('product list screen', () => {
   })
 
   it.each([
-    ['/produk?stok=hampir-habis', 'Hampir habis'],
-    ['/produk?stok=habis', 'Habis'],
-    ['/produk?stok=minus', 'Minus'],
+    ['/products?stock=low', 'Hampir habis'],
+    ['/products?stock=empty', 'Habis'],
+    ['/products?stock=negative', 'Minus'],
   ])('opens with the filter in the address %s', async (path, label) => {
     stubProductApi()
 
@@ -150,7 +150,7 @@ describe('product list screen', () => {
   it('ignores an unknown filter in the address', async () => {
     stubProductApi()
 
-    await renderProducts('/produk?stok=banyak')
+    await renderProducts('/products?stock=plenty')
 
     expect(filter('Semua')).toHaveAttribute('aria-pressed', 'true')
     expect(names()).toHaveLength(5)
@@ -158,7 +158,7 @@ describe('product list screen', () => {
 
   it('searches by name once typing pauses, within the chosen filter', async () => {
     const api = stubProductApi()
-    const user = await renderProducts('/produk?stok=habis')
+    const user = await renderProducts('/products?stock=empty')
 
     await user.type(screen.getByRole('searchbox', { name: 'Cari nama barang' }), ' telur ')
 
@@ -169,8 +169,8 @@ describe('product list screen', () => {
   })
 
   it.each([
-    ['/produk', 'rokok', 'Tidak ada barang dengan nama "rokok".'],
-    ['/produk?stok=minus', 'gula', 'Tidak ada barang dengan nama "gula" di "Minus".'],
+    ['/products', 'rokok', 'Tidak ada barang dengan nama "rokok".'],
+    ['/products?stock=negative', 'gula', 'Tidak ada barang dengan nama "gula" di "Minus".'],
   ])('says so when nothing at %s matches "%s"', async (path, text, message) => {
     stubProductApi()
     const user = await renderProducts(path)
@@ -196,7 +196,7 @@ describe('product list screen', () => {
   it('invites adding the first product when the store has none', async () => {
     stubProductApi([])
 
-    renderApp('/produk')
+    renderApp('/products')
 
     expect(await screen.findByRole('heading', { name: 'Belum ada barang' })).toBeInTheDocument()
     expect(screen.getByText('Belum ada barang di toko')).toBeInTheDocument()
@@ -205,7 +205,7 @@ describe('product list screen', () => {
     ).toBeInTheDocument()
     expect(screen.queryByRole('searchbox')).not.toBeInTheDocument()
     screen.getAllByRole('link', { name: 'Tambah Produk' }).forEach((link) => {
-      expect(link).toHaveAttribute('href', '/produk/baru')
+      expect(link).toHaveAttribute('href', '/products/new')
     })
   })
 
@@ -214,7 +214,7 @@ describe('product list screen', () => {
     stubProductApi(catalogue, {
       '/products?page=1&pageSize=50': () => (isDown ? jsonResponse(500, {}) : page(catalogue)),
     })
-    const user = renderApp('/produk')
+    const user = renderApp('/products')
 
     expect(await screen.findByRole('alert')).toHaveTextContent('Tidak bisa memuat.')
 

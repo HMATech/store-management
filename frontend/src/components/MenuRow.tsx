@@ -6,7 +6,7 @@ import { IconChip } from './IconChip'
 
 type MenuRowProps = {
   icon: LucideIcon
-  /** `danger` is for a row that ends or removes something, such as Keluar. */
+  /** `danger` is for a row that ends or removes something, such as signing out. */
   tone?: 'primary' | 'danger'
   children: ReactNode
 } & ({ to: string; onSelect?: never } | { onSelect: () => void; to?: never })

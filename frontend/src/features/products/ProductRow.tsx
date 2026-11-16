@@ -7,7 +7,7 @@ import { describeProduct, type Product } from './api'
 /** A product in the product list, opening its detail. Mirrors the Product row component in Loom (Stock). */
 export function ProductRow({ product }: { product: Product }) {
   return (
-    <CardLinkRow to={`/produk/${product.id}`}>
+    <CardLinkRow to={`/products/${product.id}`}>
       <div className="flex min-w-0 flex-1 flex-col gap-2">
         <span className="font-semibold break-words">{product.name}</span>
         <span className="text-xs break-words text-text-muted">{describeProduct(product)}</span>

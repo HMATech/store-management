@@ -15,7 +15,7 @@ type ChangePriceDialogProps = {
   onClose: () => void
 }
 
-/** Asks for a product's new selling price and saves it. Mirrors the "Ubah Harga" overlay in Loom. */
+/** Asks for a product's new selling price and saves it. Mirrors the 08a overlay in Loom. */
 export function ChangePriceDialog({ product, isOpen, onClose }: ChangePriceDialogProps) {
   return (
     <Dialog.Root open={isOpen} onOpenChange={(open) => !open && onClose()}>

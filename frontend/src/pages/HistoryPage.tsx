@@ -15,27 +15,27 @@ import { formatDayHeading, formatRupiah } from '../lib/format'
 import { usePagedList } from '../lib/usePagedList'
 import { useToday } from '../lib/useToday'
 
-/** The kinds the history can be narrowed to, by the value each has in the address (`/riwayat?jenis=belanja`). */
+/** The kinds the history can be narrowed to, by the value each has in the address (`/history?kind=purchase`). */
 const kindFilters = {
-  penjualan: { label: 'Penjualan', kind: 'Sale', whenEmpty: 'Belum ada penjualan.' },
-  belanja: { label: 'Belanja', kind: 'Purchase', whenEmpty: 'Belum ada belanja.' },
+  sale: { label: 'Penjualan', kind: 'Sale', whenEmpty: 'Belum ada penjualan.' },
+  purchase: { label: 'Belanja', kind: 'Purchase', whenEmpty: 'Belum ada belanja.' },
 } as const satisfies Record<string, { label: string; kind: TransactionKind; whenEmpty: string }>
 
 type KindFilterKey = keyof typeof kindFilters
-type KindChoice = KindFilterKey | 'semua'
+type KindChoice = KindFilterKey | 'all'
 
 const isKindFilterKey = (value: string | null): value is KindFilterKey => value !== null && value in kindFilters
 
 const kindOptions: { value: KindChoice; label: string }[] = [
-  { value: 'semua', label: 'Semua' },
+  { value: 'all', label: 'Semua' },
   ...Object.entries(kindFilters).map(([value, { label }]) => ({ value: value as KindFilterKey, label })),
 ]
 
-/** Riwayat: every sale and purchase, newest first and grouped by day. */
+/** History: every sale and purchase, newest first and grouped by day. */
 export function HistoryPage() {
   const [params, setParams] = useSearchParams()
-  const kindParam = params.get('jenis')
-  const choice: KindChoice = isKindFilterKey(kindParam) ? kindParam : 'semua'
+  const kindParam = params.get('kind')
+  const choice: KindChoice = isKindFilterKey(kindParam) ? kindParam : 'all'
 
   return (
     <Screen title="Riwayat" subtitle="Semua penjualan dan belanja">
@@ -46,10 +46,10 @@ export function HistoryPage() {
             label="Pilih jenis transaksi"
             options={kindOptions}
             value={choice}
-            onChange={(value) => setParams(value === 'semua' ? {} : { jenis: value }, { replace: true })}
+            onChange={(value) => setParams(value === 'all' ? {} : { kind: value }, { replace: true })}
             className="lg:w-420"
           />
-          <TransactionDays filter={choice === 'semua' ? undefined : kindFilters[choice]} />
+          <TransactionDays filter={choice === 'all' ? undefined : kindFilters[choice]} />
         </div>
       </ScreenBody>
     </Screen>
@@ -76,7 +76,7 @@ function TransactionDays({ filter }: { filter: (typeof kindFilters)[KindFilterKe
         icon={ReceiptText}
         title="Belum ada transaksi"
         action={
-          <ButtonLink to="/jual">
+          <ButtonLink to="/sales/new">
             <Plus aria-hidden className="size-22" />
             Catat Penjualan
           </ButtonLink>

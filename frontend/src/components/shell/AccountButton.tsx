@@ -4,7 +4,7 @@ import { Link } from 'react-router'
 import { useCurrentUser } from '../../features/auth/useCurrentUser'
 
 /**
- * Opens the account screen, labelled with the signed-in user's first name ("Akun" until it is known).
+ * Opens the account screen, labelled with the signed-in user's first name, or the account label until it is known.
  * Mirrors the Account button component in Loom.
  */
 export function AccountButton({ className }: { className?: string }) {
@@ -13,7 +13,7 @@ export function AccountButton({ className }: { className?: string }) {
 
   return (
     <Link
-      to="/akun"
+      to="/account"
       aria-label={name ? `Akun ${name}` : 'Akun'}
       className={clsx(
         'flex min-h-touch-min max-w-full items-center gap-6 rounded-full border-thin border-border-default',

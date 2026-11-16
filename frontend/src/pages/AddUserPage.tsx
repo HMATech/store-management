@@ -27,7 +27,7 @@ const emptyUser: NewUser = { firstName: '', lastName: '', email: '', password: '
 
 type Problems = Partial<Record<'firstName' | 'email' | 'password', string>>
 
-/** Tambah Pengguna: let someone else sign in, with an email and a password to hand to them. */
+/** Add User: let someone else sign in, with an email and a password to hand to them. */
 export function AddUserPage() {
   const navigate = useNavigate()
   const queryClient = useQueryClient()
@@ -47,7 +47,7 @@ export function AddUserPage() {
     mutationFn: registerUser,
     onSuccess: (_result, saved) => {
       void queryClient.invalidateQueries()
-      void navigate('/akun/pengguna', {
+      void navigate('/account/users', {
         state: {
           notice: `${saved.firstName} sudah ditambahkan. Berikan email dan kata sandinya supaya dia bisa masuk.`,
         },
@@ -69,7 +69,7 @@ export function AddUserPage() {
   }
 
   return (
-    <Screen title="Tambah Pengguna" backTo="/akun">
+    <Screen title="Tambah Pengguna" backTo="/account">
       <form noValidate onSubmit={trySave} className="flex flex-1 flex-col lg:px-32 lg:pb-32">
         <div
           className={
@@ -123,7 +123,7 @@ export function AddUserPage() {
           </div>
           <SaveBar
             label="Simpan Pengguna"
-            cancelTo="/akun"
+            cancelTo="/account"
             isSaving={save.isPending}
             failure={save.isError && !isEmailTaken ? describeSaveFailure(save.error) : undefined}
           />

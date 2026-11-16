@@ -5,7 +5,7 @@ import { Link } from 'react-router'
 export function RecordSaleCard() {
   return (
     <Link
-      to="/jual"
+      to="/sales/new"
       className={
         'flex min-h-80 items-center gap-14 rounded-lg bg-primary-default p-14 pr-16 text-primary-on'
         + ' shadow-[0_6px_16px_color-mix(in_srgb,var(--color-primary-default)_28%,transparent)]'

@@ -19,35 +19,35 @@ import { useDebouncedValue } from '../lib/useDebouncedValue'
 /** How long typing must pause before the product list is searched. */
 const SearchDelayMs = 300
 
-/** The stock filters, by the value each has in the address (`/produk?stok=minus`). */
+/** The stock filters, by the value each has in the address (`/products?stock=negative`). */
 const stockFilters = {
-  'hampir-habis': {
+  low: {
     label: 'Hampir habis',
     status: 'Low',
     dot: 'warning',
     whenEmpty: 'Tidak ada barang yang hampir habis.',
   },
-  habis: { label: 'Habis', status: 'Empty', dot: 'danger', whenEmpty: 'Tidak ada barang yang habis.' },
-  minus: { label: 'Minus', status: 'Negative', dot: 'danger', whenEmpty: 'Tidak ada barang yang stoknya minus.' },
+  empty: { label: 'Habis', status: 'Empty', dot: 'danger', whenEmpty: 'Tidak ada barang yang habis.' },
+  negative: { label: 'Minus', status: 'Negative', dot: 'danger', whenEmpty: 'Tidak ada barang yang stoknya minus.' },
 } as const satisfies Record<string, { label: string; status: StockStatus; dot: string; whenEmpty: string }>
 
 type StockFilterKey = keyof typeof stockFilters
 
 const isStockFilterKey = (value: string | null): value is StockFilterKey => value !== null && value in stockFilters
 
-/** Produk: every product with its price and stock, searchable and filterable by stock that needs attention. */
+/** Products: every product with its price and stock, searchable and filterable by stock that needs attention. */
 export function ProductsPage() {
   const [searchText, setSearchText] = useState('')
   const [params, setParams] = useSearchParams()
-  const stockParam = params.get('stok')
+  const stockParam = params.get('stock')
   const stockFilter = isStockFilterKey(stockParam) ? stockParam : null
   const count = useQuery({ queryKey: ['products', 'count'], queryFn: ({ signal }) => fetchProductCount(signal) })
 
   function selectStockFilter(key: StockFilterKey | null) {
-    setParams(key === null ? {} : { stok: key }, { replace: true })
+    setParams(key === null ? {} : { stock: key }, { replace: true })
   }
 
-  const addProductPath = '/produk/baru'
+  const addProductPath = '/products/new'
 
   if (count.data === 0) {
     return (
@@ -116,7 +116,7 @@ export function ProductsPage() {
   )
 }
 
-/** The top bar's action: "Tambah" on phones, "Tambah Produk" where there is room. */
+/** The top bar's action: a short add label on phones, and the full one where there is room. */
 function AddProductLink({ to }: { to: string }) {
   return (
     <ButtonLink to={to} aria-label="Tambah Produk" className="shrink-0">

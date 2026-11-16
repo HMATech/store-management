@@ -49,7 +49,7 @@ const sentPurchases = (api: ReturnType<typeof stubApi>) =>
   api.mock.calls.filter(([input]) => String(input).endsWith('/purchases'))
 
 async function renderPurchasePage() {
-  const user = renderApp('/belanja')
+  const user = renderApp('/purchases/new')
   await screen.findByText('Indomie Goreng')
   return user
 }
@@ -373,7 +373,7 @@ describe('purchase screen', () => {
   it('points to the products menu when there are no products at all', async () => {
     stubPurchaseApi({ '/products': () => page([]) })
 
-    renderApp('/belanja')
+    renderApp('/purchases/new')
 
     expect(await screen.findByText('Belum ada barang. Tambahkan dulu di menu Produk.')).toBeInTheDocument()
   })
@@ -381,7 +381,7 @@ describe('purchase screen', () => {
   it('offers a retry when the products cannot be loaded, and loads them on retry', async () => {
     let isDown = true
     stubPurchaseApi({ '/products': () => (isDown ? jsonResponse(500, {}) : page(catalogue)) })
-    const user = renderApp('/belanja')
+    const user = renderApp('/purchases/new')
 
     expect(await screen.findByRole('alert')).toHaveTextContent('Tidak bisa memuat.')
 

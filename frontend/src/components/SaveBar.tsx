@@ -2,9 +2,9 @@ import { Check } from 'lucide-react'
 import { Button, ButtonLink } from './Button'
 
 type SaveBarProps = {
-  /** What saving is called here: "Simpan Produk". */
+  /** What saving is called here, such as saving the product. */
   label: string
-  /** Where "Batal" leads on wide screens. On phones the screen's "Kembali" does this. */
+  /** Where the cancel button leads on wide screens. On phones the screen's back button does this. */
   cancelTo: string
   isSaving: boolean
   /** Why the save didn't happen, in words for the user. */
@@ -12,7 +12,7 @@ type SaveBarProps = {
 }
 
 /**
- * A form's submit button with why the last save failed: pinned to the bottom on phones, and beside "Batal"
+ * A form's submit button with why the last save failed: pinned to the bottom on phones, and beside the cancel button
  * at the end of the form on wide screens. Mirrors the Action bar in Loom. It belongs inside the `<form>`.
  */
 export function SaveBar({ label, cancelTo, isSaving, failure }: SaveBarProps) {

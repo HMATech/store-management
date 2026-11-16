@@ -21,7 +21,7 @@ const emptyDraft: Draft = { name: '', brand: '', measure: '', unit: '', price: n
 
 type Problems = Partial<Record<'name' | 'measure' | 'unit' | 'price', string>>
 
-/** Tambah Produk: describe a new product and what it sells for. */
+/** Add Product: describe a new product and what it sells for. */
 export function AddProductPage() {
   const navigate = useNavigate()
   const queryClient = useQueryClient()
@@ -41,7 +41,7 @@ export function AddProductPage() {
     onSuccess: (_result, product) => {
       // The product list, its count and the suggestions all changed.
       void queryClient.invalidateQueries()
-      void navigate('/produk', { state: { notice: `${product.name} sudah ditambahkan.` } })
+      void navigate('/products', { state: { notice: `${product.name} sudah ditambahkan.` } })
     },
   })
 
@@ -57,7 +57,7 @@ export function AddProductPage() {
   const failure = save.isError ? describeSaveFailure(save.error) : undefined
 
   return (
-    <Screen title="Tambah Produk" backTo="/produk">
+    <Screen title="Tambah Produk" backTo="/products">
       <form noValidate onSubmit={trySave} className="flex flex-1 flex-col lg:px-32 lg:pb-32">
         <div
           className={
@@ -128,7 +128,7 @@ export function AddProductPage() {
             </div>
             <InfoNote icon={Info}>Harga bisa diubah kapan saja. Stok awal dicatat lewat Catat Belanja.</InfoNote>
           </div>
-          <SaveBar label="Simpan Produk" cancelTo="/produk" isSaving={save.isPending} failure={failure} />
+          <SaveBar label="Simpan Produk" cancelTo="/products" isSaving={save.isPending} failure={failure} />
         </div>
       </form>
     </Screen>

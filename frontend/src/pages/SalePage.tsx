@@ -2,24 +2,17 @@ import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { Search } from 'lucide-react'
 import { useState } from 'react'
 import { CheckoutPanel } from '../components/CheckoutPanel'
-import { LoadMoreButton } from '../components/LoadMoreButton'
-import { Empty, LoadFailed, Loading } from '../components/LoadState'
 import { SavedDialog, type SavedSummary } from '../components/SavedDialog'
 import { Screen } from '../components/shell/Screen'
 import { TextField } from '../components/TextField'
-import { ProductCard } from '../features/products/ProductCard'
-import { useProductPages } from '../features/products/useProductPages'
 import { createSale } from '../features/sales/api'
-import { MaxQuantity, useCart, type Cart } from '../features/sales/useCart'
+import { SaleProductList } from '../features/sales/SaleProductList'
+import { useCart } from '../features/sales/useCart'
 import { ApiError } from '../lib/api'
 import { formatRupiah } from '../lib/format'
 import { useRetrySafeId } from '../lib/requestId'
-import { useDebouncedValue } from '../lib/useDebouncedValue'
 
-/** How long typing must pause before the product list is searched. */
-const SearchDelayMs = 300
-
-/** Catat Penjualan: pick what the customer buys, see the total, and save the sale. */
+/** Record Sale: pick what the customer buys, see the total, and save the sale. */
 export function SalePage() {
   const queryClient = useQueryClient()
   const cart = useCart()
@@ -60,7 +53,7 @@ export function SalePage() {
             onChange={(event) => setSearchText(event.target.value)}
           />
           <p className="text-sm text-text-muted">Ketuk "Tambah" untuk memasukkan barang</p>
-          <ProductList searchText={searchText} cart={cart} />
+          <SaleProductList searchText={searchText} cart={cart} />
         </div>
         <CheckoutPanel
           title="Pesanan"
@@ -88,46 +81,6 @@ export function SalePage() {
         onAgain={recordAnother}
       />
     </Screen>
-  )
-}
-
-function ProductList({ searchText, cart }: { searchText: string; cart: Cart }) {
-  const search = useDebouncedValue(searchText.trim(), SearchDelayMs)
-  const { products, isError, retry, hasMore, isLoadingMore, loadMore } = useProductPages({ search })
-
-  if (isError) {
-    return <LoadFailed onRetry={retry} />
-  }
-  if (products === undefined) {
-    return <Loading />
-  }
-  if (products.length === 0) {
-    return (
-      <Empty>
-        {search === ''
-          ? 'Belum ada barang. Tambahkan dulu di menu Produk.'
-          : `Tidak ada barang dengan nama "${search}".`}
-      </Empty>
-    )
-  }
-
-  return (
-    <>
-      <ul className="grid grid-cols-[repeat(auto-fill,minmax(min(100%,320px),1fr))] gap-14 lg:gap-16">
-        {products.map((product) => (
-          <ProductCard
-            key={product.id}
-            product={product}
-            quantity={cart.quantityOf(product.id)}
-            max={MaxQuantity}
-            onAdd={() => cart.add(product)}
-            onIncrease={() => cart.increase(product.id)}
-            onDecrease={() => cart.decrease(product.id)}
-          />
-        ))}
-      </ul>
-      {hasMore && <LoadMoreButton isLoading={isLoadingMore} onLoadMore={loadMore} />}
-    </>
   )
 }
 
