@@ -104,4 +104,26 @@ public class WebHelperTests
         Assert.Equal(CustomHttpResults.SystemErrorTitle, problem.Title);
         Assert.Equal(StatusCodes.Status500InternalServerError, problem.Status);
     }
+
+    [Theory]
+    [InlineData(StatusCodes.Status400BadRequest)]
+    [InlineData(StatusCodes.Status413PayloadTooLarge)]
+    public async Task GlobalExceptionHandler_WithBadHttpRequest_AnswersWithItsStatus(int status)
+    {
+        var context = new DefaultHttpContext();
+        context.Response.Body = new MemoryStream();
+        var handler = new GlobalExceptionHandler(NullLogger<GlobalExceptionHandler>.Instance);
+
+        var handled = await handler.TryHandleAsync(context,
+            new BadHttpRequestException("Failed to bind parameter \"int page\" from \"abc\".", status), default);
+
+        Assert.True(handled);
+        Assert.Equal(status, context.Response.StatusCode);
+        context.Response.Body.Position = 0;
+        var options = new JsonSerializerOptions(JsonSerializerDefaults.Web);
+        var problem = (await JsonSerializer.DeserializeAsync<ProblemDetails>(context.Response.Body, options))!;
+        Assert.Equal(GlobalExceptionHandler.BadRequestCode, problem.Title);
+        Assert.Equal(status, problem.Status);
+        Assert.Contains("int page", problem.Detail);
+    }
 }
