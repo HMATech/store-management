@@ -176,7 +176,8 @@ describe('sale screen', () => {
     expect(await screen.findByText('Aqua 600 ml')).toBeInTheDocument()
     expect(total()).toHaveTextContent(rupiah(0))
     expect(saveButton()).toBeDisabled()
-    expect(productRequests()).toBeGreaterThan(requestsBefore)
+    // The reload can go out a moment after the screen resets, so wait for it rather than check at once.
+    await waitFor(() => expect(productRequests()).toBeGreaterThan(requestsBefore))
   })
 
   it.each([

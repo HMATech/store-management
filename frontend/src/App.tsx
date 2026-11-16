@@ -10,6 +10,7 @@ import { HomePage } from './pages/HomePage'
 import { LoginPage } from './pages/LoginPage'
 import { ProductDetailPage } from './pages/ProductDetailPage'
 import { ProductsPage } from './pages/ProductsPage'
+import { PurchaseDetailPage } from './pages/PurchaseDetailPage'
 import { PurchasePage } from './pages/PurchasePage'
 import { UsersPage } from './pages/UsersPage'
 import { SaleDetailPage } from './pages/SaleDetailPage'
@@ -33,6 +34,7 @@ export function App() {
           <Route path="/produk/:id" element={<ProductDetailPage />} />
           <Route path="/produk/:id/stok" element={<AdjustStockPage />} />
           <Route path="/riwayat/penjualan/:id" element={<SaleDetailPage />} />
+          <Route path="/riwayat/belanja/:id" element={<PurchaseDetailPage />} />
           <Route path="/akun/pengguna" element={<UsersPage />} />
           <Route path="/akun/pengguna/baru" element={<AddUserPage />} />
         </Route>

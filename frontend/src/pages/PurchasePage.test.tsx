@@ -258,7 +258,9 @@ describe('purchase screen', () => {
     expect(total()).toHaveTextContent(rupiah(0))
     expect(saveButton()).toBeDisabled()
     expect(screen.queryByText('Isi dulu belanja dari mana.')).not.toBeInTheDocument()
-    expect(requestedPaths(api).filter((path) => path.includes('/products')).length).toBeGreaterThan(productRequests)
+    await waitFor(() =>
+      expect(requestedPaths(api).filter((path) => path.includes('/products')).length).toBeGreaterThan(productRequests),
+    )
   })
 
   it.each([
