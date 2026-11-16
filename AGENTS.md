@@ -141,6 +141,7 @@ Handlers, validators and endpoints are discovered automatically, so they don't n
 
 - Handlers wrap database work in `try`/`catch`, log the exception, and return the matching `ApplicationErrors` entry: `DBOperationError`, `OperationCancelledError` or `UnexpectedError`. Catch them in that order, and pass `nameof(<Handler>)` as the first argument.
 - Error details for `System` errors are hidden from API responses, so put the useful information in the log.
+- In Development, minimal APIs throw `BadHttpRequestException` for a request they can't bind (`?page=abc`, malformed JSON). `GlobalExceptionHandler` answers it with its own status (400) instead of a 500, so the API behaves the same in every environment.
 
 ### Validation
 
@@ -163,6 +164,7 @@ Use `TagsHelper.CreateSynchronizedTagsAsync` to sync tags on an entity (see the 
 
 - **Sales:** an entry line is a product at a selling price line (`PriceId`), and it keeps that price when the product's price changes later. Repeated products in a request add together. On `PUT /{id}/entries`, a new entry joins a kept line only if that line is at the product's current price; otherwise it becomes a new line at the current price, so a product can have more than one line.
 - **Purchases:** an entry line is a product at a unit cost, the price actually paid to the supplier (`UnitCost`). It is entered with each entry and isn't linked to the selling price, so purchases never block deleting a price line. Repeats of the same product and cost add together, and the same product at two costs makes two lines. On `PUT /{id}/entries`, a kept line can have its quantity and unit cost corrected, a new entry joins a kept line with the same product and cost, and listing one line twice with different costs is a validation error.
+- On `PUT /{id}/entries` of either kind, an entry without an `id` or with an empty GUID is a new entry.
 - Purchase responses report `unitCost` and `totalCost`; sale responses report `priceValue` and `totalPrice`.
 - **Retries:** `POST /sales` and `POST /purchases` take an optional `id`. When a sale or purchase with that id already exists, the API returns it (201, same `Location`) instead of recording another, and changes nothing. Two copies arriving at once are caught by the primary key and answered the same way. An empty GUID is a validation error.
 - A sale's `title` is optional: the endpoints store a missing title as an empty string, and the validators only reject `null`. A purchase's title is required, because it records where the goods came from.
@@ -171,6 +173,7 @@ Use `TagsHelper.CreateSynchronizedTagsAsync` to sync tags on an entity (see the 
 
 - A product's selling price is a line with `validFromTime` and `validToTime`; the current one has no `validToTime`. `POST /products/{id}/prices` closes the current line and opens a new one, so sales already recorded keep the price they were made at.
 - `GET /products/prices?productId=` lists one product's lines, and `sortOrder=DESC` puts the current one first. `search` matches the product or brand name and can be combined with it.
+- `PUT /products/prices/{id}` only fixes a typo in a line no sale uses yet. Once a sale uses the line, it returns 409 `Products.PriceInUse`, because changing it would rewrite that sale's total.
 
 ### Stock
 
