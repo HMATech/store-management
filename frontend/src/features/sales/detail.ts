@@ -1,27 +1,28 @@
 import { apiRequest } from '../../lib/api'
+import type { RecordedTransaction } from '../transactions/TransactionDetail'
 
 /** One product in a recorded sale, at the price it was sold for. */
-export type SaleEntry = {
-  id: string
-  productName: string
-  priceValue: number
-  quantity: number
-  totalPrice: number
-}
+type SaleEntry = { id: string; productName: string; priceValue: number; quantity: number; totalPrice: number }
 
-/** A recorded sale with what was sold. */
-export type SaleDetail = {
-  id: string
-  productEntries: SaleEntry[]
-  totalPrice: number
-  occurrenceTime: string
-}
+type SaleResponse = { id: string; productEntries: SaleEntry[]; totalPrice: number; occurrenceTime: string }
 
 /** Where a sale's detail screen lives. */
 export const saleDetailPath = (id: string) => `/riwayat/penjualan/${id}`
 
-export function fetchSale(id: string, signal?: AbortSignal): Promise<SaleDetail> {
-  return apiRequest<SaleDetail>(`/sales/${id}`, { signal })
+export async function fetchSale(id: string, signal?: AbortSignal): Promise<RecordedTransaction> {
+  const sale = await apiRequest<SaleResponse>(`/sales/${id}`, { signal })
+  return {
+    id: sale.id,
+    occurrenceTime: sale.occurrenceTime,
+    total: sale.totalPrice,
+    entries: sale.productEntries.map((entry) => ({
+      id: entry.id,
+      productName: entry.productName,
+      quantity: entry.quantity,
+      unitPrice: entry.priceValue,
+      total: entry.totalPrice,
+    })),
+  }
 }
 
 /** Removes a sale from the records. Its products count as stock again. */

@@ -1,12 +1,13 @@
 import { ChevronRight, ShoppingCart, Truck } from 'lucide-react'
-import { CardLinkRow, CardRow } from '../../components/Card'
+import { CardLinkRow } from '../../components/Card'
 import { IconChip } from '../../components/IconChip'
 import { formatRupiah, formatTime } from '../../lib/format'
+import { purchaseDetailPath } from '../purchases/detail'
 import { saleDetailPath } from '../sales/detail'
 import type { Transaction } from './api'
 
 /**
- * A sale or purchase in the history. A sale opens its detail. Mirrors the Transaction row component in Loom,
+ * A sale or purchase in the history, opening its detail. Mirrors the Transaction row component in Loom,
  * with its Kind.
  */
 export function TransactionRow({ transaction }: { transaction: Transaction }) {
@@ -28,11 +29,8 @@ export function TransactionRow({ transaction }: { transaction: Transaction }) {
     </>
   )
 
-  if (!isSale) {
-    return <CardRow>{content}</CardRow>
-  }
   return (
-    <CardLinkRow to={saleDetailPath(transaction.id)}>
+    <CardLinkRow to={isSale ? saleDetailPath(transaction.id) : purchaseDetailPath(transaction.id)}>
       {content}
       <ChevronRight aria-hidden className="size-20 shrink-0 text-text-subtle" />
     </CardLinkRow>
