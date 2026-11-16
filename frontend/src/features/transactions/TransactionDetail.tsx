@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import clsx from 'clsx'
-import { ReceiptText, Trash2 } from 'lucide-react'
+import { ClipboardList, ReceiptText, Trash2 } from 'lucide-react'
 import { useState } from 'react'
 import { useNavigate, useParams } from 'react-router'
 import { Button, ButtonLink } from '../../components/Button'
@@ -8,6 +8,7 @@ import { Card } from '../../components/Card'
 import { ConfirmDialog } from '../../components/ConfirmDialog'
 import { EmptyState } from '../../components/EmptyState'
 import { LoadFailed, Loading } from '../../components/LoadState'
+import { Notice } from '../../components/Notice'
 import { Screen, ScreenBody } from '../../components/shell/Screen'
 import { ApiError } from '../../lib/api'
 import { formatLongDate, formatRupiah, formatTime } from '../../lib/format'
@@ -18,8 +19,20 @@ export type RecordedTransaction = {
   /** Where the goods came from, for a purchase. */
   supplier?: string
   occurrenceTime: string
+  /** When it was last changed. An edit whose answer was lost compares it to tell whether the edit got through. */
+  lastUpdatedTime: string
   total: number
-  entries: { id: string; productName: string; quantity: number; unitPrice: number; total: number }[]
+  entries: RecordedEntry[]
+}
+
+/** One line of a recorded sale or purchase: a product at the price it was sold for or the cost paid. */
+export type RecordedEntry = {
+  id: string
+  productId: string
+  productName: string
+  quantity: number
+  unitPrice: number
+  total: number
 }
 
 /** What differs between the sale and purchase detail screens: their words, and how they reach the API. */
@@ -30,6 +43,8 @@ export type TransactionKindText = {
   queryKey: string
   fetch: (id: string, signal: AbortSignal) => Promise<RecordedTransaction>
   remove: (id: string) => Promise<void>
+  /** Where its items are changed. */
+  editPath: (id: string) => string
   /** What deleting does to stock: "Stok barangnya akan dikembalikan." */
   stockOnDelete: string
   /** Whether the total is money in, shown in the primary colour, or money out. */
@@ -37,8 +52,9 @@ export type TransactionKindText = {
 }
 
 /**
- * Detail Penjualan and Detail Belanja: what one sale or purchase held, and the way to remove it when it was
- * recorded by mistake. Mirrors the "10 · Detail Penjualan" board in Loom.
+ * Detail Penjualan and Detail Belanja: what one sale or purchase held, and the ways to correct its items or
+ * remove it when it was recorded by mistake. Mirrors the "10 · Detail Penjualan" and "10b · Detail Belanja"
+ * boards in Loom.
  */
 export function TransactionDetail({ kind }: { kind: TransactionKindText }) {
   const { id = '' } = useParams()
@@ -64,13 +80,23 @@ export function TransactionDetail({ kind }: { kind: TransactionKindText }) {
             <LoadFailed onRetry={() => void transaction.refetch()} />
           )
         ) : (
-          <div className="grid gap-16 lg:grid-cols-[minmax(0,1fr)_380px] lg:items-start lg:gap-24">
-            <Summary transaction={transaction.data} isIncome={kind.isIncome} />
-            {/* The wide column on wide screens; between the summary and the actions on phones. */}
-            <div className="lg:col-start-1 lg:row-span-2 lg:row-start-1">
-              <Items transaction={transaction.data} />
+          <div className="flex flex-col gap-16 lg:gap-24">
+            {/* Set by Ubah Barang after saving. */}
+            <Notice />
+            <div className="grid gap-16 lg:grid-cols-[minmax(0,1fr)_380px] lg:items-start lg:gap-24">
+              <Summary transaction={transaction.data} isIncome={kind.isIncome} />
+              {/* The wide column on wide screens; between the summary and the actions on phones. */}
+              <div className="lg:col-start-1 lg:row-span-2 lg:row-start-1">
+                <Items transaction={transaction.data} />
+              </div>
+              <div className="flex flex-col gap-16 lg:col-start-2">
+                <ButtonLink kind="secondary" to={kind.editPath(transaction.data.id)}>
+                  <ClipboardList aria-hidden className="size-24" />
+                  Ubah Barang
+                </ButtonLink>
+                <DeleteTransaction transaction={transaction.data} kind={kind} lower={lower} />
+              </div>
             </div>
-            <DeleteTransaction transaction={transaction.data} kind={kind} lower={lower} />
           </div>
         )}
       </ScreenBody>
@@ -149,7 +175,7 @@ function DeleteTransaction({ transaction, kind, lower }: DeleteTransactionProps)
   const from = transaction.supplier === undefined ? '' : ` dari ${transaction.supplier}`
 
   return (
-    <div className="flex flex-col lg:col-start-2">
+    <div className="flex flex-col">
       <Button kind="danger" onClick={() => setIsAsking(true)}>
         <Trash2 aria-hidden className="size-24" />
         Hapus {kind.noun}

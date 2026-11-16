@@ -88,6 +88,14 @@ describe('sale detail screen', () => {
     expect(screen.getByText('Total').parentElement).toHaveTextContent(rupiah(27500))
   })
 
+  it('offers to change its items', async () => {
+    stubSaleApi()
+
+    await renderSale()
+
+    expect(screen.getByRole('link', { name: 'Ubah Barang' })).toHaveAttribute('href', '/riwayat/penjualan/s1/ubah')
+  })
+
   it('asks before deleting, saying what will happen', async () => {
     const api = stubSaleApi()
     const user = await renderSale()

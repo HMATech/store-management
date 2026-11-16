@@ -5,6 +5,8 @@ import { AddProductPage } from './pages/AddProductPage'
 import { AddUserPage } from './pages/AddUserPage'
 import { AdjustStockPage } from './pages/AdjustStockPage'
 import { AccountPage } from './pages/AccountPage'
+import { EditPurchasePage } from './pages/EditPurchasePage'
+import { EditSalePage } from './pages/EditSalePage'
 import { HistoryPage } from './pages/HistoryPage'
 import { HomePage } from './pages/HomePage'
 import { LoginPage } from './pages/LoginPage'
@@ -34,7 +36,9 @@ export function App() {
           <Route path="/produk/:id" element={<ProductDetailPage />} />
           <Route path="/produk/:id/stok" element={<AdjustStockPage />} />
           <Route path="/riwayat/penjualan/:id" element={<SaleDetailPage />} />
+          <Route path="/riwayat/penjualan/:id/ubah" element={<EditSalePage />} />
           <Route path="/riwayat/belanja/:id" element={<PurchaseDetailPage />} />
+          <Route path="/riwayat/belanja/:id/ubah" element={<EditPurchasePage />} />
           <Route path="/akun/pengguna" element={<UsersPage />} />
           <Route path="/akun/pengguna/baru" element={<AddUserPage />} />
         </Route>

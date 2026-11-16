@@ -73,6 +73,14 @@ describe('purchase detail screen', () => {
     expect(screen.getByText('Total').parentElement).toHaveTextContent(rupiah(275000))
   })
 
+  it('offers to change its items', async () => {
+    stubPurchaseApi()
+
+    await renderPurchase()
+
+    expect(screen.getByRole('link', { name: 'Ubah Barang' })).toHaveAttribute('href', '/riwayat/belanja/b1/ubah')
+  })
+
   it('asks before deleting, then deletes and says so in the history', async () => {
     const api = stubPurchaseApi()
     const user = await renderPurchase()
