@@ -41,7 +41,7 @@ internal sealed class UpdatePurchaseEntriesByIdCommandValidator
                 }
 
                 var conflictingEntryIds = entries
-                    .Where(e => e.Id.HasValue)
+                    .Where(e => e.Id.HasValue && e.Id.Value != Guid.Empty)
                     .GroupBy(e => e.Id!.Value)
                     .Where(g => g.Select(e => e.UnitCost).Distinct().Count() > 1)
                     .Select(g => g.Key);

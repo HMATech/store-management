@@ -388,6 +388,23 @@ public class PurchaseHandlerTests
     }
 
     [Fact]
+    public async Task UpdateEntriesById_WithEmptyEntryId_AddsItAsANewEntry()
+    {
+        var graph = await SeededGraph.CreateAsync(database);
+
+        var result = await UpdateEntriesAsync(new UpdatePurchaseEntriesByIdCommand(graph.Purchase.Id,
+        [
+            new UpdateEntry(graph.PurchaseEntry.Id, graph.Product.Id, 3, Cost),
+            new UpdateEntry(Guid.Empty, graph.OtherProduct.Id, 2, 4m),
+            new UpdateEntry(Guid.Empty, graph.OtherProduct.Id, 1, 5m),
+        ]));
+
+        var response = ResultAssert.Succeeded(result);
+        Assert.Equal(3, response.ProductEntries.Length);
+        Assert.Equal(3 * Cost + 13m, response.TotalCost);
+    }
+
+    [Fact]
     public async Task UpdateEntriesById_OmittingAnEntry_RemovesIt()
     {
         var graph = await SeededGraph.CreateAsync(database);
