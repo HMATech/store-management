@@ -199,6 +199,15 @@ public class ValidatorTests
     }
 
     [Fact]
+    public void UpdatePurchaseEntries_WithEmptyIdsAtDifferentCosts_Passes()
+    {
+        Assert.True(new UpdatePurchaseEntriesByIdCommandValidator().Validate(new UpdatePurchaseEntriesByIdCommand(
+            SomeId,
+            [new PurchaseUpdateEntry(Guid.Empty, SomeId, 1, 2m), new PurchaseUpdateEntry(Guid.Empty, SomeId, 1, 3m)]))
+            .IsValid);
+    }
+
+    [Fact]
     public void UpdatePurchaseEntries_WithSameEntryAtOneCostTwice_Passes()
     {
         var entryId = Guid.NewGuid();

@@ -30,8 +30,10 @@ internal sealed class UpdatePurchaseEntriesByIdCommandHandler(
                 return PurchaseErrors.NotFound(command.Id);
             }
 
+            var inputEntries = WithoutEmptyIds(command.ProductEntries);
+
             var currentEntryIds = purchase.Products.Select(pe => pe.Id).ToHashSet();
-            var foreignEntryIds = command.ProductEntries
+            var foreignEntryIds = inputEntries
                 .Where(e => e.Id.HasValue && !currentEntryIds.Contains(e.Id.Value))
                 .Select(e => e.Id!.Value)
                 .Distinct()
@@ -42,7 +44,7 @@ internal sealed class UpdatePurchaseEntriesByIdCommandHandler(
                 return PurchaseErrors.ContainForeignEntries(purchase.Id, foreignEntryIds);
             }
 
-            var inputNewEntries = command.ProductEntries.Where(e => !e.Id.HasValue).ToArray();
+            var inputNewEntries = inputEntries.Where(e => !e.Id.HasValue).ToArray();
             var inputNewProductIds = inputNewEntries.Select(e => e.ProductId).Distinct().ToArray();
 
             var existingProductIds = await dbContext.Products
@@ -56,7 +58,7 @@ internal sealed class UpdatePurchaseEntriesByIdCommandHandler(
                 return PurchaseErrors.ContainNonExistingProducts(invalidProducts);
             }
 
-            var keptEntries = UpdateKeptEntries(purchase, command.ProductEntries);
+            var keptEntries = UpdateKeptEntries(purchase, inputEntries);
 
             var removedEntries = purchase.Products.Where(pe => !keptEntries.Contains(pe)).ToArray();
             if (removedEntries.Length > 0)
@@ -154,5 +156,15 @@ internal sealed class UpdatePurchaseEntriesByIdCommandHandler(
         }
 
         return keptEntries;
+    }
+
+    /// <summary>
+    /// Treats an entry with an empty id as a new entry, as sales do, instead of as an entry from another purchase.
+    /// </summary>
+    private static ProductEntryCommand[] WithoutEmptyIds(IEnumerable<ProductEntryCommand> entries)
+    {
+        return entries
+            .Select(e => e.Id == Guid.Empty ? e with { Id = null } : e)
+            .ToArray();
     }
 }
