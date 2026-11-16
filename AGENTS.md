@@ -36,6 +36,13 @@ Apply these to all work, however small the change.
 - Keep each change to its purpose. Raise unrelated problems separately instead of mixing them in.
 - Follow the rules in [Code style](#code-style).
 
+### Language
+
+- Everything on the code side is in English: identifiers, file and folder names, routes, URL query parameters and their values, storage keys, API fields, comments, tests, commit messages and branch names.
+- Never use another language there, even when it matches the UI. A route is `/history/sales/:id/edit`, not `/riwayat/penjualan/:id/ubah`.
+- Text in another language exists only where it is meant to be translated, and only through the localization system. In the frontend that is the message files under `frontend/src/locales/` (see [Localization](#localization)). Don't hard-code user-facing text in components.
+- Tests may assert on the translated text the user sees, because that is the behaviour under test.
+
 ## Branching
 
 Always create a new branch before writing changes, and never work directly on `main`. Feature branches go under the `feature/` prefix and bug fix branches under the `fix/` prefix.
@@ -284,7 +291,7 @@ These file names don't match the types they contain. Use the type names when sea
 
 ## Frontend
 
-A React single-page app in `frontend/`, installable as a PWA. Its users aren't tech-savvy, so the UI is in everyday Bahasa Indonesia. Code, comments and tests are in English.
+A React single-page app in `frontend/`, installable as a PWA. Its users aren't tech-savvy, so the UI is in everyday Bahasa Indonesia, served through the [localization](#localization) system. Everything else follows [Language](#language): code, routes, comments and tests are in English.
 
 ### Stack
 
@@ -339,7 +346,7 @@ The design lives in the Loom (Penpot) file "Dashboard", and the frontend follows
 
 - **API calls** go through `apiRequest` in `src/lib/api.ts`. It adds the bearer token, throws `ApiError` (status 0 means no response arrived), and ends the session on a 401.
 - **The session token** is read and written only through `src/lib/session.ts`, so its storage can change in one place.
-- **Screens:** a signed-in screen is a route inside `AppShell` in `App.tsx`, wrapped in `Screen`, which gives it the top bar. `AppShell` shows the sidebar on wide screens (`lg` and up) and the bottom navigation on phones; add a main destination to `shell/navigation.ts`. A destination stays marked on the screens under its route, so `/riwayat/penjualan/…` marks Riwayat. Routes are in Indonesian, like the UI (`/jual`, `/produk`).
+- **Screens:** a signed-in screen is a route inside `AppShell` in `App.tsx`, wrapped in `Screen`, which gives it the top bar. `AppShell` shows the sidebar on wide screens (`lg` and up) and the bottom navigation on phones; add a main destination to `shell/navigation.ts`. A destination stays marked on the screens under its route, so `/history/sales/…` marks Riwayat. Routes are in English (`/sales/new`, `/products`), whatever language the UI is in.
 - **Task screens:** a screen entered to do one job, such as Catat Penjualan, gives `Screen` a `backTo` and sits under `<AppShell bottomNavigation={false}>`. On phones it then has a back button and the whole screen, with its main action pinned to the bottom; wide screens keep the sidebar.
 - **Recording a sale or purchase** sends an id from `useRetrySafeId` in `src/lib/requestId.ts`: saving the same thing again reuses it, so a retry after a lost answer isn't recorded twice, and any change gets a new one. Build ids with `newRequestId`, never `crypto.randomUUID`, which doesn't exist over plain HTTP on the shop's network.
 - **Saving:** write with `useMutation`, disable the action while it runs, and on success call `queryClient.invalidateQueries()` so stock, totals and lists are read again. Keep what the user entered when saving fails, and say plainly that it wasn't saved.
@@ -348,7 +355,7 @@ The design lives in the Loom (Penpot) file "Dashboard", and the frontend follows
 - **Brands, units and labels** are typed into a `SuggestField`, which offers the ones already in use and takes a new one. Saving matches the name against the known ones whatever its letter case and adds it only when it is new (`createProduct` in `features/products/catalog.ts`). A product without a brand goes under "Umum".
 - **After saving or deleting from its own screen**, go back to where it was opened from and say so there: navigate with `state: { notice }`, and the screen that shows it renders `<Notice />`. Tambah Produk returns to Produk ("… sudah ditambahkan."), Sesuaikan Stok to the product, and a deleted sale or purchase to Riwayat.
 - **Detail Penjualan and Detail Belanja** are one screen, `TransactionDetail` in `features/transactions`, given the words and API calls of its kind. Each kind's `detail.ts` maps its API response into `RecordedTransaction`. Change both screens there, not in the pages.
-- **Ubah Barang** (`/riwayat/penjualan/:id/ubah`, `/riwayat/belanja/:id/ubah`) is shared in the same way: `EditEntriesScreen` and `EditEntriesLayout` in `features/transactions`, with the recorded lines in `useRecordedLines` and shown by `RecordedLineCard`. A recorded line can change its quantity (and a purchase's cost) or be removed and brought back as recorded; products to add use the recording screen's list and cart. A sale's recorded line keeps its price, and an added product takes the current one. Saving needs at least one line, and goes back to the detail with "Perubahan sudah disimpan."
+- **Ubah Barang** (`/history/sales/:id/edit`, `/history/purchases/:id/edit`) is shared in the same way: `EditEntriesScreen` and `EditEntriesLayout` in `features/transactions`, with the recorded lines in `useRecordedLines` and shown by `RecordedLineCard`. A recorded line can change its quantity (and a purchase's cost) or be removed and brought back as recorded; products to add use the recording screen's list and cart. A sale's recorded line keeps its price, and an added product takes the current one. Saving needs at least one line, and goes back to the detail with "Perubahan sudah disimpan."
 - **Retrying an edit:** `PUT /{id}/entries` adds new lines on every call, so `useSaveEntries` doesn't resend after a lost answer when the sale or purchase changed since the screen loaded it (`lastUpdatedTime`); it counts that as saved.
 - **Deleting and signing out** ask first with `ConfirmDialog`, which says what will happen and stays open with a message when it fails.
 - **Menus** such as Akun's are `MenuRow`s inside a `CardList`: a row with `to` opens a screen and shows a chevron, a row with `onSelect` acts on the spot.
@@ -364,7 +371,7 @@ The design lives in the Loom (Penpot) file "Dashboard", and the frontend follows
 - **Totals worked out from a paged list** count only what is fully loaded. The history leaves out the total of its oldest day on screen while more pages remain, because that day may continue on the next page.
 - **Stock is shown by its status**, never by comparing quantities again: `Low` is "Hampir habis" / "Sisa N", `Empty` is "Habis", `Negative` is "Minus N". Each has its own filter on Produk.
 - **Rows of filter chips wrap** onto a second line rather than scroll sideways, so no choice is hidden off the edge of a phone.
-- **Filters** that narrow a list live in the address (`/produk?stok=minus`, `/riwayat?jenis=belanja`), so a link can open the list already filtered and going back keeps the choice. An unknown value means no filter.
+- **Filters** that narrow a list live in the address, with English names and values (`/products?stock=negative`, `/history?kind=purchase`), so a link can open the list already filtered and going back keeps the choice. An unknown value means no filter.
 - **An empty screen** uses `EmptyState` with the action that fills it; an empty search or filter result uses `Empty` and says what was looked for.
 - **Search boxes** wait for a pause in typing (`useDebouncedValue`) and keep the previous results on screen while the new ones load.
 - **Fetching:** read data with `useQuery`, passing the `signal` on to `apiRequest`. Each part of a screen fetches for itself and shows `Loading`, `LoadFailed` (with its retry) or `Empty` from `components/LoadState.tsx`, so one failed request doesn't blank the screen. Fetched data is cleared when the session ends.
@@ -372,6 +379,13 @@ The design lives in the Loom (Penpot) file "Dashboard", and the frontend follows
 - **Messages** tell the user what to do next in plain words, and never show an error code or the API's English text.
 - **Mobile:** gate hover styles behind hover-capable devices (Tailwind's `hover:` does), give controls an `:active` state, keep inputs at 16px or more (the default in `index.css`; a field with its own text size must not go under `text-base`), use `dvh` for full-height layouts, and never disable zoom.
 - **Motion** is short and subtle, and off under `prefers-reduced-motion`.
+
+### Localization
+
+- User-facing text lives in message files under `src/locales/`, one folder per language (`id/` for Bahasa Indonesia, the only one so far), and is read with `t('key')` from `react-i18next`. `src/lib/i18n.ts` sets it up.
+- Message keys are English and grouped by feature (`sale.saved`, `product.stock.low`). Values may hold placeholders (`{{count}}`), never code.
+- Dates, times and amounts still go through `src/lib/format.ts`, which formats with the language's `Intl` locale and takes its words ("Kemarin", "Pukul") from the messages.
+- A new screen adds its text to the message files in the same change. A string written straight into a component is a bug.
 
 ### Testing
 
