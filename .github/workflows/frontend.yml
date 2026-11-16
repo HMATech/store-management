@@ -1,0 +1,44 @@
+name: Frontend
+
+on:
+  push:
+    branches: [main]
+    paths: ['frontend/**', '.github/workflows/frontend.yml']
+  pull_request:
+    paths: ['frontend/**', '.github/workflows/frontend.yml']
+
+concurrency:
+  group: frontend-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  lint-test-build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - uses: actions/checkout@v4
+
+      # The same Node version the web image builds with (frontend/Dockerfile).
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install
+        run: npm ci
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Test
+        run: npm test
+
+      # Type-checks, then builds the app the web image serves.
+      - name: Build
+        run: npm run build
+        env:
+          VITE_API_URL: /api
