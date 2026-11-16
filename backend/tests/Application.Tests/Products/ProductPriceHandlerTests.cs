@@ -162,6 +162,21 @@ public class ProductPriceHandlerTests
     }
 
     [Fact]
+    public async Task UpdateById_WithPriceUsedByASale_ReturnsConflictAndKeepsTheValue()
+    {
+        var graph = await SeededGraph.CreateAsync(database);
+        await using var context = database.CreateContext();
+        var handler = new UpdateProductPriceByIdCommandHandler(context,
+            NullLogger<UpdateProductPriceByIdCommandHandler>.Instance);
+
+        var result = await handler.HandleAsync(new UpdateProductPriceByIdCommand(graph.CurrentPrice.Id, 99m), default);
+
+        ResultAssert.Failed(result, "Products.PriceInUse", ErrorType.Conflict);
+        var saved = await database.ReadAsync(c => c.ProductPrices.SingleAsync(p => p.Id == graph.CurrentPrice.Id));
+        Assert.Equal(SeededGraph.CurrentPriceValue, saved.Value);
+    }
+
+    [Fact]
     public async Task UpdateById_WithUnknownId_ReturnsNotFound()
     {
         await using var context = database.CreateContext();

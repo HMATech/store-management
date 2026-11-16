@@ -381,6 +381,45 @@ public class TransactionIntegrationTests(PostgresApiFixture api)
         Assert.Equal("Products.PriceInUse", (await response.ReadJsonAsync()).GetProperty("title").GetString());
     }
 
+    [Theory]
+    [MemberData(nameof(Resources))]
+    public async Task UpdateEntries_WithEmptyEntryId_AddsANewEntry(string path)
+    {
+        var product = await CreateProductAsync(10m);
+        var otherProduct = await CreateProductAsync(10m);
+        var id = await CreateTransactionAsync(path, PostgresApiFixture.Unique("Title"), product, quantity: 1, 10m);
+        var entryId = await FirstEntryIdAsync(path, id);
+
+        var changed = await client.PutAsJsonAsync($"{path}/{id}/entries", new
+        {
+            productEntries = new object[]
+            {
+                new { id = entryId, productId = product, quantity = 1, unitCost = 10m },
+                new { id = Guid.Empty, productId = otherProduct, quantity = 2, unitCost = 10m },
+            },
+        });
+
+        Assert.Equal(HttpStatusCode.OK, changed.StatusCode);
+        var body = await (await client.GetAsync($"{path}/{id}")).ReadJsonAsync();
+        Assert.Equal(2, body.GetProperty("productEntries").GetArrayLength());
+        Assert.Equal(30m, Total(path, body));
+    }
+
+    [Fact]
+    public async Task CorrectingPriceUsedByASale_ReturnsConflict()
+    {
+        var product = await CreateProductAsync(10m);
+        await CreateTransactionAsync("/sales", PostgresApiFixture.Unique("Title"), product, quantity: 1, 10m);
+        var priceId = await ChangePriceAsync(product, 20m);
+
+        var response = await client.PutAsJsonAsync($"/products/prices/{priceId}", new { value = 11m });
+
+        Assert.Equal(HttpStatusCode.Conflict, response.StatusCode);
+        Assert.Equal("Products.PriceInUse", (await response.ReadJsonAsync()).GetProperty("title").GetString());
+        var price = await (await client.GetAsync($"/products/prices/{priceId}")).ReadJsonAsync();
+        Assert.Equal(10m, price.GetProperty("value").GetDecimal());
+    }
+
     [Fact]
     public async Task DeletingClosedPrice_IsNotBlockedByPurchases()
     {

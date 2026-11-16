@@ -26,6 +26,13 @@ internal sealed class UpdateProductPriceByIdCommandHandler(
                 return ProductErrors.PriceNotFound(command.Id);
             }
 
+            // Sales keep the price line they were made at, so changing a used line would rewrite their totals.
+            // A new price goes through POST /products/{id}/prices instead.
+            if (await dbContext.SaleProductEntries.AnyAsync(e => e.PriceId == command.Id, cancellationToken))
+            {
+                return ProductErrors.PriceInUse(command.Id);
+            }
+
             productPrice.UpdateValue(command.Value);
 
             await dbContext.SaveChangesAsync(cancellationToken);
