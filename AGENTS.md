@@ -102,6 +102,7 @@ Always write tests for code changes, including negative cases. If a change needs
 - **API tests:** test endpoints with `WebApplicationFactory` against a real PostgreSQL database run through Testcontainers, because handlers use EF Core directly. These tests need Docker running. Mark them with `[Trait("Category", "Integration")]` so they can be filtered, and put them in the project's `Integration` folder.
 - **Signed-in clients:** `CreateClient()` on the test hosts sends a valid bearer token, because every endpoint except `Login` requires one. Use `CreateAnonymousClient()` to test what an unauthenticated caller gets.
 - **Internal types:** handlers, validators and the generated `Program` class are internal. Expose them to the test project with an `InternalsVisibleTo` attribute in the project under test, written in source because `Directory.Build.props` turns off `GenerateAssemblyInfo`.
+- **CI:** GitHub Actions runs `.github/workflows/backend.yml` (restore, build, and every test, integration ones included, since the runner has Docker) on changes under `backend/`, and `.github/workflows/frontend.yml` (lint, test, build) on changes under `frontend/`, for pull requests and pushes to `main`. A red check means the PR isn't done. Keep a workflow in step when a command in this file changes.
 
 ## Architecture
 
