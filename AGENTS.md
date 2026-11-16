@@ -40,8 +40,8 @@ Apply these to all work, however small the change.
 
 - Everything on the code side is in English: identifiers, file and folder names, routes, URL query parameters and their values, storage keys, API fields, comments, tests, commit messages and branch names.
 - Never use another language there, even when it matches the UI. A route is `/history/sales/:id/edit`, not `/riwayat/penjualan/:id/ubah`.
-- Text in another language exists only where it is meant to be translated, and only through the localization system. In the frontend that is the message files under `frontend/src/locales/` (see [Localization](#localization)). Don't hard-code user-facing text in components.
-- Tests may assert on the translated text the user sees, because that is the behaviour under test.
+- Text in another language exists only where it is meant to be translated, through the localization system. The frontend doesn't have one yet (see [Localization](#localization)), so for now that means its user-facing string literals only.
+- Test data may use realistic Indonesian names, such as products, suppliers and people (`Indomie Goreng`, `Toko Sumber Rejeki`), and tests may assert on the Indonesian text the user sees.
 
 ## Branching
 
@@ -291,7 +291,7 @@ These file names don't match the types they contain. Use the type names when sea
 
 ## Frontend
 
-A React single-page app in `frontend/`, installable as a PWA. Its users aren't tech-savvy, so the UI is in everyday Bahasa Indonesia, served through the [localization](#localization) system. Everything else follows [Language](#language): code, routes, comments and tests are in English.
+A React single-page app in `frontend/`, installable as a PWA. Its users aren't tech-savvy, so the UI is in everyday Bahasa Indonesia (see [Localization](#localization)). Everything else follows [Language](#language): code, routes, comments and tests are in English.
 
 ### Stack
 
@@ -346,46 +346,45 @@ The design lives in the Loom (Penpot) file "Dashboard", and the frontend follows
 
 - **API calls** go through `apiRequest` in `src/lib/api.ts`. It adds the bearer token, throws `ApiError` (status 0 means no response arrived), and ends the session on a 401.
 - **The session token** is read and written only through `src/lib/session.ts`, so its storage can change in one place.
-- **Screens:** a signed-in screen is a route inside `AppShell` in `App.tsx`, wrapped in `Screen`, which gives it the top bar. `AppShell` shows the sidebar on wide screens (`lg` and up) and the bottom navigation on phones; add a main destination to `shell/navigation.ts`. A destination stays marked on the screens under its route, so `/history/sales/…` marks Riwayat. Routes are in English (`/sales/new`, `/products`), whatever language the UI is in.
-- **Task screens:** a screen entered to do one job, such as Catat Penjualan, gives `Screen` a `backTo` and sits under `<AppShell bottomNavigation={false}>`. On phones it then has a back button and the whole screen, with its main action pinned to the bottom; wide screens keep the sidebar.
+- **Screens:** a signed-in screen is a route inside `AppShell` in `App.tsx`, wrapped in `Screen`, which gives it the top bar. `AppShell` shows the sidebar on wide screens (`lg` and up) and the bottom navigation on phones; add a main destination to `shell/navigation.ts`. A destination stays marked on the screens under its route, so `/history/sales/…` marks History. Routes are in English (`/sales/new`, `/products`), whatever language the UI is in.
+- **Task screens:** a screen entered to do one job, such as Record Sale, gives `Screen` a `backTo` and sits under `<AppShell bottomNavigation={false}>`. On phones it then has a back button and the whole screen, with its main action pinned to the bottom; wide screens keep the sidebar.
 - **Recording a sale or purchase** sends an id from `useRetrySafeId` in `src/lib/requestId.ts`: saving the same thing again reuses it, so a retry after a lost answer isn't recorded twice, and any change gets a new one. Build ids with `newRequestId`, never `crypto.randomUUID`, which doesn't exist over plain HTTP on the shop's network.
 - **Saving:** write with `useMutation`, disable the action while it runs, and on success call `queryClient.invalidateQueries()` so stock, totals and lists are read again. Keep what the user entered when saving fails, and say plainly that it wasn't saved.
-- **Recording screens** (Catat Penjualan, Catat Belanja) share their parts: `ProductCard` in `features/products` for picking products, and `CheckoutPanel` and `SavedDialog` in `components` for the total, the save button and the confirmation. Each keeps its own cart hook, because what a line holds differs. The product lists are `SaleProductList` and `PurchaseProductList` in their features, so Ubah Barang adds products the same way.
+- **Recording screens** (Record Sale, Record Purchase) share their parts: `ProductCard` in `features/products` for picking products, and `CheckoutPanel` and `SavedDialog` in `components` for the total, the save button and the confirmation. Each keeps its own cart hook, because what a line holds differs. The product lists are `SaleProductList` and `PurchaseProductList` in their features, so Edit Items adds products the same way.
 - **Forms:** point out a missing field only after saving was tried, under the field and again next to the save button, and send nothing until it is filled in. Amounts are typed into `MoneyField`, which shows "Rp" and separates thousands. A quantity that is often large can be typed as well as stepped (`QuantityStepper` with `onChange`).
-- **Brands, units and labels** are typed into a `SuggestField`, which offers the ones already in use and takes a new one. Saving matches the name against the known ones whatever its letter case and adds it only when it is new (`createProduct` in `features/products/catalog.ts`). A product without a brand goes under "Umum".
-- **After saving or deleting from its own screen**, go back to where it was opened from and say so there: navigate with `state: { notice }`, and the screen that shows it renders `<Notice />`. Tambah Produk returns to Produk ("… sudah ditambahkan."), Sesuaikan Stok to the product, and a deleted sale or purchase to Riwayat.
-- **Detail Penjualan and Detail Belanja** are one screen, `TransactionDetail` in `features/transactions`, given the words and API calls of its kind. Each kind's `detail.ts` maps its API response into `RecordedTransaction`. Change both screens there, not in the pages.
-- **Ubah Barang** (`/history/sales/:id/edit`, `/history/purchases/:id/edit`) is shared in the same way: `EditEntriesScreen` and `EditEntriesLayout` in `features/transactions`, with the recorded lines in `useRecordedLines` and shown by `RecordedLineCard`. A recorded line can change its quantity (and a purchase's cost) or be removed and brought back as recorded; products to add use the recording screen's list and cart. A sale's recorded line keeps its price, and an added product takes the current one. Saving needs at least one line, and goes back to the detail with "Perubahan sudah disimpan."
+- **Brands, units and labels** are typed into a `SuggestField`, which offers the ones already in use and takes a new one. Saving matches the name against the known ones whatever its letter case and adds it only when it is new (`createProduct` in `features/products/catalog.ts`). A product without a brand goes under a default brand, whose name is UI text.
+- **After saving or deleting from its own screen**, go back to where it was opened from and say so there: navigate with `state: { notice }`, and the screen that shows it renders `<Notice />`. Add Product returns to Products, Adjust Stock to the product, Edit Items to the sale or purchase, and a deleted sale or purchase to History.
+- **Sale Detail and Purchase Detail** are one screen, `TransactionDetail` in `features/transactions`, given the words and API calls of its kind. Each kind's `detail.ts` maps its API response into `RecordedTransaction`. Change both screens there, not in the pages.
+- **Edit Items** (`/history/sales/:id/edit`, `/history/purchases/:id/edit`) is shared in the same way: `EditEntriesScreen` and `EditEntriesLayout` in `features/transactions`, with the recorded lines in `useRecordedLines` and shown by `RecordedLineCard`. A recorded line can change its quantity (and a purchase's cost) or be removed and brought back as recorded; products to add use the recording screen's list and cart. A sale's recorded line keeps its price, and an added product takes the current one. Saving needs at least one line, and goes back to the detail with a notice.
 - **Retrying an edit:** `PUT /{id}/entries` adds new lines on every call, so `useSaveEntries` doesn't resend after a lost answer when the sale or purchase changed since the screen loaded it (`lastUpdatedTime`); it counts that as saved.
 - **Deleting and signing out** ask first with `ConfirmDialog`, which says what will happen and stays open with a message when it fails.
-- **Menus** such as Akun's are `MenuRow`s inside a `CardList`: a row with `to` opens a screen and shows a chevron, a row with `onSelect` acts on the spot.
-- **The look** (Ikuti perangkat, Terang, Gelap) is chosen on Akun and kept per device by `src/lib/theme.ts`, which sets `data-theme` on `<html>` when the app starts.
+- **Menus** such as Account's are `MenuRow`s inside a `CardList`: a row with `to` opens a screen and shows a chevron, a row with `onSelect` acts on the spot.
+- **The look** (follow the device, light or dark) is chosen on Account and kept per device by `src/lib/theme.ts`, which sets `data-theme` on `<html>` when the app starts.
 - **New users** are checked against the API's rules before sending (`isStrongPassword` in `features/users/api.ts`). Keep the two in step if the API's password rules change.
-- **Form screens** end with `SaveBar` inside their `<form>`: the save button pinned to the bottom on phones, and beside "Batal" on wide screens.
+- **Form screens** end with `SaveBar` inside their `<form>`: the save button pinned to the bottom on phones, and beside the cancel button on wide screens.
 - **Stock adjustments** are entered as what was counted on the shelf. The screen works out the difference from what the app had on record when it opened, and sends that with the chosen reason.
-- **A purchase's cost** is typed per product ("Harga beli per barang"). It is never taken from the selling price, which the purchase screen shows only as a note.
-- **A small edit from a screen**, such as Ubah Harga, is a Base UI `Dialog` with its own form, "Simpan …" and "Batal". The form is mounted only while the dialog is open, so it starts empty each time, and the dialog stays open with a message when saving fails.
-- **Stock counts** are written as "N barang". A product's unit ("kg", "gram") is the size of one of it, not what stock is counted in.
-- **Confirmations** that must not be missed, such as "Penjualan tersimpan", are a Base UI `AlertDialog` that stays until one of its actions is chosen, not a toast.
+- **A purchase's cost** is typed per product, as the price paid for one. It is never taken from the selling price, which the purchase screen shows only as a note.
+- **A small edit from a screen**, such as Change Price, is a Base UI `Dialog` with its own form, a save button and a cancel button. The form is mounted only while the dialog is open, so it starts empty each time, and the dialog stays open with a message when saving fails.
+- **Stock counts** are written as a number of items, not in the product's unit. A product's unit ("kg", "gram") is the size of one of it, not what stock is counted in.
+- **Confirmations** that must not be missed, such as the one after saving a sale, are a Base UI `AlertDialog` that stays until one of its actions is chosen, not a toast.
 - **Long lists** load a page at a time through `usePagedList` in `src/lib`, with `LoadMoreButton` to fetch the next page. Product lists use `useProductPages` in `features/products`, which wraps it; use that wherever products are listed, as the sale and product screens do.
 - **Totals worked out from a paged list** count only what is fully loaded. The history leaves out the total of its oldest day on screen while more pages remain, because that day may continue on the next page.
-- **Stock is shown by its status**, never by comparing quantities again: `Low` is "Hampir habis" / "Sisa N", `Empty` is "Habis", `Negative` is "Minus N". Each has its own filter on Produk.
+- **Stock is shown by its status**, never by comparing quantities again: `Low`, `Empty` and `Negative` each have their own wording and badge, and their own filter on Products.
 - **Rows of filter chips wrap** onto a second line rather than scroll sideways, so no choice is hidden off the edge of a phone.
 - **Filters** that narrow a list live in the address, with English names and values (`/products?stock=negative`, `/history?kind=purchase`), so a link can open the list already filtered and going back keeps the choice. An unknown value means no filter.
 - **An empty screen** uses `EmptyState` with the action that fills it; an empty search or filter result uses `Empty` and says what was looked for.
 - **Search boxes** wait for a pause in typing (`useDebouncedValue`) and keep the previous results on screen while the new ones load.
 - **Fetching:** read data with `useQuery`, passing the `signal` on to `apiRequest`. Each part of a screen fetches for itself and shows `Loading`, `LoadFailed` (with its retry) or `Empty` from `components/LoadState.tsx`, so one failed request doesn't blank the screen. Fetched data is cleared when the session ends.
-- **Formatting:** amounts, dates and times go through `src/lib/format.ts` (`Rp 1.245.000`, `Minggu, 8 November 2026`, `Pukul 10.42`, `Kemarin, 7 Nov`). Days are counted in the device's time zone, which is also the `timeZone` sent to the API.
+- **Formatting:** amounts, dates and times go through `src/lib/format.ts` (amounts in Rupiah, long dates, times, and days relative to today). Days are counted in the device's time zone, which is also the `timeZone` sent to the API.
 - **Messages** tell the user what to do next in plain words, and never show an error code or the API's English text.
 - **Mobile:** gate hover styles behind hover-capable devices (Tailwind's `hover:` does), give controls an `:active` state, keep inputs at 16px or more (the default in `index.css`; a field with its own text size must not go under `text-base`), use `dvh` for full-height layouts, and never disable zoom.
 - **Motion** is short and subtle, and off under `prefers-reduced-motion`.
 
 ### Localization
 
-- User-facing text lives in message files under `src/locales/`, one folder per language (`id/` for Bahasa Indonesia, the only one so far), and is read with `t('key')` from `react-i18next`. `src/lib/i18n.ts` sets it up.
-- Message keys are English and grouped by feature (`sale.saved`, `product.stock.low`). Values may hold placeholders (`{{count}}`), never code.
-- Dates, times and amounts still go through `src/lib/format.ts`, which formats with the language's `Intl` locale and takes its words ("Kemarin", "Pukul") from the messages.
-- A new screen adds its text to the message files in the same change. A string written straight into a component is a bug.
+- There is no localization system yet: the Bahasa Indonesia UI text is still written as string literals in the components. Moving it into message files is planned, and this section will describe that setup once it exists.
+- Until then, other-language text may appear only in those user-facing string literals. Everything around them (names, keys, routes, comments) follows [Language](#language).
+- Dates, times and amounts go through `src/lib/format.ts`, which formats with the `id-ID` `Intl` locale.
 
 ### Testing
 
