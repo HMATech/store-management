@@ -8,6 +8,10 @@ public static class MigrationExtensions
     /// <summary>Applies pending migrations on startup outside Development when set to true.</summary>
     public const string ApplyOnStartupKey = "Database:ApplyMigrationsOnStartup";
 
+    /// <summary>
+    /// Applies pending migrations, and throws when that fails, so the app stops instead of serving an outdated
+    /// database.
+    /// </summary>
     public static IApplicationBuilder ApplyMigrations(this IApplicationBuilder app)
     {
         using var scope = app.ApplicationServices.CreateScope();
@@ -33,7 +37,8 @@ public static class MigrationExtensions
         }
         catch (Exception ex)
         {
-            logger.LogError(ex, "Unhandled exception occurred while applying migrations");
+            logger.LogCritical(ex, "Applying migrations failed, so the app won't start");
+            throw;
         }
 
         return app;
