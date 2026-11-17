@@ -15,7 +15,8 @@ internal sealed class RegisterUserCommandHandler(IPasswordHasher passwordHasher,
     ILogger<RegisterUserCommandHandler> logger) 
         : ICommandHandler<RegisterUserCommand, RegisterResponse>
 {
-    public async Task<Result<RegisterResponse>> HandleAsync(RegisterUserCommand command, CancellationToken cancellationToken)
+    public async Task<Result<RegisterResponse>> HandleAsync(RegisterUserCommand command,
+        CancellationToken cancellationToken)
     {
         if (await dbContext.Users.AnyAsync(u => u.Email == command.Email, cancellationToken))
         {

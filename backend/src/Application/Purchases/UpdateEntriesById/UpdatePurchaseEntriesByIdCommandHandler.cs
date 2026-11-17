@@ -93,7 +93,8 @@ internal sealed class UpdatePurchaseEntriesByIdCommandHandler(
         catch (OperationCanceledException ex)
         {
             logger.LogError(ex, "");
-            return ApplicationErrors.OperationCancelledError(nameof(UpdatePurchaseEntriesByIdCommandHandler), ex.Message);
+            return ApplicationErrors.OperationCancelledError(nameof(UpdatePurchaseEntriesByIdCommandHandler),
+                ex.Message);
         }
         catch (Exception ex)
         {

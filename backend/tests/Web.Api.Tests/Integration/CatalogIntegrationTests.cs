@@ -81,7 +81,8 @@ public class CatalogIntegrationTests(PostgresApiFixture api)
         Assert.Equal(3, prices.GetProperty("totalCount").GetInt32());
         Assert.Equal(JsonValueKind.Null, history[0].GetProperty("validToTime").ValueKind);
 
-        var ownPrices = await (await client.GetAsync($"/products/prices?productId={id}&sortOrder=DESC")).ReadJsonAsync();
+        var ownPrices = await (await client.GetAsync($"/products/prices?productId={id}&sortOrder=DESC"))
+            .ReadJsonAsync();
         Assert.Equal(3, ownPrices.GetProperty("totalCount").GetInt32());
         Assert.Equal(15m, ownPrices.GetProperty("responses")[0].GetProperty("value").GetDecimal());
         var noPrices = await (await client.GetAsync($"/products/prices?productId={Guid.NewGuid()}")).ReadJsonAsync();

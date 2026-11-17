@@ -9,7 +9,8 @@ public static class GeneralEntityConfigurationExtensions
     {
         foreach (var entity in modelBuilder.Model.GetEntityTypes())
         {
-            logger.LogInformation("Entity name {name}, type {type}, shared {shr}", entity.ClrType.Name, entity.ClrType, entity.HasSharedClrType);
+            logger.LogInformation("Entity name {name}, type {type}, shared {shr}",
+                entity.ClrType.Name, entity.ClrType, entity.HasSharedClrType);
             if (entity.HasSharedClrType
                 || entity.IsOwned()) continue;
             modelBuilder
