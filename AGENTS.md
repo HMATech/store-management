@@ -77,7 +77,7 @@ dotnet ef migrations add <Name> --project src/Infrastructure --startup-project s
 ```
 
 - Running the app needs PostgreSQL at the `MainDb` connection string in `src/Web.Api/appsettings.Development.json` (`localhost:5432`, database `store`).
-- Pending migrations are applied at startup (`ApplyMigrations` in `Program.cs`) in Development, and in other environments when `Database:ApplyMigrationsOnStartup` is `true`.
+- Pending migrations are applied at startup (`ApplyMigrations` in `Program.cs`) in Development, and in other environments when `Database:ApplyMigrationsOnStartup` is `true`. A migration that fails stops startup, so the API never serves an outdated database.
 
 ### Docker
 
@@ -91,6 +91,7 @@ docker compose up -d --build    # The app on http://localhost:8081, the API on :
 - `docker-compose.yml` runs the API in Production with startup migrations on, and maps the `.env` values to configuration keys such as `Jwt__Secret` and `InitialUser__Email`. A new configuration value the deployment needs goes in both files.
 - The `web` container is nginx serving the built frontend. It passes `/api/` on to the API container, so the app and the API share one origin and need no CORS. Phones on the same network open `http://<computer's address>:8081`.
 - The containers serve plain HTTP, with TLS expected at a reverse proxy in front of `web`. A phone can install the app as a PWA only over HTTPS (or on `localhost`).
+- `GET /health` answers `Healthy` (200) when the API can reach the database and `Unhealthy` (503) otherwise (`DatabaseHealthCheck`). The `api` container's health check calls it, and `web` starts once the API is healthy.
 - The API container serves plain HTTP on port 8080. `ASPNETCORE_FORWARDEDHEADERS_ENABLED` makes the API trust the proxy's `X-Forwarded-Proto`, so `Location` URLs use `https`.
 
 ## Testing
@@ -211,7 +212,7 @@ Use `TagsHelper.CreateSynchronizedTagsAsync` to sync tags on an entity (see the 
 ### Authorization
 
 - A fallback policy in `AddAuthorizationInternal` makes every endpoint require a signed-in user, so new endpoints are protected without extra code. Don't add `.RequireAuthorization()` to endpoints.
-- An endpoint that must stay public opts out with `.AllowAnonymous()`. Only Users `Login` does so far.
+- An endpoint that must stay public opts out with `.AllowAnonymous()`. Only Users `Login` and `/health` do so far.
 - Roles aren't checked yet. Any signed-in user can call any endpoint.
 - `Register` needs a signed-in user, so the first account comes from the `InitialUser` configuration section (`Email`, `Password`, `FirstName`, optional `LastName`). On startup, `CreateInitialUserAsync` creates that user when the database has no users, and startup fails if the configured user is invalid. `appsettings.Development.json` sets a local one (`admin@store.local` / `Admin123!`).
 - Swagger is set up to send a JWT bearer token.
