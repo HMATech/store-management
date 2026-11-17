@@ -36,4 +36,7 @@ app.UseAuthorization();
 
 app.MapEndpoints(Assembly.GetExecutingAssembly());
 
+// For the container's health check and any monitor, so it needs no sign-in. It answers 200 Healthy or 503 Unhealthy.
+app.MapHealthChecks("/health").AllowAnonymous();
+
 app.Run();
