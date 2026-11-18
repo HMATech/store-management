@@ -203,6 +203,14 @@ Use `TagsHelper.CreateSynchronizedTagsAsync` to sync tags on an entity (see the 
 - Each transaction's total is summed in SQL and only the grouping by local day happens in memory. A range covers at most 366 days.
 - The `occurenceFrom`/`occurenceTo` filters on `/purchases` and `/sales` still compare UTC dates.
 
+### Gross profit
+
+- Sold items are costed by **moving average**: each purchase updates a product's average cost from the stock on hand and the new goods, and a sale is costed at the average at its moment. `MovingAverageCost` in `Application/Reports` does it, replaying the history on each read like stock, so edits to past purchases and sales need no repair. Use it for anything that shows cost or profit.
+- At one moment, purchases come before adjustments and sales, and purchases of a product at the same moment (such as a paid line and a free one) are joined at their average cost, so line order never changes the result.
+- A purchase made when stock is at or below zero sets the average to its own cost. Adjustments change the stock on hand but not the average, and a free item (cost 0) lowers it.
+- A sale made before the product's first purchase has no known cost. It's left out of the cost and profit, never guessed, and counted in `uncostedQuantity` so the client can say the profit is incomplete.
+- The daily totals report `costOfSales`, `grossProfit` (selling price minus cost, for costed items only) and `uncostedQuantity` per day and for the range, rounded to two decimals per day. It loads the whole history of the products sold up to the end of the range, which is fine at a shop's volume.
+
 ### Transaction history
 
 - `GET /transactions` lists sales and purchases together, newest first by default, as `TransactionSummaryResponse` rows: `kind` (`Sale` or `Purchase`), title, time, `lineCount`, `quantity` and `total` (selling price for a sale, cost for a purchase).
