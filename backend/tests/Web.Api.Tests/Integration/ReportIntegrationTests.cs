@@ -44,6 +44,47 @@ public class ReportIntegrationTests(PostgresApiFixture api)
     }
 
     [Fact]
+    public async Task DailyTotals_CostsSalesAtTheMovingAverageOverAShopsTwoDays()
+    {
+        // Times are in Jakarta (UTC+7). Day one: 2 sold at 3.500 before any purchase is recorded, then 40 bought at
+        // 3.000 and 10 sold. Day two: 3 thrown away, 25 bought at 3.200, which makes the average
+        // (25 x 3.000 + 25 x 3.200) / 50 = 3.100, and 20 sold at the new price of 3.800.
+        var product = await CreateProductAsync(3500m);
+        await CreateAsync("/sales", "2031-07-01T01:00:00Z", new { id = product, quantity = 2 });
+        await CreateAsync("/purchases", "2031-07-01T03:00:00Z", new { id = product, quantity = 40, unitCost = 3000m });
+        await CreateAsync("/sales", "2031-07-01T08:00:00Z", new { id = product, quantity = 10 });
+        await CreateAdjustmentAsync(product, -3, "2031-07-02T02:00:00Z");
+        await CreateAsync("/purchases", "2031-07-02T04:00:00Z", new { id = product, quantity = 25, unitCost = 3200m });
+        await client.PostAsJsonAsync($"/products/{product}/prices", new { value = 3800m });
+        await CreateAsync("/sales", "2031-07-02T09:00:00Z", new { id = product, quantity = 20 });
+
+        var body = await GetDailyTotalsAsync("from=2031-07-01&to=2031-07-02&timeZone=Asia/Jakarta");
+
+        var days = body.GetProperty("days");
+        AssertProfit(days[0], costOfSales: 30000m, grossProfit: 5000m, uncostedQuantity: 2);
+        AssertProfit(days[1], costOfSales: 62000m, grossProfit: 14000m, uncostedQuantity: 0);
+        AssertProfit(body, costOfSales: 92000m, grossProfit: 19000m, uncostedQuantity: 2);
+        Assert.Equal(42000m + 76000m, body.GetProperty("salesTotal").GetDecimal());
+    }
+
+    [Fact]
+    public async Task DailyTotals_RecostsSalesWhenAnEarlierPurchaseIsCorrected()
+    {
+        var product = await CreateProductAsync(5000m);
+        var purchase = await CreateAsync("/purchases", "2031-08-01T03:00:00Z",
+            new { id = product, quantity = 10, unitCost = 4000m });
+        await CreateAsync("/sales", "2031-08-01T08:00:00Z", new { id = product, quantity = 4 });
+
+        var correction = await client.PutAsJsonAsync($"/purchases/{purchase}/entries",
+            new { productEntries = new[] { new { productId = product, quantity = 10, unitCost = 4200m } } });
+        Assert.Equal(HttpStatusCode.OK, correction.StatusCode);
+
+        var body = await GetDailyTotalsAsync("from=2031-08-01&to=2031-08-01&timeZone=Asia/Jakarta");
+
+        AssertProfit(body, costOfSales: 16800m, grossProfit: 3200m, uncostedQuantity: 0);
+    }
+
+    [Fact]
     public async Task DailyTotals_WithoutToken_ReturnsUnauthorized()
     {
         var response = await api.CreateAnonymousClient()
@@ -60,7 +101,7 @@ public class ReportIntegrationTests(PostgresApiFixture api)
         return await response.ReadJsonAsync();
     }
 
-    private async Task CreateAsync(string path, string occurredAt, params object[] entries)
+    private async Task<string> CreateAsync(string path, string occurredAt, params object[] entries)
     {
         var response = await client.PostAsJsonAsync(path, new
         {
@@ -69,6 +110,15 @@ public class ReportIntegrationTests(PostgresApiFixture api)
             productEntries = entries,
             occurrenceTime = occurredAt,
         });
+
+        Assert.Equal(HttpStatusCode.Created, response.StatusCode);
+        return response.CreatedId();
+    }
+
+    private async Task CreateAdjustmentAsync(string product, int quantity, string occurredAt)
+    {
+        var response = await client.PostAsJsonAsync("/stocks/adjustments",
+            new { productId = product, quantity, reason = "Rusak", occurrenceTime = occurredAt });
 
         Assert.Equal(HttpStatusCode.Created, response.StatusCode);
     }
@@ -99,5 +149,13 @@ public class ReportIntegrationTests(PostgresApiFixture api)
         Assert.Equal(salesCount, day.GetProperty("salesCount").GetInt32());
         Assert.Equal(purchasesTotal, day.GetProperty("purchasesTotal").GetDecimal());
         Assert.Equal(purchasesCount, day.GetProperty("purchasesCount").GetInt32());
+    }
+
+    private static void AssertProfit(JsonElement totals, decimal costOfSales, decimal grossProfit,
+        long uncostedQuantity)
+    {
+        Assert.Equal(costOfSales, totals.GetProperty("costOfSales").GetDecimal());
+        Assert.Equal(grossProfit, totals.GetProperty("grossProfit").GetDecimal());
+        Assert.Equal(uncostedQuantity, totals.GetProperty("uncostedQuantity").GetInt64());
     }
 }
