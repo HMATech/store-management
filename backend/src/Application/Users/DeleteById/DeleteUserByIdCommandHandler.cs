@@ -43,7 +43,8 @@ internal sealed class DeleteUserByIdCommandHandler(IApplicationDbContext dbConte
         }
         catch (Exception ex)
         {
-            logger.LogError(ex, "Unexpected error has occurred while deleting user '{command.UserId}' 's detail from DB",
+            logger.LogError(ex,
+                "Unexpected error has occurred while deleting user '{command.UserId}' 's detail from DB",
                 command.UserId);
             return ApplicationErrors.UnexpectedError(nameof(DeleteUserByIdCommandHandler),
                 $"Unexpected error has occurred while deleting user '{command.UserId}' 's detail from DB");

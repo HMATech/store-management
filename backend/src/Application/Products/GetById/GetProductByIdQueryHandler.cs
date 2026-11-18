@@ -14,7 +14,8 @@ internal sealed class GetProductByIdQueryHandler(
     ILogger<GetProductByIdQueryHandler> logger
 ) : IQueryHandler<GetProductByIdQuery, ProductResponse>
 {
-    public async Task<Result<ProductResponse>> HandleAsync(GetProductByIdQuery query, CancellationToken cancellationToken)
+    public async Task<Result<ProductResponse>> HandleAsync(GetProductByIdQuery query,
+        CancellationToken cancellationToken)
     {
         try
         {

@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Http.Json;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.Net.Http.Headers;
 using Microsoft.OpenApi.Models;
+using Web.Api.Infrastructure;
 using Web.Api.Middlewares;
 
 namespace Web.Api;
@@ -22,6 +23,8 @@ public static class DependencyInjection
 
         services.AddProblemDetails();
         services.AddExceptionHandler<GlobalExceptionHandler>();
+
+        services.AddHealthChecks().AddCheck<DatabaseHealthCheck>(DatabaseHealthCheck.Name);
 
         services.Configure<JsonOptions>(options =>
         {

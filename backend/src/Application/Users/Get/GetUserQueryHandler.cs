@@ -11,7 +11,8 @@ internal sealed class GetUserQueryHandler(IApplicationDbContext dbContext,
     ILogger<GetUserByIdQueryHandler> logger)
     : IQueryHandler<GetUserQuery, PagedResponse<UserResponse>>
 {
-    public async Task<Result<PagedResponse<UserResponse>>> HandleAsync(GetUserQuery query, CancellationToken cancellationToken)
+    public async Task<Result<PagedResponse<UserResponse>>> HandleAsync(GetUserQuery query,
+        CancellationToken cancellationToken)
     {
         try
         {

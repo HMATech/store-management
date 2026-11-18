@@ -40,12 +40,24 @@ services:
       InitialUser__Email: ${INITIAL_USER_EMAIL:-}
       InitialUser__Password: ${INITIAL_USER_PASSWORD:-}
       InitialUser__FirstName: ${INITIAL_USER_FIRST_NAME:-Owner}
+    # GET /health answers 200 when the API can reach the database. The image has no curl, so bash asks over a socket.
+    healthcheck:
+      test:
+        - CMD
+        - bash
+        - -c
+        - "exec 3<>/dev/tcp/127.0.0.1/8080 && printf 'GET /health HTTP/1.0\r\n\r\n' >&3 && head -n 1 <&3 | grep -q ' 200 '"
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
 
   web:
     build: ./frontend
     restart: unless-stopped
     depends_on:
-      - api
+      api:
+        condition: service_healthy
     ports:
       - "${WEB_PORT:-8081}:80"
 
