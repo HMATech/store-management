@@ -12,6 +12,7 @@ import { HomePage } from './pages/HomePage'
 import { LoginPage } from './pages/LoginPage'
 import { ProductDetailPage } from './pages/ProductDetailPage'
 import { ProductsPage } from './pages/ProductsPage'
+import { ProfitPage } from './pages/ProfitPage'
 import { PurchaseDetailPage } from './pages/PurchaseDetailPage'
 import { PurchasePage } from './pages/PurchasePage'
 import { UsersPage } from './pages/UsersPage'
@@ -31,6 +32,7 @@ export function App() {
         </Route>
         <Route element={<AppShell bottomNavigation={false} />}>
           <Route path="/sales/new" element={<SalePage />} />
+          <Route path="/profit" element={<ProfitPage />} />
           <Route path="/purchases/new" element={<PurchasePage />} />
           <Route path="/products/new" element={<AddProductPage />} />
           <Route path="/products/:id" element={<ProductDetailPage />} />

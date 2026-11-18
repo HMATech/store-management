@@ -1,12 +1,5 @@
 import { apiRequest } from '../../lib/api'
-import { deviceTimeZone, toIsoDay } from '../../lib/format'
-
-export type DailyTotals = {
-  salesTotal: number
-  salesCount: number
-  purchasesTotal: number
-  purchasesCount: number
-}
+import { fetchDailyTotals, type DailyTotals } from '../reports/api'
 
 export type StockAlert = {
   id: string
@@ -26,11 +19,9 @@ type Paged<T> = { responses: T[] }
 /** How many rows the home screen's lists show. The full lists are on their own screens. */
 const ListSize = 3
 
-/** The sales and purchase totals of one day, counted in the device's time zone. */
+/** The totals of one day, counted in the device's time zone. */
 export function fetchTodayTotals(today: Date, signal?: AbortSignal): Promise<DailyTotals> {
-  const day = toIsoDay(today)
-  const query = new URLSearchParams({ from: day, to: day, timeZone: deviceTimeZone })
-  return apiRequest<DailyTotals>(`/reports/daily-totals?${query}`, { signal })
+  return fetchDailyTotals(today, today, signal)
 }
 
 /** The products whose stock needs a look: those below zero first, then those run out, then those running low. */

@@ -1,11 +1,13 @@
 import clsx from 'clsx'
 import { Store } from 'lucide-react'
-import { NavLink } from 'react-router'
+import { NavLink, useLocation } from 'react-router'
 import { AccountButton } from './AccountButton'
 import { navigationItems } from './navigation'
 
 /** The main navigation on wide screens. Mirrors the Sidebar and Sidebar item components in Loom. */
 export function Sidebar() {
+  const { pathname } = useLocation()
+
   return (
     <aside
       className={
@@ -21,7 +23,7 @@ export function Sidebar() {
       </div>
 
       <nav aria-label="Menu utama" className="flex flex-1 flex-col gap-4">
-        {navigationItems.map(({ label, to, icon: Icon }) => (
+        {navigationItems.map(({ label, to, icon: Icon, opens = [] }) => (
           <NavLink
             key={to}
             to={to}
@@ -31,7 +33,7 @@ export function Sidebar() {
                 'flex min-h-control-md items-center gap-12 rounded-md px-14 py-12',
                 'transition-transform duration-100 ease-out active:scale-[0.97] motion-reduce:transition-none',
                 'focus-visible:outline-2 focus-visible:outline-primary-default',
-                isActive
+                isActive || opens.some((path) => pathname.startsWith(path))
                   ? 'bg-primary-soft font-bold text-primary-default'
                   : 'font-medium text-text-muted hover:bg-bg-canvas',
               )

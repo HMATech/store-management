@@ -8,7 +8,16 @@ import { renderApp } from '../test/render'
 /** The amount as the screen shows it. Testing Library reads the no-break space after "Rp" as a space. */
 const rupiah = (amount: number) => formatRupiah(amount).replace(/\u00a0/g, ' ')
 
-const totals = { salesTotal: 1245000, salesCount: 38, purchasesTotal: 860000, purchasesCount: 2 }
+const totals = {
+  salesTotal: 1245000,
+  salesCount: 38,
+  purchasesTotal: 860000,
+  purchasesCount: 2,
+  costOfSales: 1066600,
+  grossProfit: 178400,
+  uncostedQuantity: 0,
+  days: [],
+}
 const paged = (responses: unknown[]) => () => jsonResponse(200, { responses })
 const product = (id: string, name: string, quantity: number, status: string) => ({
   id,
@@ -72,13 +81,50 @@ describe('home screen', () => {
   it('shows zero totals on a day with no transactions', async () => {
     stubHomeApi({
       '/reports/daily-totals': () =>
-        jsonResponse(200, { salesTotal: 0, salesCount: 0, purchasesTotal: 0, purchasesCount: 0 }),
+        jsonResponse(200, {
+          ...totals,
+          salesTotal: 0,
+          salesCount: 0,
+          purchasesTotal: 0,
+          purchasesCount: 0,
+          costOfSales: 0,
+          grossProfit: 0,
+        }),
     })
 
     renderApp('/')
 
     expect(await screen.findByText('dari 0 penjualan')).toBeInTheDocument()
-    expect(screen.getAllByText(rupiah(0))).toHaveLength(2)
+    expect(screen.getAllByText(rupiah(0))).toHaveLength(3)
+  })
+
+  it("shows today's profit and the way to the last seven days", async () => {
+    stubHomeApi()
+
+    renderApp('/')
+
+    expect(await screen.findByText(rupiah(178400))).toBeInTheDocument()
+    expect(screen.getByText('setelah dikurangi modal')).toBeInTheDocument()
+    expect(screen.getByRole('link', { name: 'Lihat 7 hari' })).toHaveAttribute('href', '/profit')
+    expect(screen.queryByText(/belum ada catatan belanjanya/)).not.toBeInTheDocument()
+  })
+
+  it('says the profit leaves out items sold before their purchase was recorded', async () => {
+    stubHomeApi({ '/reports/daily-totals': () => jsonResponse(200, { ...totals, uncostedQuantity: 3 }) })
+
+    renderApp('/')
+
+    expect(
+      await screen.findByText('Belum termasuk 3 barang yang belum ada catatan belanjanya.'),
+    ).toBeInTheDocument()
+  })
+
+  it('shows the totals as not loaded when the answer is malformed', async () => {
+    stubHomeApi({ '/reports/daily-totals': () => jsonResponse(200, { salesTotal: 1000 }) })
+
+    renderApp('/')
+
+    expect(await screen.findByRole('alert')).toHaveTextContent('Tidak bisa memuat.')
   })
 
   it('lists stock below zero before stock running low', async () => {
