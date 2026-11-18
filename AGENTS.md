@@ -203,6 +203,14 @@ Use `TagsHelper.CreateSynchronizedTagsAsync` to sync tags on an entity (see the 
 - Each transaction's total is summed in SQL and only the grouping by local day happens in memory. A range covers at most 366 days.
 - The `occurenceFrom`/`occurenceTo` filters on `/purchases` and `/sales` still compare UTC dates.
 
+### Gross profit
+
+- Sold items are costed by **moving average**: each purchase updates a product's average cost from the stock on hand and the new goods, and a sale is costed at the average at its moment. `MovingAverageCost` in `Application/Reports` does it, replaying the history on each read like stock, so edits to past purchases and sales need no repair. Use it for anything that shows cost or profit.
+- At one moment, purchases come before adjustments and sales, and purchases of a product at the same moment (such as a paid line and a free one) are joined at their average cost, so line order never changes the result.
+- A purchase made when stock is at or below zero sets the average to its own cost. Adjustments change the stock on hand but not the average, and a free item (cost 0) lowers it.
+- A sale made before the product's first purchase has no known cost. It's left out of the cost and profit, never guessed, and counted in `uncostedQuantity` so the client can say the profit is incomplete.
+- The daily totals report `costOfSales`, `grossProfit` (selling price minus cost, for costed items only) and `uncostedQuantity` per day and for the range, rounded to two decimals per day. It loads the whole history of the products sold up to the end of the range, which is fine at a shop's volume.
+
 ### Transaction history
 
 - `GET /transactions` lists sales and purchases together, newest first by default, as `TransactionSummaryResponse` rows: `kind` (`Sale` or `Purchase`), title, time, `lineCount`, `quantity` and `total` (selling price for a sale, cost for a purchase).
@@ -374,6 +382,7 @@ The design lives in the Loom (Penpot) file "Dashboard", and the frontend follows
 - **Confirmations** that must not be missed, such as the one after saving a sale, are a Base UI `AlertDialog` that stays until one of its actions is chosen, not a toast.
 - **Long lists** load a page at a time through `usePagedList` in `src/lib`, with `LoadMoreButton` to fetch the next page. Product lists use `useProductPages` in `features/products`, which wraps it; use that wherever products are listed, as the sale and product screens do.
 - **Totals worked out from a paged list** count only what is fully loaded. The history leaves out the total of its oldest day on screen while more pages remain, because that day may continue on the next page.
+- **Profit** is shown as "Untung", from the daily totals' `grossProfit`: on Home's "Hari ini" card, and on the Untung screen (`/profit`) for the last seven days. `fetchDailyTotals` in `features/reports` reads the totals for any range and rejects a malformed answer. When `uncostedQuantity` is above zero, say the profit leaves out those items with `IncompleteProfit`, never hide it. A destination's `opens` in `shell/navigation.ts` keeps it marked in the sidebar on screens outside its route, as Beranda stays marked on Untung.
 - **Stock is shown by its status**, never by comparing quantities again: `Low`, `Empty` and `Negative` each have their own wording and badge, and their own filter on Products.
 - **Rows of filter chips wrap** onto a second line rather than scroll sideways, so no choice is hidden off the edge of a phone.
 - **Filters** that narrow a list live in the address, with English names and values (`/products?stock=negative`, `/history?kind=purchase`), so a link can open the list already filtered and going back keeps the choice. An unknown value means no filter.

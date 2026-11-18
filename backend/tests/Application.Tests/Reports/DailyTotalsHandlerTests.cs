@@ -22,8 +22,8 @@ public class DailyTotalsHandlerTests
         var response = await GetAsync(SeedDay.AddDays(-1), SeedDay.AddDays(1), "UTC");
 
         Assert.Equal([SeedDay.AddDays(-1), SeedDay, SeedDay.AddDays(1)], response.Days.Select(d => d.Date));
-        Assert.Equal(new DayTotalsResponse(SeedDay.AddDays(-1), 0m, 0, 0m, 0), response.Days[0]);
-        Assert.Equal(new DayTotalsResponse(SeedDay.AddDays(1), 0m, 0, 0m, 0), response.Days[2]);
+        Assert.Equal(new DayTotalsResponse(SeedDay.AddDays(-1), 0m, 0, 0m, 0, 0m, 0m, 0), response.Days[0]);
+        Assert.Equal(new DayTotalsResponse(SeedDay.AddDays(1), 0m, 0, 0m, 0, 0m, 0m, 0), response.Days[2]);
     }
 
     [Fact]
@@ -33,8 +33,8 @@ public class DailyTotalsHandlerTests
 
         var day = Assert.Single((await GetAsync(SeedDay, SeedDay, "UTC")).Days);
 
-        // The seed sells 3 at the price of 10 and buys 3 at a cost of 6.
-        Assert.Equal(new DayTotalsResponse(SeedDay, 30m, 1, 18m, 1), day);
+        // The seed buys 3 at a cost of 6 and sells them at the price of 10, a profit of 4 each.
+        Assert.Equal(new DayTotalsResponse(SeedDay, 30m, 1, 18m, 1, 18m, 12m, 0), day);
     }
 
     [Fact]
@@ -113,6 +113,63 @@ public class DailyTotalsHandlerTests
     }
 
     [Fact]
+    public async Task Get_CostsSalesAtTheMovingAverageOfWhatWasPaid()
+    {
+        var graph = await SeededGraph.CreateAsync(database);
+        // The seed buys 3, sells 3 and spills 1, so the shelf is 1 short. 5 at 9 set the average to 9 and leave 4,
+        // and 2 more at 6 bring it to (4 x 9 + 2 x 6) / 6 = 8.
+        await AddPurchaseAsync(graph, SeededGraph.OccurredAt.AddDays(1), unitCost: 9m, quantity: 5);
+        await AddPurchaseAsync(graph, SeededGraph.OccurredAt.AddDays(2), unitCost: 6m, quantity: 2);
+        await AddSaleAsync(graph, SeededGraph.OccurredAt.AddDays(3), quantity: 3);
+
+        var day = (await GetAsync(SeedDay.AddDays(3), SeedDay.AddDays(3), "UTC")).Days.Single();
+
+        Assert.Equal(24m, day.CostOfSales);
+        Assert.Equal(30m - 24m, day.GrossProfit);
+        Assert.Equal(0, day.UncostedQuantity);
+    }
+
+    [Fact]
+    public async Task Get_KeepsAnEarlierSalesCostWhenGoodsAreBoughtLater()
+    {
+        var graph = await SeededGraph.CreateAsync(database);
+        await AddPurchaseAsync(graph, SeededGraph.OccurredAt.AddDays(1), unitCost: 9m, quantity: 10);
+
+        var day = (await GetAsync(SeedDay, SeedDay.AddDays(1), "UTC")).Days[0];
+
+        Assert.Equal(18m, day.CostOfSales);
+    }
+
+    [Fact]
+    public async Task Get_LeavesOutOfTheProfitWhatWasSoldBeforeAnyPurchase()
+    {
+        var graph = await SeededGraph.CreateAsync(database);
+        await AddSaleAsync(graph, SeededGraph.OccurredAt.AddDays(-1), quantity: 2);
+
+        var response = await GetAsync(SeedDay.AddDays(-1), SeedDay, "UTC");
+
+        Assert.Equal(new DayTotalsResponse(SeedDay.AddDays(-1), 20m, 1, 0m, 0, 0m, 0m, 2), response.Days[0]);
+        Assert.Equal(12m, response.GrossProfit);
+        Assert.Equal(18m, response.CostOfSales);
+        Assert.Equal(2, response.UncostedQuantity);
+    }
+
+    [Fact]
+    public async Task Get_RoundsAnAverageThatDoesNotDivideEvenly()
+    {
+        var graph = await SeededGraph.CreateAsync(database);
+        // The shelf is 1 short after the seed, so 2 at 1 leave 1 at 1. 2 more at 2 make an average of 5 / 3.
+        await AddPurchaseAsync(graph, SeededGraph.OccurredAt.AddDays(1), unitCost: 1m, quantity: 2);
+        await AddPurchaseAsync(graph, SeededGraph.OccurredAt.AddDays(1).AddHours(1), unitCost: 2m, quantity: 2);
+        await AddSaleAsync(graph, SeededGraph.OccurredAt.AddDays(2), quantity: 1);
+
+        var day = (await GetAsync(SeedDay.AddDays(2), SeedDay.AddDays(2), "UTC")).Days.Single();
+
+        Assert.Equal(1.67m, day.CostOfSales);
+        Assert.Equal(8.33m, day.GrossProfit);
+    }
+
+    [Fact]
     public async Task Get_WithNoTransactions_ReturnsZeroTotals()
     {
         var response = await GetAsync(new DateOnly(2030, 1, 1), new DateOnly(2030, 1, 7), Jakarta);
@@ -139,6 +196,14 @@ public class DailyTotalsHandlerTests
         sale.UpdateProductEntries(
             [SaleProductEntry.CreateNew(sale.Id, graph.Product.Id, graph.CurrentPrice.Id, quantity)]);
         await database.SeedAsync(sale);
+    }
+
+    private async Task AddPurchaseAsync(SeededGraph graph, DateTime occurredAt, decimal unitCost, int quantity)
+    {
+        var purchase = Purchase.CreateNew("Restock", occurredAt, FixedClock.Now);
+        purchase.UpdateProductEntries(
+            [PurchaseProductEntry.CreateNew(purchase.Id, graph.Product.Id, unitCost, quantity)]);
+        await database.SeedAsync(purchase);
     }
 
     private async Task<DailyTotalsResponse> GetAsync(DateOnly from, DateOnly to, string timeZone)
